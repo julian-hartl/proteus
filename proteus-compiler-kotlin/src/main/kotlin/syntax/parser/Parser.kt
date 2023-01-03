@@ -1,10 +1,11 @@
-package parser
+package syntax.parser
 
+import diagnostics.Diagnosable
 import diagnostics.Diagnostics
-import lexer.Lexer
-import lexer.Operator
-import lexer.SyntaxKind
-import lexer.SyntaxToken
+import syntax.lexer.Lexer
+import syntax.lexer.Operator
+import syntax.lexer.SyntaxKind
+import syntax.lexer.SyntaxToken
 
 class Parser private constructor(
     private val input: String,
@@ -12,7 +13,7 @@ class Parser private constructor(
     private var position: Int,
     private val verbose: Boolean,
     private var diagnostics: Diagnostics
-) {
+) : Diagnosable {
 
 
     companion object {
@@ -91,23 +92,35 @@ class Parser private constructor(
 
     private fun parsePrimaryExpression(): ExpressionSyntax {
 
-        if (current.kind == SyntaxKind.OpenParenthesisToken) {
-            val left = nextToken()
-            val expression = parseExpression()
-            val right = matchToken(SyntaxKind.CloseParenthesisToken)
-            return ParenthesizedExpressionSyntax(left, expression, right)
+        when (current.kind) {
+            SyntaxKind.OpenParenthesisToken -> {
+                val left = nextToken()
+                val expression = parseExpression()
+                val right = matchToken(SyntaxKind.CloseParenthesisToken)
+                return ParenthesizedExpressionSyntax(left, expression, right)
+            }
+
+            SyntaxKind.FalseKeyword, SyntaxKind.TrueKeyword -> {
+                val value = current.kind == SyntaxKind.TrueKeyword
+                val token = current
+                nextToken()
+                return LiteralExpressionSyntax(token, value)
+            }
+
+            else -> {
+                val numberToken = matchToken(SyntaxKind.NumberToken)
+
+                if (numberToken.value !is Int) {
+                    diagnostics.add(
+                        "The number ${numberToken.literal} isn't valid Int32.",
+                        numberToken.literal,
+                        numberToken.position
+                    )
+                }
+                return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
+            }
         }
 
-        val numberToken = matchToken(SyntaxKind.NumberToken)
-
-        if (numberToken.value !is Int) {
-            diagnostics.add(
-                "The number ${numberToken.literal} isn't valid Int32.",
-                numberToken.literal ?: "",
-                numberToken.position
-            )
-        }
-        return LiteralExpressionSyntax(numberToken)
     }
 
     private fun matchToken(syntaxKind: SyntaxKind): SyntaxToken<*> {
@@ -139,5 +152,13 @@ class Parser private constructor(
 
     private val current: SyntaxToken<*>
         get() = peek(0)
+
+    override fun printDiagnostics() {
+        diagnostics.print()
+    }
+
+    override fun hasErrors(): Boolean {
+        return diagnostics.size() > 0
+    }
 
 }

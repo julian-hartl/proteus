@@ -1,54 +1,51 @@
 package evaluator
 
-import lexer.SyntaxKind
-import parser.*
+import binding.*
+import syntax.parser.*
 
-class Evaluator(private val syntaxTree: SyntaxTree) {
+class Evaluator(private val boundExpression: BoundExpression) {
 
     fun evaluate(): Any {
-        return evaluateExpression(syntaxTree.root)
+        return evaluateExpression(boundExpression)
     }
 
-    private fun evaluateExpression(syntax: ExpressionSyntax): Any {
+    private fun evaluateExpression(expression: BoundExpression): Any {
         // This suppression is needed in order to compile.
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
-        return when (syntax) {
-            is LiteralExpressionSyntax -> syntax.value
-            is BinaryExpression -> {
-                evaluateBinaryExpression(syntax)
+
+        return when (expression) {
+            is BoundLiteralExpression<*> -> expression.value
+            is BoundBinaryExpression -> {
+                evaluateBinaryExpression(expression)
             }
 
-            is UnaryExpressionSyntax -> {
-                evaluateUnaryExpression(syntax)
+            is BoundUnaryExpression -> {
+                evaluateUnaryExpression(expression)
             }
 
-            is ParenthesizedExpressionSyntax -> evaluateExpression(syntax.expressionSyntax)
-            else -> throw Exception("Unexpected syntax ${syntax.kind}")
+            else -> evaluateExpression(expression)
         }
 
     }
 
-    private fun evaluateUnaryExpression(syntax: UnaryExpressionSyntax): Any {
-        val operand = evaluateExpression(syntax.operand)
-        return when (syntax.operatorToken.kind) {
-            SyntaxKind.PlusToken -> operand as Int
-            SyntaxKind.MinusToken -> -(operand as Int)
-            else -> throw Exception("Unexpected unary operator ${syntax.operatorToken.kind}")
+    private fun evaluateUnaryExpression(expression: BoundUnaryExpression): Any {
+        val operand = evaluateExpression(expression.operand)
+        return when (expression.operatorKind) {
+            BoundUnaryOperatorKind.Identity -> operand as Int
+            BoundUnaryOperatorKind.Negation -> -(operand as Int)
         }
     }
 
-    private fun evaluateBinaryExpression(syntax: BinaryExpression): Any {
-        val left = evaluateExpression(syntax.left) as Int
-        val right = evaluateExpression(syntax.right) as Int
-        return when (syntax.operatorToken.kind) {
-            SyntaxKind.PlusToken -> left + right
-            SyntaxKind.MinusToken -> left - right
-            SyntaxKind.AsteriskToken -> left * right
-            SyntaxKind.SlashToken -> left / right
-            SyntaxKind.EqualityToken -> left == right
-            SyntaxKind.AmpersandToken -> left and right
-            SyntaxKind.PipeToken -> left or right
-            else -> throw Exception("Unexpected binary operator ${syntax.operatorToken.kind}")
+    private fun evaluateBinaryExpression(expression: BoundBinaryExpression): Any {
+        val left = evaluateExpression(expression.left) as Int
+        val right = evaluateExpression(expression.right) as Int
+        return when (expression.operatorKind) {
+            BoundBinaryOperatorKind.Addition -> left + right
+            BoundBinaryOperatorKind.Subtraction -> left - right
+            BoundBinaryOperatorKind.Multiplication -> left * right
+            BoundBinaryOperatorKind.Division -> left / right
+            BoundBinaryOperatorKind.LogicalAnd -> left and right
+            BoundBinaryOperatorKind.LogicalOr -> left or right
         }
     }
 

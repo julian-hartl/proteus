@@ -1,7 +1,8 @@
 package evaluator
 
+import binding.Binder
 import org.junit.jupiter.api.Test
-import parser.Parser
+import syntax.parser.Parser
 import kotlin.test.assertEquals
 
 class EvaluatorTest {
@@ -10,7 +11,9 @@ class EvaluatorTest {
     private fun initEvaluator(input: String) {
         val parser = Parser(input)
         val syntaxTree = parser.parse()
-        evaluator = Evaluator(syntaxTree)
+        val binder = Binder()
+        val boundExpression = binder.bindSyntaxTree(syntaxTree)
+        evaluator = Evaluator(boundExpression)
     }
 
     @Test
@@ -76,5 +79,20 @@ class EvaluatorTest {
         val result = evaluator.evaluate()
         assertEquals(7, result)
     }
+
+    @Test
+    fun shouldEvaluateToTrue() {
+        initEvaluator("true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateToFalse() {
+        initEvaluator("false")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
 
 }

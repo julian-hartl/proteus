@@ -1,7 +1,8 @@
 package parser
 
-import lexer.SyntaxKind
+import syntax.lexer.SyntaxKind
 import org.junit.jupiter.api.Test
+import syntax.parser.Parser
 import kotlin.test.assertEquals
 
 class ParserTest {

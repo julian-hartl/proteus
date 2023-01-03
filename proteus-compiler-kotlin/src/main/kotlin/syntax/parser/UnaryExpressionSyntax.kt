@@ -1,7 +1,7 @@
-package parser
+package syntax.parser
 
-import lexer.SyntaxKind
-import lexer.SyntaxToken
+import syntax.lexer.SyntaxKind
+import syntax.lexer.SyntaxToken
 
 class UnaryExpressionSyntax(val operatorToken: SyntaxToken<*>, val operand: ExpressionSyntax) : ExpressionSyntax() {
 

@@ -1,6 +1,6 @@
-package lexer
+package syntax.lexer
 
-import parser.SyntaxNode
+import syntax.parser.SyntaxNode
 
 class SyntaxToken<T>(
     override val kind: SyntaxKind,
@@ -11,8 +11,23 @@ class SyntaxToken<T>(
     companion object {
 
 
-        fun equalityToken(position: Int): SyntaxToken<Boolean> {
-            return SyntaxToken(SyntaxKind.EqualityToken, position, "==", true)
+        fun keywordToken(position: Int, literal: String): SyntaxToken<*> {
+            val keyword = Keyword.fromString(literal) ?: return identifierToken(position, literal)
+            return SyntaxToken(
+                SyntaxKind.fromKeyword(keyword),
+                position,
+                literal,
+                keyword
+            )
+        }
+
+        fun identifierToken(position: Int, literal: String): SyntaxToken<*> {
+            return SyntaxToken(
+                SyntaxKind.IdentifierToken,
+                position,
+                literal,
+                null
+            )
         }
 
         fun numberToken(position: Int, literal: String): SyntaxToken<Int?> {
@@ -23,7 +38,7 @@ class SyntaxToken<T>(
             return SyntaxToken(SyntaxKind.WhiteSpaceToken, position, literal, null)
         }
 
-        fun fromOperator(position: Int, operator: String): SyntaxToken<Nothing?> {
+        fun operator(position: Int, operator: String): SyntaxToken<Nothing?> {
             return SyntaxToken(SyntaxKind.fromOperator(Operator.fromLiteralOrThrow(operator)), position, operator, null)
         }
 

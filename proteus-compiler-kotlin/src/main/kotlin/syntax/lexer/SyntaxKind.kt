@@ -1,4 +1,4 @@
-package lexer
+package syntax.lexer
 
 enum class SyntaxKind {
     NumberToken,
@@ -16,12 +16,24 @@ enum class SyntaxKind {
     AmpersandToken,
     PipeToken,
     BinaryExpression,
-    EqualityToken,
-    UnaryExpression;
+    TrueKeyword,
+    FalseKeyword,
+    UnaryExpression,
+    IdentifierToken;
 
     companion object {
         fun fromOperator(operator: Operator): SyntaxKind {
             return operator.syntaxKind
+        }
+
+        fun fromKeyword(keyword: Keyword): SyntaxKind {
+            return when (keyword) {
+                Keyword.True -> TrueKeyword
+                Keyword.False -> FalseKeyword
+                else -> {
+                    throw Exception("Unexpected keyword $keyword")
+                }
+            }
         }
 
     }

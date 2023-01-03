@@ -1,4 +1,4 @@
-package lexer
+package syntax.lexer
 
 sealed class Operator(
     val syntaxKind: SyntaxKind,
@@ -60,6 +60,5 @@ object OpenParenthesisOperator : Operator(SyntaxKind.OpenParenthesisToken, "(", 
 
 object CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")", OperatorType.Other, 0)
 
-object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Comparison, 4)
 
 

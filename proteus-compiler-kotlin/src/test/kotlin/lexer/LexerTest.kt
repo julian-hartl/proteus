@@ -1,5 +1,7 @@
 package lexer
 
+import syntax.lexer.Lexer
+import syntax.lexer.SyntaxKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

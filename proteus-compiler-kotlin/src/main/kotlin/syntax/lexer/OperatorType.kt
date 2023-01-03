@@ -1,4 +1,4 @@
-package lexer
+package syntax.lexer
 
 enum class OperatorType {
     Arithmetic,

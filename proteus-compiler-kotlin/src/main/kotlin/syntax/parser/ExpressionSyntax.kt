@@ -1,4 +1,4 @@
-package parser
+package syntax.parser
 
 sealed class ExpressionSyntax(): SyntaxNode() {
 }

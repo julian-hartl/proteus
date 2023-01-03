@@ -1,6 +1,6 @@
-package parser
+package syntax.parser
 
-import lexer.SyntaxKind
+import syntax.lexer.SyntaxKind
 
 abstract class SyntaxNode {
     abstract val kind: SyntaxKind

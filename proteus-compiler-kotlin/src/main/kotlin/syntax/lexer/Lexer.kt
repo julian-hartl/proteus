@@ -1,4 +1,4 @@
-package lexer
+package syntax.lexer
 
 import diagnostics.Diagnostics
 
@@ -31,23 +31,20 @@ class Lexer private constructor(private val input: String, private var position:
             return SyntaxToken.whiteSpaceToken(start, literal)
         }
 
+        if (current.isLetter()) {
+            val start = position
+            while (current.isLetter()) {
+                next()
+            }
+            val literal = input.substring(start, position)
+            return SyntaxToken.keywordToken(start, literal)
+        }
+
         if (isCurrentOperator()) {
             val start = position
             val operator = current.toString()
             next()
-            return SyntaxToken.fromOperator(start, operator)
-        }
-
-        if (current == '=') {
-            val start = position
-            if (peek(1) == '=' && peek(2).isWhitespace()) {
-                next()
-                return SyntaxToken.equalityToken(start)
-            }
-            if (peek(-1) == '=') {
-                next()
-                return nextToken()
-            }
+            return SyntaxToken.operator(start, operator)
         }
 
         diagnostics.add("Unexpected character", current.toString(), position)

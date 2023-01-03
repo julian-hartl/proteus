@@ -1,6 +1,7 @@
+import binding.Binder
 import evaluator.Evaluator
-import parser.SyntaxTree
 import source_file_reader.SourceFileReader
+import syntax.parser.SyntaxTree
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
@@ -23,14 +24,20 @@ fun main(args: Array<String>) {
         val tree = SyntaxTree.parse(input, verbose = verbose)
 
         if (tree.hasErrors()) {
-            tree.outputDiagnostics()
-            return
+            tree.printDiagnostics()
+            continue
         }
 
         if (verbose)
             tree.prettyPrint()
 
-        val evaluator = Evaluator(tree)
+        val binder = Binder()
+        val boundExpression = binder.bindSyntaxTree(tree)
+        if(binder.hasErrors()) {
+            binder.printDiagnostics()
+            continue
+        }
+        val evaluator = Evaluator(boundExpression)
 
         val result = evaluator.evaluate()
         println(result)
