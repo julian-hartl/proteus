@@ -12,9 +12,9 @@ enum class SyntaxKind {
     WhiteSpaceToken,
     BadToken,
     ParenthesizedExpression,
-    NumberExpression,
-    BinaryExpression,
+    LiteralExpression,
     BitwiseAndToken,
+    BinaryExpression,
     EqualityToken;
     companion object {
 

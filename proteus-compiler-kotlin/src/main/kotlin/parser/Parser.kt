@@ -110,7 +110,7 @@ class Parser private constructor(
                 numberToken.position
             )
         }
-        return NumberExpressionSyntax(numberToken)
+        return LiteralExpressionSyntax(numberToken)
     }
 
     private fun matchToken(syntaxKind: SyntaxKind): SyntaxToken<*> {

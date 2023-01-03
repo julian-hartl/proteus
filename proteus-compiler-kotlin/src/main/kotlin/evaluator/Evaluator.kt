@@ -13,7 +13,7 @@ class Evaluator(private val syntaxTree: SyntaxTree) {
         // This suppression is needed in order to compile.
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
         return when (syntax) {
-            is NumberExpressionSyntax -> syntax.value.toInt()
+            is LiteralExpressionSyntax -> syntax.value
             is BinaryExpression -> {
                 evaluateBinaryExpression(syntax)
             }
