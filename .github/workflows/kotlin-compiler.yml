@@ -21,4 +21,5 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           java-version: 17
+          distribution: corretto
       - run: gradle build
