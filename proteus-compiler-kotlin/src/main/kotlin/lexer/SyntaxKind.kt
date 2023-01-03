@@ -16,12 +16,17 @@ enum class SyntaxKind {
     AmpersandToken,
     PipeToken,
     BinaryExpression,
-    EqualityToken;
+    EqualityToken,
+    UnaryExpression;
 
     companion object {
         fun fromOperator(operator: Operator): SyntaxKind {
             return operator.syntaxKind
         }
 
+    }
+
+    fun toOperator(): Operator {
+        return Operator.fromSyntaxKind(this)
     }
 }

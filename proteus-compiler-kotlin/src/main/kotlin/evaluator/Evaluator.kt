@@ -18,10 +18,23 @@ class Evaluator(private val syntaxTree: SyntaxTree) {
                 evaluateBinaryExpression(syntax)
             }
 
+            is UnaryExpressionSyntax -> {
+                evaluateUnaryExpression(syntax)
+            }
+
             is ParenthesizedExpressionSyntax -> evaluateExpression(syntax.expressionSyntax)
             else -> throw Exception("Unexpected syntax ${syntax.kind}")
         }
 
+    }
+
+    private fun evaluateUnaryExpression(syntax: UnaryExpressionSyntax): Any {
+        val operand = evaluateExpression(syntax.operand)
+        return when (syntax.operatorToken.kind) {
+            SyntaxKind.PlusToken -> operand as Int
+            SyntaxKind.MinusToken -> -(operand as Int)
+            else -> throw Exception("Unexpected unary operator ${syntax.operatorToken.kind}")
+        }
     }
 
     private fun evaluateBinaryExpression(syntax: BinaryExpression): Any {

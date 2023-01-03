@@ -1,7 +1,5 @@
 package lexer
 
-import kotlin.reflect.full.createInstance
-
 sealed class Operator(
     val syntaxKind: SyntaxKind,
     val literal: String,
@@ -30,6 +28,18 @@ sealed class Operator(
 
         fun fromLiteralOrThrow(literal: String): Operator {
             return fromLiteral(literal) ?: throw IllegalArgumentException("Unknown operator: $literal")
+        }
+
+        fun fromSyntaxKind(syntaxKind: SyntaxKind): Operator {
+            return all.find { it.syntaxKind == syntaxKind } ?: throw IllegalArgumentException("Unknown syntax kind: $syntaxKind")
+        }
+    }
+
+    fun unaryPrecedence(): Int {
+        return when (this) {
+            is PlusOperator -> 100
+            is MinusOperator -> 100
+            else -> 0
         }
     }
 }

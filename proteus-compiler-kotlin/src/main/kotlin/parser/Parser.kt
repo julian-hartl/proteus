@@ -1,7 +1,10 @@
 package parser
 
 import diagnostics.Diagnostics
-import lexer.*
+import lexer.Lexer
+import lexer.Operator
+import lexer.SyntaxKind
+import lexer.SyntaxToken
 
 class Parser private constructor(
     private val input: String,
@@ -33,11 +36,8 @@ class Parser private constructor(
 
     constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, Diagnostics()) {
         val lexer = Lexer(input)
-        val tokens = parseInput(lexer)
-        this.tokens = tokens
+        this.tokens = parseInput(lexer)
         diagnostics = lexer.diagnostics
-
-
     }
 
     fun parse(): SyntaxTree {
@@ -50,10 +50,19 @@ class Parser private constructor(
     }
 
     private fun parseExpression(parentPrecedence: Int = 0): ExpressionSyntax {
-        var left = parsePrimaryExpression()
+
+        val unaryOperatorPrecedence = currentOperator?.unaryPrecedence() ?: 0
+        var left =
+            if (unaryOperatorPrecedence != 0 && unaryOperatorPrecedence >= parentPrecedence) {
+                val operatorToken = nextToken()
+                val operand = parsePrimaryExpression()
+                UnaryExpressionSyntax(operatorToken, operand)
+            } else {
+                parsePrimaryExpression()
+            }
 
         while (true) {
-            val precedence = Operator.fromLiteral(current.literal)?.precedence ?: 0
+            val precedence = currentOperator?.precedence ?: 0
 
             if (precedence == 0 || precedence <= parentPrecedence) {
                 break
@@ -66,6 +75,9 @@ class Parser private constructor(
 
         return left
     }
+
+    private val currentOperator
+        get() = Operator.fromLiteral(current.literal)
 
     private fun printLexerTokens() {
         if (verbose)
@@ -107,7 +119,7 @@ class Parser private constructor(
             current.literal,
             current.position
         )
-        return SyntaxToken(syntaxKind, current.position, "", null)
+        return SyntaxToken(syntaxKind, current.position, current.literal, null)
     }
 
     private fun nextToken(): SyntaxToken<*> {

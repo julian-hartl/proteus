@@ -41,4 +41,18 @@ class EvaluatorTest {
         assertEquals(-3, result)
     }
 
+    @Test
+    fun shouldEvaluateOperationWithUnaryOperator() {
+        initEvaluator("-1 + 2")
+        val result = evaluator.evaluate()
+        assertEquals(1, result)
+    }
+
+    @Test
+    fun shouldEvaluateOperationWithUnaryOperatorAndParenthesis() {
+        initEvaluator("1 + -(2 - 3) * 4")
+        val result = evaluator.evaluate()
+        assertEquals(5, result)
+    }
+
 }

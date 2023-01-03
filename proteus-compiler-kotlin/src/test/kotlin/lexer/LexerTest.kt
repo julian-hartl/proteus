@@ -127,4 +127,26 @@ class LexerTest {
         assertEquals(SyntaxKind.NumberToken, lexer.nextToken().kind)
         assertEquals(SyntaxKind.EndOfFileToken, lexer.nextToken().kind)
     }
+
+    @Test
+    fun shouldParseExpressionWithUnaryOperator() {
+        initLexer("-1")
+        assertEquals(SyntaxKind.MinusToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.NumberToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.EndOfFileToken, lexer.nextToken().kind)
+    }
+
+    @Test
+    fun shouldParseExpressionWithParenthesisAndUnaryOperator() {
+        initLexer("-(1 + 2)")
+        assertEquals(SyntaxKind.MinusToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.OpenParenthesisToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.NumberToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.WhiteSpaceToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.PlusToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.WhiteSpaceToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.NumberToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.CloseParenthesisToken, lexer.nextToken().kind)
+        assertEquals(SyntaxKind.EndOfFileToken, lexer.nextToken().kind)
+    }
 }

@@ -86,4 +86,19 @@ class ParserTest {
         assertEquals(SyntaxKind.LiteralExpression, asteriskNodeChildren.next().kind)
     }
 
+    @Test
+    fun shouldParseExpressionWithUnaryOperator() {
+        initParser("-1 + 2")
+        val ast = parser.parse()
+        assertEquals(SyntaxKind.BinaryExpression, ast.root.kind)
+        val rootChildren = ast.root.getChildren()
+        val unaryNode = rootChildren.next()
+        assertEquals(SyntaxKind.UnaryExpression, unaryNode.kind)
+        val unaryNodeChildren = unaryNode.getChildren()
+        assertEquals(SyntaxKind.MinusToken, unaryNodeChildren.next().kind)
+        assertEquals(SyntaxKind.LiteralExpression, unaryNodeChildren.next().kind)
+        assertEquals(SyntaxKind.PlusToken, rootChildren.next().kind)
+        assertEquals(SyntaxKind.LiteralExpression, rootChildren.next().kind)
+    }
+
 }
