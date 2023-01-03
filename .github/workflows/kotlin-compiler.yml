@@ -22,6 +22,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - run: cd proteus-compiler-kotlin
-      - run: gradle build
+      - name: Build kotlin compiler
+        working-directory: ./proteus-compiler-kotlin
+        run: gradle build
                 
