@@ -11,10 +11,6 @@ class SyntaxToken<T>(
     companion object {
 
 
-        fun bitwiseAndToken(position: Int): SyntaxToken<*> {
-            return SyntaxToken(SyntaxKind.BitwiseAndToken, position, "&", null)
-        }
-
         fun equalityToken(position: Int): SyntaxToken<Boolean> {
             return SyntaxToken(SyntaxKind.EqualityToken, position, "==", true)
         }
@@ -28,7 +24,7 @@ class SyntaxToken<T>(
         }
 
         fun fromOperator(position: Int, operator: String): SyntaxToken<Nothing?> {
-            return SyntaxToken(SyntaxKind.fromOperator(operator), position, operator, null)
+            return SyntaxToken(SyntaxKind.fromOperator(Operator.fromLiteralOrThrow(operator)), position, operator, null)
         }
 
         fun badToken(position: Int, literal: String): SyntaxToken<Nothing?> {

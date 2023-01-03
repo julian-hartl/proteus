@@ -13,9 +13,10 @@ enum class SyntaxKind {
     BadToken,
     ParenthesizedExpression,
     LiteralExpression,
-    BitwiseAndToken,
+    AmpersandToken,
     BinaryExpression,
     EqualityToken;
+
     companion object {
 
     }
@@ -32,21 +33,13 @@ fun SyntaxKind.isLowPriorityBinaryOperator(): Boolean {
 }
 
 fun SyntaxKind.isHighPriorityBinaryOperator(): Boolean {
-    return this == SyntaxKind.AsteriskToken || this == SyntaxKind.SlashToken || this == SyntaxKind.BitwiseAndToken
+    return this == SyntaxKind.AsteriskToken || this == SyntaxKind.SlashToken || this == SyntaxKind.AmpersandToken
 }
 
 fun SyntaxKind.isOperator(): Boolean {
-    return isBooleanOperator() || isLowPriorityBinaryOperator() || isHighPriorityBinaryOperator()
+    return Operator.all.map { it.syntaxKind }.contains(this)
 }
 
-fun SyntaxKind.Companion.fromOperator(operator: String): SyntaxKind {
-    return when (operator) {
-        "+" -> SyntaxKind.PlusToken
-        "-" -> SyntaxKind.MinusToken
-        "*" -> SyntaxKind.AsteriskToken
-        "/" -> SyntaxKind.SlashToken
-        else -> {
-            throw Exception("Unexpected operator: $operator")
-        }
-    }
+fun SyntaxKind.Companion.fromOperator(operator: Operator): SyntaxKind {
+    return operator.syntaxKind
 }

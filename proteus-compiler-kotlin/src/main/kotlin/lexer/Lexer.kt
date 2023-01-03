@@ -7,10 +7,6 @@ class Lexer private constructor(private val input: String, private var position:
 
     constructor(input: String) : this(input, 0, Diagnostics())
 
-    companion object {
-        private val OPERATORS = arrayOf("+", "-", "*", "/")
-    }
-
 
     fun nextToken(): SyntaxToken<*> {
         if (position >= input.length) {
@@ -42,35 +38,18 @@ class Lexer private constructor(private val input: String, private var position:
             return SyntaxToken.fromOperator(start, operator)
         }
 
-        if(current == '&') {
-            val start = position
-            next()
-            return SyntaxToken.bitwiseAndToken(start)
-        }
-
         if (current == '=') {
             val start = position
-            if(peek(1) == '=' && peek(2).isWhitespace()) {
+            if (peek(1) == '=' && peek(2).isWhitespace()) {
                 next()
                 return SyntaxToken.equalityToken(start)
             }
-            if(peek(-1) == '=') {
+            if (peek(-1) == '=') {
                 next()
                 return nextToken()
             }
         }
 
-        if (current == '(') {
-            val start = position
-            next()
-            return SyntaxToken(SyntaxKind.OpenParenthesisToken, start, "(", null)
-        }
-
-        if (current == ')') {
-            val start = position
-            next()
-            return SyntaxToken(SyntaxKind.CloseParenthesisToken, start, ")", null)
-        }
         diagnostics.add("Unexpected character", current.toString(), position)
         next()
         return SyntaxToken.badToken(position, current.toString())
@@ -78,7 +57,7 @@ class Lexer private constructor(private val input: String, private var position:
     }
 
     private fun isCurrentOperator(): Boolean {
-        return OPERATORS.contains(current.toString())
+        return Operator.isOperator(current.toString())
     }
 
     private fun next() {
