@@ -17,6 +17,19 @@ dependencies {
     implementation(kotlin("reflect"))
 }
 
+sourceSets {
+    main {
+        kotlin {
+            srcDirs("src/main/kotlin")
+        }
+    }
+    test {
+        kotlin {
+            srcDirs("src/test/kotlin")
+        }
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }
