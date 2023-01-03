@@ -55,4 +55,26 @@ class EvaluatorTest {
         assertEquals(5, result)
     }
 
+    @Test
+    fun shouldHandleDoubleUnaryOperator() {
+        initEvaluator("1 + --2")
+        val result = evaluator.evaluate()
+        assertEquals(3, result)
+    }
+
+
+    @Test
+    fun shouldHandleMultipleUnaryOperator() {
+        initEvaluator("1 + -2 * ---3")
+        val result = evaluator.evaluate()
+        assertEquals(7, result)
+    }
+
+    @Test
+    fun shouldHandleMultipleUnaryOperatorWithParenthesis() {
+        initEvaluator("1 + -2 * (---3)")
+        val result = evaluator.evaluate()
+        assertEquals(7, result)
+    }
+
 }

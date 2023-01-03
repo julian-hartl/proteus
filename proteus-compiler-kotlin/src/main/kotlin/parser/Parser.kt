@@ -55,7 +55,7 @@ class Parser private constructor(
         var left =
             if (unaryOperatorPrecedence != 0 && unaryOperatorPrecedence >= parentPrecedence) {
                 val operatorToken = nextToken()
-                val operand = parsePrimaryExpression()
+                val operand = parseExpression(unaryOperatorPrecedence)
                 UnaryExpressionSyntax(operatorToken, operand)
             } else {
                 parsePrimaryExpression()
