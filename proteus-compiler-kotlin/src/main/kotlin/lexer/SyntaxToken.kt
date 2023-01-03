@@ -5,7 +5,7 @@ import parser.SyntaxNode
 class SyntaxToken<T>(
     override val kind: SyntaxKind,
     var position: Int,
-    val literal: String?,
+    val literal: String,
     val value: T
 ) : SyntaxNode() {
     companion object {

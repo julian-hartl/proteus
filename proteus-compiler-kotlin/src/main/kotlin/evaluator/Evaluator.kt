@@ -34,6 +34,7 @@ class Evaluator(private val syntaxTree: SyntaxTree) {
             SyntaxKind.SlashToken -> left / right
             SyntaxKind.EqualityToken -> left == right
             SyntaxKind.AmpersandToken -> left and right
+            SyntaxKind.PipeToken -> left or right
             else -> throw Exception("Unexpected binary operator ${syntax.operatorToken.kind}")
         }
     }

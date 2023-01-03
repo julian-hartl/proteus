@@ -1,17 +1,24 @@
 package lexer
 
-sealed class Operator(val syntaxKind: SyntaxKind, val literal: String) {
+import kotlin.reflect.full.createInstance
+
+sealed class Operator(
+    val syntaxKind: SyntaxKind,
+    val literal: String,
+    val operatorType: OperatorType,
+    val precedence: Int
+) {
     companion object {
-        val all = listOf(
-            PlusOperator(),
-            MinusOperator(),
-            AsteriskOperator(),
-            SlashOperator(),
-            AmpersandOperator(),
-            EqualityOperator(),
-            OpenParenthesisOperator(),
-            CloseParenthesisOperator()
-        )
+        val all
+            get() = Operator::class.sealedSubclasses
+                .map { it.objectInstance!! }
+
+        val logical: List<Operator>
+            get() = filterByType(OperatorType.Logical)
+
+        fun filterByType(operatorType: OperatorType): List<Operator> {
+            return all.filter { it.operatorType == operatorType }
+        }
 
         fun isOperator(literal: String): Boolean {
             return fromLiteral(literal) != null
@@ -27,20 +34,22 @@ sealed class Operator(val syntaxKind: SyntaxKind, val literal: String) {
     }
 }
 
-class PlusOperator : Operator(SyntaxKind.PlusToken, "+")
+object PlusOperator : Operator(SyntaxKind.PlusToken, "+", OperatorType.Arithmetic, 1)
 
-class MinusOperator : Operator(SyntaxKind.MinusToken, "-")
+object MinusOperator : Operator(SyntaxKind.MinusToken, "-", OperatorType.Arithmetic, 1)
 
-class AsteriskOperator : Operator(SyntaxKind.AsteriskToken, "*")
+object AsteriskOperator : Operator(SyntaxKind.AsteriskToken, "*", OperatorType.Arithmetic, 2)
 
-class SlashOperator : Operator(SyntaxKind.SlashToken, "/")
+object SlashOperator : Operator(SyntaxKind.SlashToken, "/", OperatorType.Arithmetic, 2)
 
-class AmpersandOperator : Operator(SyntaxKind.AmpersandToken, "&")
+object AmpersandOperator : Operator(SyntaxKind.AmpersandToken, "&", OperatorType.Bitwise, 3)
 
-class OpenParenthesisOperator : Operator(SyntaxKind.OpenParenthesisToken, "(")
+object PipeOperator : Operator(SyntaxKind.PipeToken, "|", OperatorType.Bitwise, 3)
 
-class CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")")
+object OpenParenthesisOperator : Operator(SyntaxKind.OpenParenthesisToken, "(", OperatorType.Other, 0)
 
-class EqualityOperator : Operator(SyntaxKind.EqualityToken, "==")
+object CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")", OperatorType.Other, 0)
+
+object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Comparison, 4)
 
 

@@ -43,44 +43,29 @@ class Parser private constructor(
     fun parse(): SyntaxTree {
         printInput()
         printLexerTokens()
-        val expression = parseBooleanExpression()
+        val expression = parseExpression()
         val endOfFileToken = matchToken(SyntaxKind.EndOfFileToken)
 
         return SyntaxTree(expression, endOfFileToken, diagnostics)
     }
 
-    private fun parseBooleanExpression(): ExpressionSyntax {
-        var left = parseTerm()
-        while (current.kind.isBooleanOperator()) {
-            val operatorToken = nextToken()
-            val right = parseTerm()
-            left = BinaryExpression(left, operatorToken, right)
-        }
-        return left;
-    }
-
-    private fun parseTerm(): ExpressionSyntax {
-        var left = parseFactor()
-        while (current.kind.isLowPriorityBinaryOperator()) {
-            val operatorToken = nextToken()
-            val right = parseFactor()
-            left = BinaryExpression(left, operatorToken, right)
-        }
-
-        return left;
-    }
-
-    private fun parseFactor(): ExpressionSyntax {
+    private fun parseExpression(parentPrecedence: Int = 0): ExpressionSyntax {
         var left = parsePrimaryExpression()
-        while (current.kind.isHighPriorityBinaryOperator()) {
+
+        while (true) {
+            val precedence = Operator.fromLiteral(current.literal)?.precedence ?: 0
+
+            if (precedence == 0 || precedence <= parentPrecedence) {
+                break
+            }
+
             val operatorToken = nextToken()
-            val right = parsePrimaryExpression()
+            val right = parseExpression(precedence)
             left = BinaryExpression(left, operatorToken, right)
         }
 
-        return left;
+        return left
     }
-
 
     private fun printLexerTokens() {
         if (verbose)
@@ -96,7 +81,7 @@ class Parser private constructor(
 
         if (current.kind == SyntaxKind.OpenParenthesisToken) {
             val left = nextToken()
-            val expression = parseTerm()
+            val expression = parseExpression()
             val right = matchToken(SyntaxKind.CloseParenthesisToken)
             return ParenthesizedExpressionSyntax(left, expression, right)
         }
@@ -119,10 +104,10 @@ class Parser private constructor(
         }
         diagnostics.add(
             "Unexpected token <${current.kind}>, expected <$syntaxKind>",
-            current.literal ?: "<Unknown token>",
+            current.literal,
             current.position
         )
-        return SyntaxToken(syntaxKind, current.position, null, null)
+        return SyntaxToken(syntaxKind, current.position, "", null)
     }
 
     private fun nextToken(): SyntaxToken<*> {
