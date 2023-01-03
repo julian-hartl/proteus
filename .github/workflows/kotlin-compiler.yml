@@ -22,4 +22,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - run: gradle build
+      - run: | 
+                cd proteus-compiler-kotlin
+                gradle build
+                
