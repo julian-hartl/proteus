@@ -1,12 +1,16 @@
 package lang.proteus.syntax.lexer
 
 import lang.proteus.binding.BoundType
-import lang.proteus.diagnostics.MutableDiagnostics
+import lang.proteus.diagnostics.DiagnosticsBag
 
-class Lexer private constructor(private val input: String, private var position: Int, val diagnostics: MutableDiagnostics) {
+class Lexer private constructor(
+    private val input: String,
+    private var position: Int,
+    val diagnosticsBag: DiagnosticsBag
+) {
 
 
-    constructor(input: String) : this(input, 0, MutableDiagnostics())
+    constructor(input: String) : this(input, 0, DiagnosticsBag())
 
 
     fun nextToken(): SyntaxToken<*> {
@@ -49,7 +53,7 @@ class Lexer private constructor(private val input: String, private var position:
             return SyntaxToken.keywordToken(start, literal)
         }
 
-        diagnostics.add("Unexpected character", current.toString(), position)
+        diagnosticsBag.reportUnexpectedCharacter(current, position)
         next()
         return SyntaxToken.badToken(position, current.toString())
 

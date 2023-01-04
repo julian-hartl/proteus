@@ -1,10 +1,10 @@
 package lexer
 
-import de.proteus.syntax.lexer.Lexer
-import de.proteus.syntax.lexer.Operator
+import lang.proteus.syntax.lexer.Lexer
+import lang.proteus.syntax.lexer.Operator
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import de.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.Token
 class LexerTest {
 
     private lateinit var lexer: Lexer

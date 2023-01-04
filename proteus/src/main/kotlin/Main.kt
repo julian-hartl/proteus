@@ -1,4 +1,8 @@
+package lang.proteus
 
+import lang.proteus.api.Compilation
+import lang.proteus.source_file_reader.SourceFileReader
+import lang.proteus.syntax.parser.SyntaxTree
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
@@ -23,28 +27,21 @@ fun main(args: Array<String>) {
         }
         val tree = SyntaxTree.parse(input, verbose = verbose)
 
-        if (tree.hasErrors()) {
-            tree.printDiagnostics()
-            if (filePath == null) {
-                continue
-            }
 
-        }
         if (verbose)
             tree.prettyPrint()
 
-        val binder = Binder()
-        val boundExpression = binder.bindSyntaxTree(tree)
-        if (binder.hasErrors()) {
-            binder.printDiagnostics()
+        val compilation = Compilation(tree)
+        val compilationResult = compilation.evaluate()
+        if (compilationResult.diagnostics.hasErrors()) {
+            compilationResult.diagnostics.print()
             if (filePath == null) {
                 continue
             }
-        }
-        val evaluator = Evaluator(boundExpression)
+        } else {
 
-        val result = evaluator.evaluate()
-        println(result)
+            println(compilationResult.value)
+        }
         if (filePath != null) {
             break
         }

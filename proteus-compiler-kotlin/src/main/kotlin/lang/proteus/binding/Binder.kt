@@ -1,13 +1,15 @@
 package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
-import lang.proteus.diagnostics.MutableDiagnostics
+import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.parser.*
 
 class Binder : Diagnosable {
 
 
-    override val diagnostics = MutableDiagnostics()
+    private val diagnosticsBag = DiagnosticsBag()
+
+    override val diagnostics = diagnosticsBag.diagnostics
 
     fun bindSyntaxTree(tree: SyntaxTree): BoundExpression {
         return bind(tree.root)
@@ -49,10 +51,10 @@ class Binder : Diagnosable {
         val binaryOperator =
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
-            diagnostics.add(
-                "Operator '${binaryExpression.operatorToken.literal}' cannot be applied to '${boundLeft.type}' and '${boundRight.type}'",
-                binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.position
+            diagnosticsBag.reportBinaryOperatorMismatch(
+                binaryExpression.operatorToken.span,
+                boundLeft.type,
+                boundRight.type
             )
             return boundLeft
         }
@@ -65,10 +67,9 @@ class Binder : Diagnosable {
         val boundOperand = bind(unaryExpression.operand)
         val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
-            diagnostics.add(
-                "Operator '${unaryExpression.operatorSyntaxToken.literal}' cannot be applied to '${boundOperand.type}'",
-                unaryExpression.operatorSyntaxToken.literal,
-                unaryExpression.operatorSyntaxToken.position
+            diagnosticsBag.reportUnaryOperatorMismatch(
+                unaryExpression.operatorSyntaxToken.span,
+                boundOperand.type
             )
             return boundOperand
         }

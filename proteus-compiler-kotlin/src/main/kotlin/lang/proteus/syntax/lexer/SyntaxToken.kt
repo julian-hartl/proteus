@@ -1,6 +1,7 @@
 package lang.proteus.syntax.lexer
 
 import lang.proteus.binding.BoundType
+import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.parser.SyntaxNode
 
 class SyntaxToken<T : Token>(
@@ -46,6 +47,10 @@ class SyntaxToken<T : Token>(
     override fun getChildren(): Iterator<SyntaxNode> {
         return iterator { }
     }
+
+
+    val span: TextSpan
+        get() = TextSpan(position, literal)
 
 
 }

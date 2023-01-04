@@ -3,7 +3,7 @@ package lang.proteus.syntax.parser
 import lang.proteus.binding.BoundType
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
-import lang.proteus.diagnostics.MutableDiagnostics
+import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.*
 
 class Parser private constructor(
@@ -11,7 +11,7 @@ class Parser private constructor(
     private var tokens: Array<SyntaxToken<*>>,
     private var position: Int,
     private val verbose: Boolean,
-    private var mutableDiagnostics: MutableDiagnostics
+    private val diagnosticsBag: DiagnosticsBag
 ) : Diagnosable {
 
 
@@ -34,10 +34,10 @@ class Parser private constructor(
         }
     }
 
-    constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, MutableDiagnostics()) {
+    constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, DiagnosticsBag()) {
         val lexer = Lexer(input)
         this.tokens = parseInput(lexer)
-        mutableDiagnostics = lexer.diagnostics
+        diagnosticsBag.concat(lexer.diagnosticsBag)
     }
 
     fun parse(): SyntaxTree {
@@ -46,7 +46,7 @@ class Parser private constructor(
         val expression = parseExpression()
         val endOfFileToken = matchToken(Token.EndOfFile)
 
-        return SyntaxTree(expression, endOfFileToken, mutableDiagnostics)
+        return SyntaxTree(expression, endOfFileToken, diagnosticsBag.diagnostics)
     }
 
     private fun parseExpression(parentPrecedence: Int = 0): ExpressionSyntax {
@@ -121,10 +121,9 @@ class Parser private constructor(
                 val numberToken = matchToken(Token.Number)
 
                 if (numberToken.value !is Int) {
-                    mutableDiagnostics.add(
-                        "The number ${numberToken.literal} isn't valid Int32.",
-                        numberToken.literal,
-                        numberToken.position
+                    diagnosticsBag.reportInvalidNumber(
+                        numberToken.span,
+                        BoundType.Int
                     )
                 }
                 return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
@@ -137,10 +136,11 @@ class Parser private constructor(
         if (current.token == token) {
             return nextToken() as SyntaxToken<T>
         }
-        mutableDiagnostics.add(
-            "Unexpected token <${current.token}>, expected <$token>",
-            current.literal,
-            current.position
+        diagnosticsBag.reportUnexpectedToken(
+
+            current.span,
+            actual = current.token,
+            expected = token,
         )
         return SyntaxToken(token, current.position, current.literal, null)
     }
@@ -165,6 +165,6 @@ class Parser private constructor(
 
 
     override val diagnostics: Diagnostics
-        get() = mutableDiagnostics
+        get() = diagnosticsBag.diagnostics
 
 }

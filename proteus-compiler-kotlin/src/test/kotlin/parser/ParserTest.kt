@@ -1,9 +1,9 @@
 package parser
 
 import org.junit.jupiter.api.Test
-import de.proteus.syntax.lexer.Operator
-import de.proteus.syntax.parser.*
-import de.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.Operator
+import lang.proteus.syntax.parser.*
+import lang.proteus.syntax.lexer.Token
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

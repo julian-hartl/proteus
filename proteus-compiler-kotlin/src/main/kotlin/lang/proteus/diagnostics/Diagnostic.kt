@@ -1,7 +1,8 @@
 package lang.proteus.diagnostics
 
-data class Diagnostic(val message: String, val literal: String, val position: Int) {
+data class Diagnostic(val message: String, val span: TextSpan) {
     override fun toString(): String {
-        return "ERROR: $message at $position: $literal"
+        return message
     }
 }
+
