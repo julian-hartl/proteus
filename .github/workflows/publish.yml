@@ -10,8 +10,10 @@
 
 name: Publish package to GitHub Packages
 on:
-  release:
-    types: [created]
+#  release:
+#    types: [created]
+  push:
+    branches: [ "*" ]
 jobs:
   publish:
     runs-on: ubuntu-latest
