@@ -1,0 +1,16 @@
+<component name="ArtifactManager">
+  <artifact name="proteus-compiler-kotlin.main:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/proteus_compiler_kotlin_main_jar</output-path>
+    <root id="root">
+      <element id="archive" name="proteus-compiler-kotlin.main.jar">
+        <element id="module-output" name="proteus-compiler-kotlin.main" />
+      </element>
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.7.20" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.7.20" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.20" />
+      <element id="library" level="project" name="Gradle: org.jetbrains:annotations:13.0" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.20" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.7.20" />
+    </root>
+  </artifact>
+</component>

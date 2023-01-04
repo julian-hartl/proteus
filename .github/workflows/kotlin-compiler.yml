@@ -25,4 +25,14 @@ jobs:
       - name: Build kotlin compiler
         working-directory: ./proteus-compiler-kotlin
         run: gradle build
-                
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - name: Test kotlin compiler
+        working-directory: ./proteus-compiler-kotlin
+        run: gradle test

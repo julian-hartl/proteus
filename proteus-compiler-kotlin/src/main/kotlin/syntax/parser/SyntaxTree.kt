@@ -1,13 +1,14 @@
-package parser
+package syntax.parser
 
+import diagnostics.Diagnosable
 import diagnostics.Diagnostics
-import lexer.SyntaxToken
+import syntax.lexer.SyntaxToken
 
 class SyntaxTree(
     val root: ExpressionSyntax,
     private val endOfFileToken: SyntaxToken<*>,
     private val diagnostics: Diagnostics
-) {
+) : Diagnosable {
 
     companion object {
         fun parse(text: String, verbose: Boolean): SyntaxTree {
@@ -23,7 +24,7 @@ class SyntaxTree(
     private fun h_prettyPrint(node: SyntaxNode, indent: String) {
         var currentIndent = indent
         print(indent)
-        print(node.kind)
+        print(node.token)
 
         if (node is SyntaxToken<*>) {
             print(" " + node.value)
@@ -37,11 +38,12 @@ class SyntaxTree(
         }
     }
 
-    fun hasErrors(): Boolean {
+
+    override fun hasErrors(): Boolean {
         return diagnostics.size() > 0
     }
 
-    fun outputDiagnostics() {
+    override fun printDiagnostics() {
         diagnostics.print()
     }
 }

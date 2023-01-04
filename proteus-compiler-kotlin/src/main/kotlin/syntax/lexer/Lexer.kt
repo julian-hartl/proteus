@@ -1,4 +1,4 @@
-package lexer
+package syntax.lexer
 
 import diagnostics.Diagnostics
 
@@ -7,14 +7,10 @@ class Lexer private constructor(private val input: String, private var position:
 
     constructor(input: String) : this(input, 0, Diagnostics())
 
-    companion object {
-        private val OPERATORS = arrayOf("+", "-", "*", "/")
-    }
-
 
     fun nextToken(): SyntaxToken<*> {
         if (position >= input.length) {
-            return SyntaxToken(SyntaxKind.EndOfFileToken, position, "", null)
+            return SyntaxToken(Token.EndOfFile, position, "", null)
         }
 
         if (current.isDigit()) {
@@ -34,51 +30,50 @@ class Lexer private constructor(private val input: String, private var position:
             val literal = input.substring(start, position)
             return SyntaxToken.whiteSpaceToken(start, literal)
         }
-
-        if (isCurrentOperator()) {
-            val start = position
-            val operator = current.toString()
-            next()
-            return SyntaxToken.fromOperator(start, operator)
+        // check if it's an operator
+        val operatorToken = checkForOperator()
+        if (operatorToken != null) {
+            return operatorToken
         }
-
-        if(current == '&') {
-            val start = position
-            next()
-            return SyntaxToken.bitwiseAndToken(start)
-        }
-
-        if (current == '=') {
-            val start = position
-            if(peek(1) == '=' && peek(2).isWhitespace()) {
+        val start = position
+        if (current.isLetter()) {
+            while (current.isLetter()) {
                 next()
-                return SyntaxToken.equalityToken(start)
             }
-            if(peek(-1) == '=') {
-                next()
-                return nextToken()
-            }
+            val literal = input.substring(start, position)
+            return SyntaxToken.keywordToken(start, literal)
         }
 
-        if (current == '(') {
-            val start = position
-            next()
-            return SyntaxToken(SyntaxKind.OpenParenthesisToken, start, "(", null)
-        }
-
-        if (current == ')') {
-            val start = position
-            next()
-            return SyntaxToken(SyntaxKind.CloseParenthesisToken, start, ")", null)
-        }
         diagnostics.add("Unexpected character", current.toString(), position)
         next()
         return SyntaxToken.badToken(position, current.toString())
 
     }
 
-    private fun isCurrentOperator(): Boolean {
-        return OPERATORS.contains(current.toString())
+    private fun checkForOperator(): SyntaxToken<*>? {
+        val start = position
+        var operatorPosition = 0
+        val maxOperatorLength = Operator.maxOperatorLength
+        var lastFoundOperatorPosition = 0
+
+        var next = peek(operatorPosition)
+        var operator = ""
+        var syntaxToken: SyntaxToken<*>? = null
+        do {
+            operator += next
+            val token = SyntaxToken.operator(start, operator)
+            if (token != null) {
+                syntaxToken = token
+                lastFoundOperatorPosition = operatorPosition
+            }
+            operatorPosition++
+            next = peek(operatorPosition)
+        } while (!next.isWhitespace() && operatorPosition < maxOperatorLength);
+        if (syntaxToken != null) {
+            position += lastFoundOperatorPosition + 1
+            return syntaxToken
+        }
+        return null
     }
 
     private fun next() {
