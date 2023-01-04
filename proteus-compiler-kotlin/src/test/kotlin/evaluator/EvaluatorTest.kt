@@ -1,6 +1,7 @@
 package evaluator
 
 import lang.proteus.binding.Binder
+import lang.proteus.binding.ProteusType
 import lang.proteus.binding.VariableContainer
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.Parser
@@ -13,6 +14,7 @@ class EvaluatorTest {
     companion object {
         private const val TEST_VARIABLE_NAME = "x"
         private const val TEST_VARIABLE_VALUE = 1
+        private val TEST_VARIABLE_TYPE = ProteusType.Int
     }
 
     private lateinit var variableContainer: VariableContainer
@@ -395,6 +397,30 @@ class EvaluatorTest {
     fun shouldUseVariableValueToComputeResult() {
         initEvaluator("$TEST_VARIABLE_NAME + 1")
         assertEquals(TEST_VARIABLE_VALUE + 1, evaluator.evaluate())
+    }
+
+    @Test
+    fun typOfShouldReturnTypeOfVariable() {
+        initEvaluator("typeof $TEST_VARIABLE_NAME")
+        assertEquals(TEST_VARIABLE_TYPE, evaluator.evaluate())
+    }
+
+    @Test
+    fun whenTypeOfCalledOnTypeShouldReturnTypeName() {
+        initEvaluator("typeof Int")
+        assertEquals(ProteusType.Type, evaluator.evaluate())
+    }
+
+    @Test
+    fun typeOfOnVariableShouldReturnTypeName() {
+        initEvaluator("typeof $TEST_VARIABLE_NAME")
+        assertEquals(TEST_VARIABLE_TYPE, evaluator.evaluate())
+    }
+
+    @Test
+    fun typeofComparisonWithCorrectTypeShouldReturnTrue(){
+        initEvaluator("typeof $TEST_VARIABLE_NAME == Int")
+        assertEquals(true, evaluator.evaluate())
     }
 
 

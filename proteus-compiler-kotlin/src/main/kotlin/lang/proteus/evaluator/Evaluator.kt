@@ -81,6 +81,7 @@ class Evaluator(private val boundExpression: BoundExpression, private val variab
             BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
             BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
+            BoundUnaryOperator.BoundUnaryTypeOfOperator -> ProteusType.fromValueOrObject(operand)
         }
     }
 

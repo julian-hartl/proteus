@@ -242,4 +242,28 @@ class BinderTest {
         useExpression("$TEST_VARIABLE_NAME = true")
         assertTrue(binder.hasErrors())
     }
+
+    @Test
+    fun shouldAllowTypeOfOnValue() {
+        useExpression("typeof 1")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowTypeOfOnType() {
+        useExpression("typeof Int")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowTypeofOnVariable() {
+        useExpression("typeof $TEST_VARIABLE_NAME")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowTypeComparison() {
+        useExpression("typeof $TEST_VARIABLE_NAME == Int")
+        assertTrue(!binder.hasErrors())
+    }
 }
