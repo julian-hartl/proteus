@@ -70,7 +70,7 @@ class Binder : Diagnosable {
 
     private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
         val boundOperand = bind(unaryExpression.operand)
-        val boundOperator = BoundUnaryOperator.bind(unaryExpression.kind, boundOperand.type)
+        val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorToken.kind, boundOperand.type)
         if (boundOperator == null) {
             diagnostics.add(
                 "Unary operator '${unaryExpression.operatorToken.literal}' cannot be applied to operand of type ${boundOperand.type}",

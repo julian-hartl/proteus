@@ -20,7 +20,7 @@ internal sealed class BoundUnaryOperator(
         private val operators = BoundUnaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
 
         fun bind(syntaxKind: SyntaxKind, operandType: BoundType): BoundUnaryOperator? {
-            return operators.firstOrNull { it.syntaxKind == syntaxKind && it.operandType == operandType }
+            return operators.firstOrNull { it.syntaxKind == syntaxKind && it.operandType.isAssignableTo(operandType) }
         }
     }
 
