@@ -110,6 +110,12 @@ class Parser private constructor(
                 return LiteralExpressionSyntax(token, token.value as BoundType)
             }
 
+            Token.Identifier -> {
+                val token = current
+                nextToken()
+                return IdentifierExpressionSyntax(token as SyntaxToken<Token.Identifier>)
+            }
+
             else -> {
                 val numberToken = matchToken(Token.Number)
 

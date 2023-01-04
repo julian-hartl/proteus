@@ -202,4 +202,10 @@ class BinderTest {
         useExpression("1 is Int")
         assertTrue(!binder.hasErrors())
     }
+
+    @Test
+    fun isShouldHaveErrorWhenUsedOnNonExistentType() {
+        useExpression("1 is NonExistentType")
+        assertTrue(binder.hasErrors())
+    }
 }

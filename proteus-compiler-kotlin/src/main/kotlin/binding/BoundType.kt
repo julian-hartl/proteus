@@ -12,6 +12,8 @@ sealed class BoundType(val kType: KType) {
 
     object Type : BoundType(KType::class.createType())
 
+    object Identifier : BoundType(Any::class.createType())
+
     override fun toString(): String {
         return this::class.simpleName!!
     }
