@@ -30,8 +30,8 @@ jobs:
         uses: gradle/wrapper-validation-action@v1
         working-directory: ./proteus-compiler-kotlin
       - name: Publish package
-        working-directory: ./proteus-compiler-kotlin
         uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        working-directory: ./proteus-compiler-kotlin
         with:
           arguments: publish
         env:
