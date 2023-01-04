@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.parser.*
 
-class Binder : Diagnosable {
+class Binder(private val variables: Map<String, Any?>) : Diagnosable {
 
 
     private val diagnosticsBag = DiagnosticsBag()
@@ -34,13 +34,31 @@ class Binder : Diagnosable {
                 bind(syntax.expressionSyntax)
             }
 
-            is IdentifierExpressionSyntax -> bindIdentifierExpression(syntax)
-
+            is NameExpressionSyntax -> bindNameExpressionSyntax(syntax)
+            is AssignmentExpressionSyntax -> bindAssignmentExpression(syntax)
         }
     }
 
-    private fun bindIdentifierExpression(syntax: IdentifierExpressionSyntax): BoundExpression {
-        return BoundIdentifierExpression(syntax.identifierToken)
+    private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
+        val boundExpression = bind(syntax.expression)
+        val currentValue = variables[syntax.identifierToken.literal]
+        val currentType = if(currentValue == null) null else ProteusType.fromValueOrObject(currentValue)
+        val newType = boundExpression.type
+        if(currentType != null && !newType.isAssignableTo(currentType)) {
+            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span, currentType, newType)
+        }
+        return BoundAssignmentExpression(syntax.identifierToken.literal, boundExpression)
+    }
+
+    private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
+        val name = syntax.identifierToken.literal
+        val value = variables[name]
+        if (value == null) {
+            diagnosticsBag.reportUndefinedName(syntax.identifierToken.span, name)
+            return BoundLiteralExpression(0)
+        }
+        val type = ProteusType.fromValueOrObject(value)
+        return BoundVariableExpression(name, type)
     }
 
 

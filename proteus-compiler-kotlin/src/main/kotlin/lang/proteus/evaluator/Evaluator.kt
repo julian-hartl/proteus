@@ -1,13 +1,9 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
-import lang.proteus.binding.BoundBinaryExpression
-import lang.proteus.binding.BoundLiteralExpression
-import lang.proteus.binding.BoundUnaryExpression
-import lang.proteus.binding.BoundUnaryOperator
 import kotlin.math.pow
 
-class Evaluator(private val boundExpression: BoundExpression) {
+class Evaluator(private val boundExpression: BoundExpression, private val variables: MutableMap<String, Any>) {
 
     fun evaluate(): Any {
         return evaluateExpression(boundExpression)
@@ -25,11 +21,23 @@ class Evaluator(private val boundExpression: BoundExpression) {
                 evaluateUnaryExpression(expression)
             }
 
-            is BoundIdentifierExpression -> {
-                throw Exception("Identifier expression not supported yet")
+            is BoundVariableExpression -> {
+                evaluateVariableExpression(expression)
             }
+
+            is BoundAssignmentExpression -> evaluateAssignmentExpression(expression)
         }
 
+    }
+
+    private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
+        return variables[expression.name] ?: throw Exception("Variable ${expression.name} is not defined")
+    }
+
+    private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
+        val value = evaluateExpression(expression.expression)
+        variables[expression.identifierName] = value
+        return value
     }
 
     private fun evaluateBinaryExpression(expression: BoundBinaryExpression): Any {
@@ -57,7 +65,11 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
             BoundBinaryOperator.BoundLeftShiftBinaryOperator -> left as Int shl right as Int
             BoundBinaryOperator.BoundRightShiftBinaryOperator -> left as Int shr right as Int
-            BoundBinaryOperator.BoundIsBinaryOperator -> (right as ProteusType).isAssignableTo(ProteusType.fromValue(left))
+            BoundBinaryOperator.BoundIsBinaryOperator -> (right as ProteusType).isAssignableTo(
+                ProteusType.fromValueOrObject(
+                    left
+                )
+            )
         }
 
     }
@@ -69,10 +81,6 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
             BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
-
-            else -> {
-                throw Exception("Unexpected unary operator ${expression.operator}")
-            }
         }
     }
 

@@ -34,11 +34,11 @@ sealed class ProteusType(val kType: KType) {
             }
         }
 
-        fun fromValue(value: Any): ProteusType {
+        fun fromValue(value: Any): ProteusType? {
             return when (value) {
                 is kotlin.Int -> Int
                 is kotlin.Boolean -> Boolean
-                else -> Object
+                else -> null
             }
         }
 
@@ -55,6 +55,10 @@ sealed class ProteusType(val kType: KType) {
                 kType.isSubtypeOf(Type.kType) -> Type
                 else -> null
             }
+        }
+
+        fun fromValueOrObject(value: Any): ProteusType {
+            return fromValue(value) ?: Object
         }
     }
 }

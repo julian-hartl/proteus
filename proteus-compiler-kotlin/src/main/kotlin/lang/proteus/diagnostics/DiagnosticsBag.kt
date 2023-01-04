@@ -29,6 +29,9 @@ class DiagnosticsBag {
         report("Operator '${span.literal}' cannot be applied to '${type}'", span)
     }
 
+    fun reportUndefinedName(span: TextSpan, name: String) {
+        report("Undefined name '$name'", span)
+    }
     private fun report(message: String, span: TextSpan) {
         mutableDiagnostics.add(Diagnostic("ERROR: $message at position ${span.start}", span))
     }
@@ -36,6 +39,11 @@ class DiagnosticsBag {
     fun concat(other: DiagnosticsBag) {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
+
+    fun reportCannotAssign(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
+        report("Cannot assign '${newType}' to '${currentType}'", span)
+    }
+
 
     val diagnostics: Diagnostics
         get() = mutableDiagnostics

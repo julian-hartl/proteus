@@ -9,6 +9,8 @@ sealed class Token {
 
     object Type : Token()
 
+    object Expression : Token()
+
     fun toSyntaxToken(position: Int, literal: String, value: Any? = null): SyntaxToken<Token> {
         return SyntaxToken(this, position, literal, value)
     }

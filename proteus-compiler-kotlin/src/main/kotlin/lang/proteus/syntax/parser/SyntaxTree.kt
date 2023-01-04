@@ -24,10 +24,17 @@ class SyntaxTree(
     private fun h_prettyPrint(node: SyntaxNode, indent: String) {
         var currentIndent = indent
         print(indent)
-        print(node.token)
-
+        if (node is ExpressionSyntax) {
+            print(node::class.simpleName)
+            currentIndent += "  "
+        } else {
+            print(node.token)
+        }
         if (node is SyntaxToken<*>) {
-            print(" " + node.value)
+            if (node.value != null) {
+                print(" = ")
+                print(node.value)
+            }
         }
 
         println()

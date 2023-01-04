@@ -6,14 +6,17 @@ import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.SyntaxTree
 
 class Compilation(val syntaxTree: SyntaxTree) {
-    fun evaluate(): EvaluationResult<*> {
+    fun evaluate(variables: MutableMap<String, Any>): EvaluationResult<*> {
 
         val syntaxDiagnostics = syntaxTree.diagnostics
-        val binder = Binder()
+        val binder = Binder(variables)
         val boundExpression = binder.bindSyntaxTree(syntaxTree)
-        val evaluator = Evaluator(boundExpression)
-        val value = evaluator.evaluate()
         val diagnostics = binder.diagnostics.concat(syntaxDiagnostics)
+        if (diagnostics.hasErrors()) {
+            return EvaluationResult(diagnostics, null)
+        }
+        val evaluator = Evaluator(boundExpression, variables)
+        val value = evaluator.evaluate()
         return EvaluationResult(diagnostics, value)
     }
 }

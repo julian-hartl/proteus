@@ -2,20 +2,30 @@ package evaluator
 
 import lang.proteus.binding.Binder
 import lang.proteus.evaluator.Evaluator
-import org.junit.jupiter.api.Test
 import lang.proteus.syntax.parser.Parser
-import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class EvaluatorTest {
     private lateinit var evaluator: Evaluator
 
+    companion object {
+        private const val TEST_VARIABLE_NAME = "x"
+        private const val TEST_VARIABLE_VALUE = 1
+    }
+
+    private var variables: MutableMap<String, Any> = mutableMapOf(
+        TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
+    )
+
     private fun initEvaluator(input: String) {
         val parser = Parser(input)
         val syntaxTree = parser.parse()
-        val binder = Binder()
+        val binder = Binder(
+            variables
+        )
         val boundExpression = binder.bindSyntaxTree(syntaxTree)
-        evaluator = Evaluator(boundExpression)
+        evaluator = Evaluator(boundExpression, variables)
     }
 
     @Test
@@ -370,6 +380,19 @@ class EvaluatorTest {
         val result = evaluator.evaluate()
         assertEquals(true, result)
     }
-    
+
+    @Test
+    fun shouldAssignValueToVariable() {
+        initEvaluator("$TEST_VARIABLE_NAME = 3")
+        assertEquals(3, evaluator.evaluate())
+        assertEquals(3, variables[TEST_VARIABLE_NAME])
+    }
+
+    @Test
+    fun shouldUseVariableValueToComputeResult() {
+        initEvaluator("$TEST_VARIABLE_NAME + 1")
+        assertEquals(TEST_VARIABLE_VALUE + 1, evaluator.evaluate())
+    }
+
 
 }

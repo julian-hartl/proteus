@@ -114,4 +114,16 @@ class ParserTest {
 
     }
 
+    @Test
+    fun shouldParseAssignment() {
+        initParser("a = 1")
+        val ast = parser.parse()
+        assertTrue(ast.root is AssignmentExpressionSyntax)
+        val rootChildren = ast.root.getChildren()
+        val next = rootChildren.next()
+        assertEquals(Token.Identifier,next.token)
+        assertEquals(Operator.Equals, rootChildren.next().token)
+        assertTrue(rootChildren.next() is LiteralExpressionSyntax)
+    }
+
 }

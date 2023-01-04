@@ -49,13 +49,27 @@ class Parser private constructor(
         return SyntaxTree(expression, endOfFileToken, diagnosticsBag.diagnostics)
     }
 
-    private fun parseExpression(parentPrecedence: Int = 0): ExpressionSyntax {
+    private fun parseExpression(): ExpressionSyntax {
+        return parseAssigmentExpression()
+    }
+
+    private fun parseAssigmentExpression(): ExpressionSyntax {
+        if (peek(0).token is Token.Identifier && peek(1).token is Operator.Equals) {
+            val identifierToken = matchToken(Token.Identifier)
+            val equalsToken = matchToken(Operator.Equals)
+            val expression = parseAssigmentExpression()
+            return AssignmentExpressionSyntax(identifierToken, equalsToken, expression)
+        }
+        return parseBinaryExpression()
+    }
+
+    private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {
 
         val unaryOperatorPrecedence = currentOperator?.unaryPrecedence() ?: 0
         var left =
             if (unaryOperatorPrecedence != 0 && unaryOperatorPrecedence >= parentPrecedence) {
                 val operatorToken = nextToken()
-                val operand = parseExpression(unaryOperatorPrecedence)
+                val operand = parseBinaryExpression(unaryOperatorPrecedence)
                 UnaryExpressionSyntax(operatorToken as SyntaxToken<Operator>, operand)
             } else {
                 parsePrimaryExpression()
@@ -69,7 +83,7 @@ class Parser private constructor(
             }
 
             val operatorToken = nextToken()
-            val right = parseExpression(precedence)
+            val right = parseBinaryExpression(precedence)
             left = BinaryExpressionSyntax(left, operatorToken as SyntaxToken<Operator>, right)
         }
 
@@ -93,7 +107,7 @@ class Parser private constructor(
         when (current.token) {
             Operator.OpenParenthesis -> {
                 val left = nextToken()
-                val expression = parseExpression()
+                val expression = parseBinaryExpression()
                 val right = matchToken(Operator.CloseParenthesis)
                 return ParenthesizedExpressionSyntax(left, expression, right)
             }
@@ -112,12 +126,12 @@ class Parser private constructor(
             }
 
             Token.Identifier -> {
-                val token = current
-                nextToken()
-                return IdentifierExpressionSyntax(token as SyntaxToken<Token.Identifier>)
+                val token = nextToken()
+
+                return NameExpressionSyntax(token as SyntaxToken<Token.Identifier>)
             }
 
-            else -> {
+            Token.Number -> {
                 val numberToken = matchToken(Token.Number)
 
                 if (numberToken.value !is Int) {
@@ -127,6 +141,11 @@ class Parser private constructor(
                     )
                 }
                 return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
+            }
+
+            else -> {
+                diagnosticsBag.reportUnexpectedToken(current.span, current.token, Token.Expression)
+                return LiteralExpressionSyntax(current, -1)
             }
         }
 
