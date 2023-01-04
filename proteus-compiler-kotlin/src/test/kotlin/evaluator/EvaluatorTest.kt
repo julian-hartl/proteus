@@ -208,4 +208,88 @@ class EvaluatorTest {
         assertEquals(true, result)
     }
 
+    @Test
+    fun notEqualsShouldBeApplicableToBoolean() {
+        initEvaluator("true != true")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun notEqualsShouldBeApplicableToInt() {
+        initEvaluator("1 != 1")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun notEqualsShouldBeApplicableToBoolean2() {
+        initEvaluator("true != false")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun notEqualsShouldBeApplicableToInt2() {
+        initEvaluator("1 != 2")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun notEqualsShouldBindStrongerThanAnd() {
+        initEvaluator("1 + 2 != 3 and true")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun notEqualsShouldNotBindStrongerThanNot() {
+        initEvaluator("false != not true")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun notEqualsShouldBindWeakerThanArithmeticOperators() {
+        initEvaluator("1 + 2 != 3")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvaluateLessThan() {
+        initEvaluator("1 < 2")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateLessThanWithParenthesis() {
+        initEvaluator("6 < (2 + 3)")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvaluateGreaterThan() {
+        initEvaluator("2 > 1")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateGreaterThanOrEquals() {
+        initEvaluator("2 >= 2")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateLessThanOrEquals() {
+        initEvaluator("2 <= 2")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
 }

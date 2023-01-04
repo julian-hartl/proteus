@@ -69,4 +69,64 @@ class BinderTest {
         useExpression("not true")
         assertTrue(!binder.hasErrors())
     }
+
+    @Test
+    fun shouldHaveErrorsWhenUsingLessThanOnNonNumbers() {
+        useExpression("true < false")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorsWhenUsingLessThanOnNumbers() {
+        useExpression("1 < 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldHaveErrorsWhenUsingGreaterThanOnNonNumbers() {
+        useExpression("true > false")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorsWhenUsingGreaterThanOnNumbers() {
+        useExpression("1 > 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorsWhenUsingGreaterThanOrEqualsOnNumbers() {
+        useExpression("1 >= 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorsWhenUsingLessThanOrEqualsOnNumbers() {
+        useExpression("1 <= 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorsWhenUsingEqualsOnNumbers() {
+        useExpression("1 == 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldHaveErrorsWhenUsingEqualsOnDifferentTypes() {
+        useExpression("1 == true")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldHaveErrorWhenUsingLessThanOrEqualsOnNonNumbers() {
+        useExpression("true <= false")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldHaveErrorWhenUsingGreaterThanOrEqualsOnNonNumbers() {
+        useExpression("true >= false")
+        assertTrue(binder.hasErrors())
+    }
 }

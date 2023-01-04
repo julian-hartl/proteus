@@ -108,7 +108,7 @@ class Binder : Diagnosable {
         boundRight: BoundExpression,
         binaryExpression: BinaryExpression,
     ): BoundExpression {
-        val boundOperatorKind = BoundArithmeticBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken)
+        val boundOperatorKind = BoundNumberBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken)
         if (boundOperatorKind == null) {
             diagnostics.add(
                 "Operator '${binaryExpression.operatorToken.literal}' cannot be applied to int values",
@@ -117,7 +117,7 @@ class Binder : Diagnosable {
             )
             return boundLeft
         }
-        return BoundArithmeticBinaryExpression(
+        return BoundNumberBinaryExpression(
             boundLeft,
             boundRight,
             boundOperatorKind

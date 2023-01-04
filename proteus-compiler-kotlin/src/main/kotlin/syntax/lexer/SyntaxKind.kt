@@ -24,7 +24,12 @@ enum class SyntaxKind {
     AndToken,
     OrToken,
     XorToken,
-    EqualityToken;
+    EqualityToken,
+    NotEqualityToken,
+    LessThanToken,
+    GreaterThanToken,
+    LessThanOrEqualsToken,
+    `GreaterThanOrEqualsToken`;
 
     companion object {
         fun fromOperator(operator: Operator): SyntaxKind {

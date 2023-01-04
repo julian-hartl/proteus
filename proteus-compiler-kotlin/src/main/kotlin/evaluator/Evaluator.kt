@@ -15,8 +15,8 @@ class Evaluator(private val boundExpression: BoundExpression) {
 
         return when (expression) {
             is BoundLiteralExpression<*> -> expression.value
-            is BoundArithmeticBinaryExpression -> {
-                evaluateArithmeticBinaryExpression(expression)
+            is BoundNumberBinaryExpression -> {
+                evaluateNumberBinaryExpression(expression)
             }
 
             is BoundGenericBinaryExpression -> {
@@ -41,6 +41,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
         val left = evaluateExpression(expression.left)
         return when (expression.operatorKind) {
             BoundGenericBinaryOperatorKind.Equals -> left == right
+            BoundGenericBinaryOperatorKind.NotEquals -> left != right
         }
 
     }
@@ -66,16 +67,20 @@ class Evaluator(private val boundExpression: BoundExpression) {
         }
     }
 
-    private fun evaluateArithmeticBinaryExpression(expression: BoundArithmeticBinaryExpression): Any {
+    private fun evaluateNumberBinaryExpression(expression: BoundNumberBinaryExpression): Any {
         val left = evaluateExpression(expression.left) as Int
         val right = evaluateExpression(expression.right) as Int
         return when (expression.operatorKind) {
-            BoundArithmeticBinaryOperatorKind.Addition -> left + right
-            BoundArithmeticBinaryOperatorKind.Subtraction -> left - right
-            BoundArithmeticBinaryOperatorKind.Multiplication -> left * right
-            BoundArithmeticBinaryOperatorKind.Division -> left / right
-            BoundArithmeticBinaryOperatorKind.LogicalAnd -> left and right
-            BoundArithmeticBinaryOperatorKind.LogicalOr -> left or right
+            BoundNumberBinaryOperatorKind.Addition -> left + right
+            BoundNumberBinaryOperatorKind.Subtraction -> left - right
+            BoundNumberBinaryOperatorKind.Multiplication -> left * right
+            BoundNumberBinaryOperatorKind.Division -> left / right
+            BoundNumberBinaryOperatorKind.LogicalAnd -> left and right
+            BoundNumberBinaryOperatorKind.LogicalOr -> left or right
+            BoundNumberBinaryOperatorKind.GreaterThan -> left > right
+            BoundNumberBinaryOperatorKind.LessThan -> left < right
+            BoundNumberBinaryOperatorKind.GreaterThanOrEqual -> left >= right
+            BoundNumberBinaryOperatorKind.LessThanOrEqual -> left <= right
         }
     }
 

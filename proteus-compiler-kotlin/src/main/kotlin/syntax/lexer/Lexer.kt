@@ -54,6 +54,7 @@ class Lexer private constructor(private val input: String, private var position:
         val start = position
         var operatorPosition = 0
         val maxOperatorLength = Operator.maxOperatorLength
+        var lastFoundOperatorPosition = 0
 
         var next = peek(operatorPosition)
         var operator = ""
@@ -63,13 +64,13 @@ class Lexer private constructor(private val input: String, private var position:
             val token = SyntaxToken.operator(start, operator)
             if (token != null) {
                 syntaxToken = token
-                break
+                lastFoundOperatorPosition = operatorPosition
             }
             operatorPosition++
             next = peek(operatorPosition)
         } while (!next.isWhitespace() && operatorPosition < maxOperatorLength);
         if (syntaxToken != null) {
-            position += operatorPosition + 1
+            position += lastFoundOperatorPosition + 1
             return syntaxToken
         }
         return null

@@ -56,10 +56,10 @@ internal enum class BoundUnaryOperatorKind {
 }
 
 
-internal class BoundArithmeticBinaryExpression(
+internal class BoundNumberBinaryExpression(
     val left: BoundExpression,
     val right: BoundExpression,
-    val operatorKind: BoundArithmeticBinaryOperatorKind
+    val operatorKind: BoundNumberBinaryOperatorKind
 ) :
     BoundExpression() {
 
@@ -70,13 +70,15 @@ internal class BoundArithmeticBinaryExpression(
         get() = BoundNodeKind.ArithmeticBinaryExpression
 }
 
-internal enum class BoundArithmeticBinaryOperatorKind {
+internal enum class BoundNumberBinaryOperatorKind {
     Addition,
     Subtraction,
     Division,
     Multiplication,
     LogicalAnd,
-    LogicalOr;
+    LogicalOr,
+    GreaterThan,
+    LessThan, GreaterThanOrEqual, LessThanOrEqual;
 
     val syntaxKind: SyntaxKind
         get() = when (this) {
@@ -86,10 +88,14 @@ internal enum class BoundArithmeticBinaryOperatorKind {
             Multiplication -> SyntaxKind.AsteriskToken
             LogicalAnd -> SyntaxKind.AmpersandToken
             LogicalOr -> SyntaxKind.PipeToken
+            GreaterThan -> SyntaxKind.GreaterThanToken
+            LessThan -> SyntaxKind.LessThanToken
+            GreaterThanOrEqual -> SyntaxKind.GreaterThanOrEqualsToken
+            LessThanOrEqual -> SyntaxKind.LessThanOrEqualsToken
         }
 
     companion object {
-        fun fromSyntaxToken(token: SyntaxToken<*>): BoundArithmeticBinaryOperatorKind? {
+        fun fromSyntaxToken(token: SyntaxToken<*>): BoundNumberBinaryOperatorKind? {
             for (operatorKind in values()) {
                 if (operatorKind.syntaxKind == token.kind) {
                     return operatorKind
@@ -153,11 +159,12 @@ internal class BoundGenericBinaryExpression(
 }
 
 internal enum class BoundGenericBinaryOperatorKind {
-    Equals;
+    Equals, NotEquals;
 
     val syntaxKind: SyntaxKind
         get() = when (this) {
             Equals -> SyntaxKind.EqualityToken
+            NotEquals -> SyntaxKind.NotEqualityToken
         }
 
     companion object {

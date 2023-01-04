@@ -62,7 +62,13 @@ object CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")"
 object NotOperator : Operator(SyntaxKind.NotToken, "not", OperatorType.Logical, 3)
 
 object AndOperator : Operator(SyntaxKind.AndToken, "and", OperatorType.Logical, 2)
-object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Logical, 1)
+object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Relational, 1)
+object NotEqualityOperator : Operator(SyntaxKind.NotEqualityToken, "!=", OperatorType.Relational, 1)
+
+object LessThanOperator : Operator(SyntaxKind.LessThanToken, "<", OperatorType.Relational, 1)
+object GreaterThanOperator : Operator(SyntaxKind.GreaterThanToken, ">", OperatorType.Relational, 1)
+object GreaterThanOrEqualsOperator : Operator(SyntaxKind.GreaterThanOrEqualsToken, ">=", OperatorType.Relational, 1)
+object LessThanOrEqualsToken : Operator(SyntaxKind.LessThanOrEqualsToken, "<=", OperatorType.Relational, 1)
 
 object OrOperator : Operator(SyntaxKind.OrToken, "or", OperatorType.Logical, 2)
 object XorOperator : Operator(SyntaxKind.XorToken, "xor", OperatorType.Logical, 2)

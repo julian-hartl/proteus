@@ -6,5 +6,6 @@ enum class OperatorType {
     Comparison,
     Assignment,
     Other,
-    Bitwise
+    Bitwise,
+    Relational
 }
