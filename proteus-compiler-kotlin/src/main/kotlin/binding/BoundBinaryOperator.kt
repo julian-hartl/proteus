@@ -21,6 +21,7 @@ internal sealed class BoundBinaryOperator(
         private val operators = BoundBinaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
 
         fun bind(operator: Operator, leftType: BoundType, rightType: BoundType): BoundBinaryOperator? {
+            if(rightType != leftType) return null
             return operators.firstOrNull {
                 it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
                     rightType

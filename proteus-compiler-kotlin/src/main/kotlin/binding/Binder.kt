@@ -40,19 +40,11 @@ class Binder : Diagnosable {
 
         val boundLeft = bind(binaryExpression.left)
         val boundRight = bind(binaryExpression.right)
-        if (boundLeft.type != boundRight.type) {
-            diagnostics.add(
-                "Binary operator ${binaryExpression.operatorToken.literal} can only be applied to values of the same type",
-                binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.position
-            )
-            return boundLeft
-        }
         val binaryOperator =
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
             diagnostics.add(
-                "Binary operator ${binaryExpression.operatorToken.literal} is not defined for types ${boundLeft.type} and ${boundRight.type}",
+                "Operator '${binaryExpression.operatorToken.literal}' cannot be applied to '${boundLeft.type}' and '${boundRight.type}'",
                 binaryExpression.operatorToken.literal,
                 binaryExpression.operatorToken.position
             )
@@ -68,7 +60,7 @@ class Binder : Diagnosable {
         val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
             diagnostics.add(
-                "Unary operator '${unaryExpression.operatorSyntaxToken.literal}' cannot be applied to operand of type ${boundOperand.type}",
+                "Operator '${unaryExpression.operatorSyntaxToken.literal}' cannot be applied to '${boundOperand.type}'",
                 unaryExpression.operatorSyntaxToken.literal,
                 unaryExpression.operatorSyntaxToken.position
             )

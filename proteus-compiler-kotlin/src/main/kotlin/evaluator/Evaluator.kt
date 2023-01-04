@@ -31,6 +31,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
         val left = evaluateExpression(expression.left)
         val right = evaluateExpression(expression.right)
 
+
         return when (expression.operator) {
             BoundBinaryOperator.BoundAdditionBinaryOperator -> left as Int + right as Int
             BoundBinaryOperator.BoundSubtractionBinaryOperator -> left as Int - right as Int
@@ -38,7 +39,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBinaryOperator.BoundMultiplicationBinaryOperator -> left as Int * right as Int
             BoundBinaryOperator.BoundExponentiationBinaryOperator -> (left as Int).toDouble().pow(right as Int).toInt()
             BoundBinaryOperator.BoundBitwiseAndBinaryOperator -> left as Int and right as Int
-            BoundBinaryOperator.BoundBitwiseXorBinaryOperator -> left as Int xor  right as Int
+            BoundBinaryOperator.BoundBitwiseXorBinaryOperator -> left as Int xor right as Int
             BoundBinaryOperator.BoundBitwiseOrBinaryOperator -> left as Int or right as Int
             BoundBinaryOperator.BoundBitwiseLogicalAndBinaryOperator -> left as Boolean and right as Boolean
             BoundBinaryOperator.BoundBitwiseLogicalOrBinaryOperator -> left as Boolean or right as Boolean
