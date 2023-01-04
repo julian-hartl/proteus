@@ -5,15 +5,12 @@ import lang.proteus.syntax.parser.SyntaxTree
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
-    var variables: Map<String, Any> = mapOf(
-        "x" to 1
-    )
     while (true) {
-        val line =
+        val line: String =
             run {
                 print("> ")
-                readlnOrNull()
-            } ?: continue
+                readln()
+            }
         if (line == "quit") {
             break
         }
@@ -24,7 +21,7 @@ fun main(args: Array<String>) {
             tree.prettyPrint()
 
         val compilation = Compilation(tree)
-        val compilationResult = compilation.evaluate(variables)
+        val compilationResult = compilation.evaluate()
         if (compilationResult.diagnostics.hasErrors()) {
             val printer = ConsolePrinter()
             for (diagnostic in compilationResult.diagnostics.diagnostics) {
@@ -34,15 +31,11 @@ fun main(args: Array<String>) {
                 val error = line.substring(diagnostic.span.start, diagnostic.span.end)
                 val suffix = line.substring(diagnostic.span.end)
 
-
-                printer.setColor(PrinterColor.RED)
-                printer.println(diagnostic.message)
                 printer.reset()
 
                 printer.print("    ")
                 printer.print(prefix)
                 printer.setColor(PrinterColor.RED)
-
                 printer.print(error)
                 printer.reset()
 
@@ -52,7 +45,6 @@ fun main(args: Array<String>) {
         } else {
 
             println(compilationResult.value)
-            variables = compilationResult.variableContainer.untypedVariables
         }
     }
 

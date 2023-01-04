@@ -1,18 +1,27 @@
 package binder
 
-import binding.Binder
+import lang.proteus.binding.Binder
+import lang.proteus.binding.VariableContainer
 import org.junit.jupiter.api.Test
-import syntax.parser.ExpressionSyntax
-import syntax.parser.Parser
+import lang.proteus.syntax.parser.ExpressionSyntax
+import lang.proteus.syntax.parser.Parser
 import kotlin.test.assertTrue
 
 class BinderTest {
 
     private lateinit var binder: Binder
 
+    companion object {
+        private const val TEST_VARIABLE_NAME = "x"
+        private const val TEST_VARIABLE_VALUE = 1
+    }
+
     private fun useExpression(input: String) {
         val expression = parseExpression(input)
-        binder = Binder()
+        val variables: MutableMap<String, Any> = mutableMapOf(
+            TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
+        )
+        binder = Binder(VariableContainer.fromUntypedMap(variables))
         binder.bind(expression)
     }
 
@@ -206,6 +215,31 @@ class BinderTest {
     @Test
     fun isShouldHaveErrorWhenUsedOnNonExistentType() {
         useExpression("1 is NonExistentType")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToIdentifier() {
+        useExpression("$TEST_VARIABLE_NAME = 1")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToLiteral() {
+        useExpression("1 = 1")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToDeclaredVariable() {
+        useExpression("$TEST_VARIABLE_NAME = 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+
+    @Test
+    fun shouldNotAllowAssignmentToOtherType() {
+        useExpression("$TEST_VARIABLE_NAME = true")
         assertTrue(binder.hasErrors())
     }
 }

@@ -1,9 +1,10 @@
 package parser
 
+import lang.proteus.syntax.lexer.Operator
+import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.parser.*
 import org.junit.jupiter.api.Test
-import syntax.lexer.Operator
-import syntax.lexer.Token
-import syntax.parser.*
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -102,6 +103,48 @@ class ParserTest {
         assertTrue(unaryNodeChildren.next() is LiteralExpressionSyntax)
         assertEquals(Operator.Plus, rootChildren.next().token)
         assertTrue(rootChildren.next().token is Token.Number)
+    }
+
+    @Test
+    fun shouldNotCrashOnInvalidInput() {
+        initParser("if(false) 8 _8")
+        assertDoesNotThrow {
+            parser.parse()
+        }
+
+    }
+
+    @Test
+    fun shouldParseAssignment() {
+        initParser("a = 1")
+        val ast = parser.parse()
+        assertTrue(ast.root is AssignmentExpressionSyntax)
+        val rootChildren = ast.root.getChildren()
+        val next = rootChildren.next()
+        assertEquals(Token.Identifier,next.token)
+        assertEquals(Operator.Equals, rootChildren.next().token)
+        assertTrue(rootChildren.next() is LiteralExpressionSyntax)
+    }
+
+    @Test
+    fun shouldParseNestedAssignment() {
+        initParser("(b = 1) * 10")
+        val ast = parser.parse()
+        assertTrue(ast.root is BinaryExpressionSyntax)
+        val rootChildren = ast.root.getChildren()
+        val next = rootChildren.next()
+        assertTrue(next is ParenthesizedExpressionSyntax)
+        val nextChildren = next.getChildren()
+        assertEquals(Operator.OpenParenthesis, nextChildren.next().token)
+        val assigmentSyntax = nextChildren.next()
+        assertTrue(assigmentSyntax is AssignmentExpressionSyntax)
+        val assignmentChildren = assigmentSyntax.getChildren()
+        assertEquals(Token.Identifier, assignmentChildren.next().token)
+        assertEquals(Operator.Equals, assignmentChildren.next().token)
+        assertTrue(assignmentChildren.next() is LiteralExpressionSyntax)
+        assertEquals(Operator.CloseParenthesis, nextChildren.next().token)
+        assertEquals(Operator.Asterisk, rootChildren.next().token)
+        assertTrue(rootChildren.next() is LiteralExpressionSyntax)
     }
 
 }
