@@ -19,8 +19,16 @@ class ConsolePrinter {
         kotlin.io.println(buildColoredString(text))
     }
 
+    fun print(text: String) {
+        kotlin.io.print(buildColoredString(text))
+    }
+
     private fun buildColoredString(text: String): String {
         return "\u001B[${color.ansiCode}m$text\u001B[0m"
+    }
+
+    fun reset() {
+        color = PrinterColor.WHITE
     }
 
     fun setColor(color: PrinterColor) {

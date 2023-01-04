@@ -1,31 +1,22 @@
 package lang.proteus
 
 import lang.proteus.api.Compilation
-import lang.proteus.source_file_reader.SourceFileReader
+import lang.proteus.printing.ConsolePrinter
+import lang.proteus.printing.PrinterColor
 import lang.proteus.syntax.parser.SyntaxTree
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
-    var filePath = args.getOrNull(0)
-    if (filePath?.startsWith("-") == true) {
-        filePath = null
-    }
     while (true) {
-        val input: String = if (filePath != null) {
-
-            val fileReader = SourceFileReader()
-
-            val sourceFile = fileReader.getSourceFile(filePath)
-            println("Compiling ${sourceFile.absoluteFile}...")
-            fileReader.readAndValidateSourceFile(filePath)
-        } else {
-            print("> ")
-            readln()
-        }
-        if (input == "quit") {
+        val line: String =
+            run {
+                print("> ")
+                readln()
+            }
+        if (line == "quit") {
             break
         }
-        val tree = SyntaxTree.parse(input, verbose = verbose)
+        val tree = SyntaxTree.parse(line, verbose = verbose)
 
 
         if (verbose)
@@ -34,16 +25,25 @@ fun main(args: Array<String>) {
         val compilation = Compilation(tree)
         val compilationResult = compilation.evaluate()
         if (compilationResult.diagnostics.hasErrors()) {
-            compilationResult.diagnostics.print()
-            if (filePath == null) {
-                continue
+            val printer = ConsolePrinter()
+            for (diagnostic in compilationResult.diagnostics.diagnostics) {
+                val prefix = line.substring(0, diagnostic.span.start)
+                val error = line.substring(diagnostic.span.start, diagnostic.span.end)
+                val suffix = line.substring(diagnostic.span.end)
+
+                printer.reset()
+
+                printer.print("    ")
+                printer.print(prefix)
+                printer.setColor(PrinterColor.RED)
+                printer.print(error)
+                printer.reset()
+
+                printer.println(suffix)
             }
         } else {
 
             println(compilationResult.value)
-        }
-        if (filePath != null) {
-            break
         }
     }
 

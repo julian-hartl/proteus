@@ -22,7 +22,13 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("lang.proteus:proteus-compiler-kotlin:1.0-SNAPSHOT")
+    implementation("lang.proteus:proteus-compiler-kotlin:1.0-SNAPSHOT") {
+        isChanging = true
+    }
+}
+configurations.all {
+    // Check for updates every build
+    resolutionStrategy.cacheChangingModulesFor(0, "seconds")
 }
 
 tasks.test {
