@@ -2,7 +2,7 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.binding.BoundType
 import lang.proteus.diagnostics.Diagnosable
-import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.diagnostics.MutableDiagnostics
 import lang.proteus.syntax.lexer.*
 
 class Parser private constructor(
@@ -10,7 +10,7 @@ class Parser private constructor(
     private var tokens: Array<SyntaxToken<*>>,
     private var position: Int,
     private val verbose: Boolean,
-    private var diagnostics: Diagnostics
+    private var diagnostics: MutableDiagnostics
 ) : Diagnosable {
 
 
@@ -33,7 +33,7 @@ class Parser private constructor(
         }
     }
 
-    constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, Diagnostics()) {
+    constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, MutableDiagnostics()) {
         val lexer = Lexer(input)
         this.tokens = parseInput(lexer)
         diagnostics = lexer.diagnostics

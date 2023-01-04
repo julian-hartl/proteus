@@ -1,12 +1,12 @@
 package lang.proteus.syntax.lexer
 
 import lang.proteus.binding.BoundType
-import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.diagnostics.MutableDiagnostics
 
-class Lexer private constructor(private val input: String, private var position: Int, val diagnostics: Diagnostics) {
+class Lexer private constructor(private val input: String, private var position: Int, val diagnostics: MutableDiagnostics) {
 
 
-    constructor(input: String) : this(input, 0, Diagnostics())
+    constructor(input: String) : this(input, 0, MutableDiagnostics())
 
 
     fun nextToken(): SyntaxToken<*> {

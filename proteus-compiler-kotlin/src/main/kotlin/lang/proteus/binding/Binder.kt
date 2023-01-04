@@ -2,12 +2,12 @@ package lang.proteus.binding
 
 import lang.proteus.syntax.parser.*
 import lang.proteus.diagnostics.Diagnosable
-import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.diagnostics.MutableDiagnostics
 
 class Binder : Diagnosable {
 
 
-    private val diagnostics = Diagnostics()
+    private val diagnostics = MutableDiagnostics()
 
     fun bindSyntaxTree(tree: SyntaxTree): BoundExpression {
         return bind(tree.root)
