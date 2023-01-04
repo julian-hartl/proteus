@@ -1,9 +1,10 @@
 package parser
 
-import org.junit.jupiter.api.Test
 import lang.proteus.syntax.lexer.Operator
-import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.parser.*
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -102,6 +103,15 @@ class ParserTest {
         assertTrue(unaryNodeChildren.next() is LiteralExpressionSyntax)
         assertEquals(Operator.Plus, rootChildren.next().token)
         assertTrue(rootChildren.next().token is Token.Number)
+    }
+
+    @Test
+    fun shouldNotCrashOnInvalidInput() {
+        initParser("if(false) 8 _8")
+        assertDoesNotThrow {
+            parser.parse()
+        }
+
     }
 
 }

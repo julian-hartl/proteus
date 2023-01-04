@@ -3,13 +3,13 @@ package lang.proteus.binding
 import kotlin.reflect.full.createType
 
 sealed class BoundExpression : BoundNode() {
-    abstract val type: BoundType
+    abstract val type: ProteusType
 }
 
 internal class BoundLiteralExpression<T : Any>(val value: T) : BoundExpression() {
 
-    override val type: BoundType
-        get() = if (value is BoundType) BoundType.Type else BoundType.fromKotlinTypeOrObject(value::class.createType())
+    override val type: ProteusType
+        get() = if (value is ProteusType) ProteusType.Type else ProteusType.fromKotlinTypeOrObject(value::class.createType())
 }
 
 internal class BoundBinaryExpression(
@@ -18,14 +18,14 @@ internal class BoundBinaryExpression(
     val operator: BoundBinaryOperator
 ) : BoundExpression() {
 
-    override val type: BoundType
+    override val type: ProteusType
         get() = operator.resultType
 }
 
 internal class BoundUnaryExpression(val operand: BoundExpression, val operator: BoundUnaryOperator) :
     BoundExpression() {
 
-    override val type: BoundType
+    override val type: ProteusType
         get() = operator.resultType
 
 }

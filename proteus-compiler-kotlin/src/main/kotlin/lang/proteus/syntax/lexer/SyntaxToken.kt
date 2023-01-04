@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer
 
-import lang.proteus.binding.BoundType
+import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.parser.SyntaxNode
 
@@ -13,7 +13,7 @@ class SyntaxToken<T : Token>(
     companion object {
 
 
-        fun typeToken(position: Int, literal: String, type: BoundType): SyntaxToken<Token> {
+        fun typeToken(position: Int, literal: String, type: ProteusType): SyntaxToken<Token> {
             return Token.Type.toSyntaxToken(position, literal, value = type)
         }
 

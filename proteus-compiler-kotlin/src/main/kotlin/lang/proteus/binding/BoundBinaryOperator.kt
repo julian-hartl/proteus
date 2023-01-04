@@ -4,14 +4,14 @@ import lang.proteus.syntax.lexer.Operator
 
 
 internal sealed class BoundBinaryOperator(
-    val operator: Operator, val leftType: BoundType, val rightType: BoundType, val resultType: BoundType,
+    val operator: Operator, val leftType: ProteusType, val rightType: ProteusType, val resultType: ProteusType,
     val requiresSameTypes: Boolean = true
 ) {
 
 
-    constructor(operator: Operator, type: BoundType) : this(operator, type, type, type)
+    constructor(operator: Operator, type: ProteusType) : this(operator, type, type, type)
 
-    constructor(operator: Operator, type: BoundType, resultType: BoundType) : this(
+    constructor(operator: Operator, type: ProteusType, resultType: ProteusType) : this(
         operator,
         type,
         type,
@@ -21,7 +21,7 @@ internal sealed class BoundBinaryOperator(
     companion object {
         private val operators = BoundBinaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
 
-        fun bind(operator: Operator, leftType: BoundType, rightType: BoundType): BoundBinaryOperator? {
+        fun bind(operator: Operator, leftType: ProteusType, rightType: ProteusType): BoundBinaryOperator? {
             return operators.firstOrNull {
                 val isSuited = it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
                     rightType
@@ -34,50 +34,50 @@ internal sealed class BoundBinaryOperator(
         }
     }
 
-    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, BoundType.Int)
+    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, ProteusType.Int)
 
-    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, BoundType.Int)
+    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, ProteusType.Int)
 
-    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, BoundType.Int)
+    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, ProteusType.Int)
 
-    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, BoundType.Int)
+    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, ProteusType.Int)
 
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleCircumflex, BoundType.Int)
+    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleCircumflex, ProteusType.Int)
 
-    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, BoundType.Int)
-    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, BoundType.Int)
+    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, ProteusType.Int)
+    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, ProteusType.Int)
 
-    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, BoundType.Int)
-    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, BoundType.Int)
-    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, BoundType.Int)
+    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, ProteusType.Int)
+    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, ProteusType.Int)
+    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, ProteusType.Int)
 
-    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, BoundType.Boolean)
+    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, ProteusType.Boolean)
 
-    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, BoundType.Boolean)
+    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, ProteusType.Boolean)
 
-    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, BoundType.Boolean)
+    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, ProteusType.Boolean)
     object BoundEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.DoubleEquals, BoundType.Object, BoundType.Boolean)
+        BoundBinaryOperator(Operator.DoubleEquals, ProteusType.Object, ProteusType.Boolean)
 
     object BoundNotEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.NotEquals, BoundType.Object, BoundType.Boolean)
+        BoundBinaryOperator(Operator.NotEquals, ProteusType.Object, ProteusType.Boolean)
 
-    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, BoundType.Int, BoundType.Boolean)
+    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, ProteusType.Int, ProteusType.Boolean)
 
     object BoundGreaterThanBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThan, BoundType.Int, BoundType.Boolean)
+        BoundBinaryOperator(Operator.GreaterThan, ProteusType.Int, ProteusType.Boolean)
 
     object BoundLessThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.LessThanEquals, BoundType.Int, BoundType.Boolean)
+        BoundBinaryOperator(Operator.LessThanEquals, ProteusType.Int, ProteusType.Boolean)
 
     object BoundGreaterThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThanEquals, BoundType.Int, BoundType.Boolean)
+        BoundBinaryOperator(Operator.GreaterThanEquals, ProteusType.Int, ProteusType.Boolean)
 
     object BoundIsBinaryOperator : BoundBinaryOperator(
         Operator.Is,
-        BoundType.Object,
-        BoundType.Type,
-        BoundType.Boolean, requiresSameTypes = false)
+        ProteusType.Object,
+        ProteusType.Type,
+        ProteusType.Boolean, requiresSameTypes = false)
 
 
 }

@@ -4,27 +4,27 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 
-sealed class BoundType(val kType: KType) {
-    object Int : BoundType(kotlin.Int::class.createType())
-    object Boolean : BoundType(kotlin.Boolean::class.createType())
+sealed class ProteusType(val kType: KType) {
+    object Int : ProteusType(kotlin.Int::class.createType())
+    object Boolean : ProteusType(kotlin.Boolean::class.createType())
 
-    object Object : BoundType(Any::class.createType())
+    object Object : ProteusType(Any::class.createType())
 
-    object Type : BoundType(KType::class.createType())
+    object Type : ProteusType(KType::class.createType())
 
-    object Identifier : BoundType(Any::class.createType())
+    object Identifier : ProteusType(Any::class.createType())
 
     override fun toString(): String {
         return this::class.simpleName!!
     }
 
-    fun isAssignableTo(other: BoundType): kotlin.Boolean {
+    fun isAssignableTo(other: ProteusType): kotlin.Boolean {
         return other.kType.isSubtypeOf(kType)
     }
 
     companion object {
 
-        fun fromName(name: String): BoundType? {
+        fun fromName(name: String): ProteusType? {
             return when (name) {
                 "Int" -> Int
                 "Boolean" -> Boolean
@@ -34,7 +34,7 @@ sealed class BoundType(val kType: KType) {
             }
         }
 
-        fun fromValue(value: Any): BoundType {
+        fun fromValue(value: Any): ProteusType {
             return when (value) {
                 is kotlin.Int -> Int
                 is kotlin.Boolean -> Boolean
@@ -43,11 +43,11 @@ sealed class BoundType(val kType: KType) {
         }
 
 
-        fun fromKotlinTypeOrObject(kType: KType): BoundType {
+        fun fromKotlinTypeOrObject(kType: KType): ProteusType {
             return fromKotlinType(kType) ?: Object
         }
 
-        fun fromKotlinType(kType: KType): BoundType? {
+        fun fromKotlinType(kType: KType): ProteusType? {
             return when {
                 kType.isSubtypeOf(Int.kType) -> Int
                 kType.isSubtypeOf(Boolean.kType) -> Boolean

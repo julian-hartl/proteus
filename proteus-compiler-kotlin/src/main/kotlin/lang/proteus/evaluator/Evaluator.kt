@@ -25,7 +25,9 @@ class Evaluator(private val boundExpression: BoundExpression) {
                 evaluateUnaryExpression(expression)
             }
 
-            else -> evaluateExpression(expression)
+            is BoundIdentifierExpression -> {
+                throw Exception("Identifier expression not supported yet")
+            }
         }
 
     }
@@ -55,7 +57,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
             BoundBinaryOperator.BoundLeftShiftBinaryOperator -> left as Int shl right as Int
             BoundBinaryOperator.BoundRightShiftBinaryOperator -> left as Int shr right as Int
-            BoundBinaryOperator.BoundIsBinaryOperator -> (right as BoundType).isAssignableTo(BoundType.fromValue(left))
+            BoundBinaryOperator.BoundIsBinaryOperator -> (right as ProteusType).isAssignableTo(ProteusType.fromValue(left))
         }
 
     }

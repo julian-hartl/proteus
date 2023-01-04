@@ -1,16 +1,12 @@
 package lang.proteus.diagnostics
 
-import lang.proteus.binding.BoundType
+import lang.proteus.binding.ProteusType
 import lang.proteus.syntax.lexer.Token
 
 class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
 
-    private fun report(message: String, span: TextSpan) {
-        mutableDiagnostics.add(Diagnostic("ERROR: $message at ${span.start}", span))
-    }
-
-    fun reportInvalidNumber(span: TextSpan, type: BoundType) {
+    fun reportInvalidNumber(span: TextSpan, type: ProteusType) {
         report("Invalid literal for type $type: '${span.literal}'", span)
     }
 
@@ -22,19 +18,23 @@ class DiagnosticsBag {
         report("Unexpected token <${actual}>, expected <${expected}>", span)
     }
 
-    fun concat(other: DiagnosticsBag) {
-        mutableDiagnostics.concat(other.mutableDiagnostics)
-    }
-
-    fun reportBinaryOperatorMismatch(span: TextSpan, leftType: BoundType, rightType: BoundType) {
+    fun reportBinaryOperatorMismatch(span: TextSpan, leftType: ProteusType, rightType: ProteusType) {
         report(
             "Operator '${span.literal}' cannot be applied to '${leftType}' and '${rightType}'",
             span
         )
     }
 
-    fun reportUnaryOperatorMismatch(span: TextSpan, type: BoundType) {
+    fun reportUnaryOperatorMismatch(span: TextSpan, type: ProteusType) {
         report("Operator '${span.literal}' cannot be applied to '${type}'", span)
+    }
+
+    private fun report(message: String, span: TextSpan) {
+        mutableDiagnostics.add(Diagnostic("ERROR: $message at ${span.start}", span))
+    }
+
+    fun concat(other: DiagnosticsBag) {
+        mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
     val diagnostics: Diagnostics

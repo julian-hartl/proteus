@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer
 
-import lang.proteus.binding.BoundType
+import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.DiagnosticsBag
 
 class Lexer private constructor(
@@ -46,7 +46,7 @@ class Lexer private constructor(
                 next()
             }
             val literal = input.substring(start, position)
-            val type = BoundType.fromName(literal)
+            val type = ProteusType.fromName(literal)
             if (type != null) {
                 return SyntaxToken.typeToken(start, literal, type)
             }

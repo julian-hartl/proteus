@@ -4,6 +4,7 @@ import lang.proteus.binding.Binder
 import lang.proteus.evaluator.Evaluator
 import org.junit.jupiter.api.Test
 import lang.proteus.syntax.parser.Parser
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.assertEquals
 
 class EvaluatorTest {
@@ -369,5 +370,6 @@ class EvaluatorTest {
         val result = evaluator.evaluate()
         assertEquals(true, result)
     }
+    
 
 }

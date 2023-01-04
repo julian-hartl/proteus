@@ -1,6 +1,6 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.binding.BoundType
+import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
@@ -108,7 +108,7 @@ class Parser private constructor(
             Token.Type -> {
                 val token = current
                 nextToken()
-                return LiteralExpressionSyntax(token, token.value as BoundType)
+                return LiteralExpressionSyntax(token, token.value as ProteusType)
             }
 
             Token.Identifier -> {
@@ -123,7 +123,7 @@ class Parser private constructor(
                 if (numberToken.value !is Int) {
                     diagnosticsBag.reportInvalidNumber(
                         numberToken.span,
-                        BoundType.Int
+                        ProteusType.Int
                     )
                 }
                 return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
