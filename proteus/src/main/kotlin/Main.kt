@@ -27,6 +27,8 @@ fun main(args: Array<String>) {
         if (compilationResult.diagnostics.hasErrors()) {
             val printer = ConsolePrinter()
             for (diagnostic in compilationResult.diagnostics.diagnostics) {
+                printer.println("")
+
                 val prefix = line.substring(0, diagnostic.span.start)
                 val error = line.substring(diagnostic.span.start, diagnostic.span.end)
                 val suffix = line.substring(diagnostic.span.end)
@@ -41,6 +43,7 @@ fun main(args: Array<String>) {
 
                 printer.println(suffix)
             }
+            printer.println("")
         } else {
 
             println(compilationResult.value)

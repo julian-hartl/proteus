@@ -19,6 +19,10 @@ class ConsolePrinter {
         kotlin.io.println(buildColoredString(text))
     }
 
+    fun println() {
+        kotlin.io.println()
+    }
+
     fun print(text: String) {
         kotlin.io.print(buildColoredString(text))
     }
