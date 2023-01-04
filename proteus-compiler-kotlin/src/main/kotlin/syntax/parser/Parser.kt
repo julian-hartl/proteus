@@ -91,7 +91,6 @@ class Parser private constructor(
     }
 
     private fun parsePrimaryExpression(): ExpressionSyntax {
-
         when (current.kind) {
             SyntaxKind.OpenParenthesisToken -> {
                 val left = nextToken()

@@ -7,5 +7,7 @@ abstract class BoundNode {
 enum class BoundNodeKind {
     UnaryExpression,
     LiteralExpression,
-    BinaryExpression
+    ArithmeticBinaryExpression,
+    NotExpression,
+    BooleanBinaryExpression
 }

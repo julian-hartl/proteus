@@ -57,4 +57,16 @@ class BinderTest {
         useExpression("1 * 2")
         assertTrue(!binder.hasErrors())
     }
+
+    @Test
+    fun shouldHaveErrorWhenUsingBangOperatorOnNonBoolean() {
+        useExpression("not 1")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorWhenUsingBangOperatorOnBoolean() {
+        useExpression("not true")
+        assertTrue(!binder.hasErrors())
+    }
 }

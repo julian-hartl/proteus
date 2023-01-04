@@ -11,12 +11,9 @@ sealed class Operator(
             get() = Operator::class.sealedSubclasses
                 .map { it.objectInstance!! }
 
-        val logical: List<Operator>
-            get() = filterByType(OperatorType.Logical)
 
-        fun filterByType(operatorType: OperatorType): List<Operator> {
-            return all.filter { it.operatorType == operatorType }
-        }
+        val maxOperatorLength: Int
+            get() = all.maxOfOrNull { it.literal.length } ?: 0
 
         fun isOperator(literal: String): Boolean {
             return fromLiteral(literal) != null
@@ -31,7 +28,8 @@ sealed class Operator(
         }
 
         fun fromSyntaxKind(syntaxKind: SyntaxKind): Operator {
-            return all.find { it.syntaxKind == syntaxKind } ?: throw IllegalArgumentException("Unknown syntax kind: $syntaxKind")
+            return all.find { it.syntaxKind == syntaxKind }
+                ?: throw IllegalArgumentException("Unknown syntax kind: $syntaxKind")
         }
     }
 
@@ -39,6 +37,7 @@ sealed class Operator(
         return when (this) {
             is PlusOperator -> 100
             is MinusOperator -> 100
+            is NotOperator -> 100
             else -> 0
         }
     }
@@ -59,6 +58,16 @@ object PipeOperator : Operator(SyntaxKind.PipeToken, "|", OperatorType.Bitwise, 
 object OpenParenthesisOperator : Operator(SyntaxKind.OpenParenthesisToken, "(", OperatorType.Other, 0)
 
 object CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")", OperatorType.Other, 0)
+
+object NotOperator : Operator(SyntaxKind.NotToken, "not", OperatorType.Logical, 7)
+
+object AndOperator : Operator(SyntaxKind.AndToken, "and", OperatorType.Logical, 5)
+object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Logical, 5)
+
+object OrOperator : Operator(SyntaxKind.OrToken, "or", OperatorType.Logical, 4)
+object XorOperator : Operator(SyntaxKind.XorToken, "xor", OperatorType.Logical, 4)
+
+
 
 
 

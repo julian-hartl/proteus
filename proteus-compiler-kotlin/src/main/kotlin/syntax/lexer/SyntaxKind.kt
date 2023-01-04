@@ -19,7 +19,12 @@ enum class SyntaxKind {
     TrueKeyword,
     FalseKeyword,
     UnaryExpression,
-    IdentifierToken;
+    IdentifierToken,
+    NotToken,
+    AndToken,
+    OrToken,
+    XorToken,
+    EqualityToken;
 
     companion object {
         fun fromOperator(operator: Operator): SyntaxKind {

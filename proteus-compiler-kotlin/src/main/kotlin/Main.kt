@@ -5,7 +5,10 @@ import syntax.parser.SyntaxTree
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
-    val filePath = args.getOrNull(0)
+    var filePath = args.getOrNull(0)
+    if(filePath?.startsWith("-") == true) {
+        filePath = null
+    }
     while (true) {
         val input: String = if (filePath != null) {
 

@@ -38,8 +38,9 @@ class SyntaxToken<T>(
             return SyntaxToken(SyntaxKind.WhiteSpaceToken, position, literal, null)
         }
 
-        fun operator(position: Int, operator: String): SyntaxToken<Nothing?> {
-            return SyntaxToken(SyntaxKind.fromOperator(Operator.fromLiteralOrThrow(operator)), position, operator, null)
+        fun operator(position: Int, operatorLiteral: String): SyntaxToken<Nothing?>? {
+            val operator = Operator.fromLiteral(operatorLiteral) ?: return null
+            return SyntaxToken(SyntaxKind.fromOperator(operator), position, operatorLiteral, null)
         }
 
         fun badToken(position: Int, literal: String): SyntaxToken<Nothing?> {

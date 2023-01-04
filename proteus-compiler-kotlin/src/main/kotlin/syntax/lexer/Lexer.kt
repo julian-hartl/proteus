@@ -30,21 +30,34 @@ class Lexer private constructor(private val input: String, private var position:
             val literal = input.substring(start, position)
             return SyntaxToken.whiteSpaceToken(start, literal)
         }
+        // check if it's an operator
+        val start = position
+        var operatorPosition = 0
+        val maxOperatorLength = Operator.maxOperatorLength
 
+        var next = peek(operatorPosition)
+        var operator = ""
+        var syntaxToken: SyntaxToken<*>? = null
+        do {
+            operator += next
+            val token = SyntaxToken.operator(start, operator)
+            if (token != null) {
+                syntaxToken = token
+                break
+            }
+            operatorPosition++
+            next = peek(operatorPosition)
+        } while (!next.isWhitespace() && operatorPosition < maxOperatorLength);
+        if (syntaxToken != null) {
+            position += operatorPosition + 1
+            return syntaxToken
+        }
         if (current.isLetter()) {
-            val start = position
             while (current.isLetter()) {
                 next()
             }
             val literal = input.substring(start, position)
             return SyntaxToken.keywordToken(start, literal)
-        }
-
-        if (isCurrentOperator()) {
-            val start = position
-            val operator = current.toString()
-            next()
-            return SyntaxToken.operator(start, operator)
         }
 
         diagnostics.add("Unexpected character", current.toString(), position)

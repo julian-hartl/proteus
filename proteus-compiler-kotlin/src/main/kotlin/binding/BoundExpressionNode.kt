@@ -29,23 +29,37 @@ internal class BoundUnaryExpression(val operand: BoundExpression, val operatorKi
 
 internal enum class BoundUnaryOperatorKind {
     Identity,
-    Negation, ;
+    Negation, Invert;
 
     companion object {
-        fun fromSyntaxToken(operatorToken: SyntaxToken<*>): BoundUnaryOperatorKind {
-            return when (operatorToken.kind) {
+        fun fromSyntaxToken(operatorToken: SyntaxToken<*>, operandType: KType): BoundUnaryOperatorKind? {
+            val operatorKind = when (operatorToken.kind) {
                 SyntaxKind.PlusToken -> Identity
                 SyntaxKind.MinusToken -> Negation
+                SyntaxKind.NotToken -> Invert
                 else -> throw Exception("Unexpected token ${operatorToken.kind}")
             }
+            if (operatorKind.allowsType(operandType)) {
+                return operatorKind
+            }
+            return null
+        }
+    }
+
+    fun allowsType(type: KType): Boolean {
+        return when (this) {
+            Identity -> type == Int::class.createType()
+            Negation -> type == Int::class.createType()
+            Invert -> type == Boolean::class.createType()
         }
     }
 }
 
-internal class BoundBinaryExpression(
+
+internal class BoundArithmeticBinaryExpression(
     val left: BoundExpression,
     val right: BoundExpression,
-    val operatorKind: BoundBinaryOperatorKind
+    val operatorKind: BoundArithmeticBinaryOperatorKind
 ) :
     BoundExpression() {
 
@@ -53,10 +67,10 @@ internal class BoundBinaryExpression(
         get() = left.type
 
     override val kind: BoundNodeKind
-        get() = BoundNodeKind.BinaryExpression
+        get() = BoundNodeKind.ArithmeticBinaryExpression
 }
 
-internal enum class BoundBinaryOperatorKind {
+internal enum class BoundArithmeticBinaryOperatorKind {
     Addition,
     Subtraction,
     Division,
@@ -75,13 +89,52 @@ internal enum class BoundBinaryOperatorKind {
         }
 
     companion object {
-        fun fromSyntaxToken(token: SyntaxToken<*>): BoundBinaryOperatorKind {
+        fun fromSyntaxToken(token: SyntaxToken<*>): BoundArithmeticBinaryOperatorKind? {
             for (operatorKind in values()) {
                 if (operatorKind.syntaxKind == token.kind) {
                     return operatorKind
                 }
             }
-            throw Exception("Unexpected token ${token.kind}")
+            return null
+        }
+    }
+}
+
+internal class BoundBooleanBinaryExpression(
+    val left: BoundExpression,
+    val right: BoundExpression,
+    val operatorKind: BoundBooleanBinaryOperatorKind
+) :
+    BoundExpression() {
+
+    override val type: KType
+        get() = Boolean::class.createType()
+
+    override val kind: BoundNodeKind
+        get() = BoundNodeKind.BooleanBinaryExpression
+}
+
+internal enum class BoundBooleanBinaryOperatorKind {
+    Or,
+    And,
+    Xor, Equals;
+
+    val syntaxKind: SyntaxKind
+        get() = when (this) {
+            Or -> SyntaxKind.OrToken
+            And -> SyntaxKind.AndToken
+            Xor -> SyntaxKind.XorToken
+            Equals -> SyntaxKind.EqualityToken
+        }
+
+    companion object {
+        fun fromSyntaxToken(token: SyntaxToken<*>): BoundBooleanBinaryOperatorKind? {
+            for (operatorKind in values()) {
+                if (operatorKind.syntaxKind == token.kind) {
+                    return operatorKind
+                }
+            }
+            return null
         }
     }
 }

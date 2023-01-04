@@ -95,4 +95,110 @@ class EvaluatorTest {
     }
 
 
+    @Test
+    fun notFalseShouldBeTrue() {
+        initEvaluator("not false")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun notTrueShouldBeFalse() {
+        initEvaluator("not true")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+
+    @Test
+    fun shouldEvaluateLogicalAnd() {
+        initEvaluator("true and false")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvaluateLogicalOr() {
+        initEvaluator("false or true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateLogicalOrWithParenthesis() {
+        initEvaluator("true or (false and true)")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateComplexExpression() {
+        initEvaluator("not (true or false) and (true or false)")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvaluateComplexExpressionWithUnaryOperator() {
+        initEvaluator("not (true or false) and (true or false) and not (true or false) and (true or false)")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvaluateXor() {
+        initEvaluator("true xor false")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateXorWithParenthesis() {
+        initEvaluator("true xor (false and true)")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvaluateComplexExpressionWithXor() {
+        initEvaluator("not (true or false) and (true or false) xor not (true or false) and (true or false)")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvaluateEquals() {
+        initEvaluator("1 == 1")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun equalsShouldBindStrongerThanAnyOtherOperator() {
+        initEvaluator("1 + 2 == 3")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun equalsShouldBindStrongerThanAnyOtherBooleanOperator() {
+        initEvaluator("1 + 2 == 3 and true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun equalsShouldBeApplicableToBoolean() {
+        initEvaluator("true == true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun equalsShouldBeApplicableToInt() {
+        initEvaluator("1 == 1")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
 }
