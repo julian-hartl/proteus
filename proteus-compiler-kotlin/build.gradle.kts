@@ -16,11 +16,9 @@ repositories {
 publishing {
     repositories {
         maven {
-            tasks {
-                credentials {
-                    username = project.findProperty("gpr.user") as String? ?: System.getenv("julian-hartl")
-                    password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
-                }
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("julian-hartl")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
             }
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/julian-hartl/proteus")
