@@ -28,7 +28,6 @@ jobs:
           distribution: 'corretto'
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
-        working-directory: ./proteus-compiler-kotlin
       - name: Publish package
         uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
         working-directory: ./proteus-compiler-kotlin
