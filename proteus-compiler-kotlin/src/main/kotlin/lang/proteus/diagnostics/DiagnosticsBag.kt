@@ -30,7 +30,7 @@ class DiagnosticsBag {
     }
 
     private fun report(message: String, span: TextSpan) {
-        mutableDiagnostics.add(Diagnostic("ERROR: $message at ${span.start}", span))
+        mutableDiagnostics.add(Diagnostic("ERROR: $message at position ${span.start}", span))
     }
 
     fun concat(other: DiagnosticsBag) {

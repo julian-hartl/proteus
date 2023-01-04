@@ -33,9 +33,10 @@ fun main(args: Array<String>) {
 
                 printer.reset()
 
+                printer.setColor(PrinterColor.RED)
+                printer.println(diagnostic.message)
                 printer.print("    ")
                 printer.print(prefix)
-                printer.setColor(PrinterColor.RED)
                 printer.print(error)
                 printer.reset()
 

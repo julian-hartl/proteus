@@ -8,7 +8,7 @@ enum class PrinterColor(val ansiCode: Byte) {
     BLUE(34),
     MAGENTA(35),
     CYAN(36),
-    WHITE(37);
+    WHITE(38);
 }
 
 class ConsolePrinter {
