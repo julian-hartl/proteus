@@ -24,7 +24,7 @@ class SyntaxTree(
     private fun h_prettyPrint(node: SyntaxNode, indent: String) {
         var currentIndent = indent
         print(indent)
-        print(node.kind)
+        print(node.token)
 
         if (node is SyntaxToken<*>) {
             print(" " + node.value)

@@ -1,17 +1,16 @@
 package syntax.parser
 
-import syntax.lexer.SyntaxKind
+import syntax.lexer.Operator
 import syntax.lexer.SyntaxToken
 
-class BinaryExpression (
+class BinaryExpressionSyntax(
     val left: ExpressionSyntax,
-    val operatorToken: SyntaxToken<*>,
+    val operatorToken: SyntaxToken<Operator>,
     val right: ExpressionSyntax
 ) : ExpressionSyntax() {
+    override val token: Operator
+        get() = operatorToken.token
 
-
-    override val kind: SyntaxKind
-        get() = SyntaxKind.BinaryExpression
 
     override fun getChildren(): Iterator<SyntaxNode> {
         return iterator {

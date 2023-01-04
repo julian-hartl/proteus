@@ -10,7 +10,7 @@ class Lexer private constructor(private val input: String, private var position:
 
     fun nextToken(): SyntaxToken<*> {
         if (position >= input.length) {
-            return SyntaxToken(SyntaxKind.EndOfFileToken, position, "", null)
+            return SyntaxToken(Token.EndOfFile, position, "", null)
         }
 
         if (current.isDigit()) {

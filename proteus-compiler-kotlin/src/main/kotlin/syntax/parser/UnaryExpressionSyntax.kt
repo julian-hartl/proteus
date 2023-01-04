@@ -1,16 +1,17 @@
 package syntax.parser
 
-import syntax.lexer.SyntaxKind
+import syntax.lexer.Operator
 import syntax.lexer.SyntaxToken
+import syntax.lexer.Token
 
-class UnaryExpressionSyntax(val operatorToken: SyntaxToken<*>, val operand: ExpressionSyntax) : ExpressionSyntax() {
+class UnaryExpressionSyntax(val operatorSyntaxToken: SyntaxToken<Operator>, val operand: ExpressionSyntax) : ExpressionSyntax() {
+    override val token: Token
+        get() = operatorSyntaxToken.token
 
-    override val kind: SyntaxKind
-        get() = SyntaxKind.UnaryExpression
 
     override fun getChildren(): Iterator<SyntaxNode> {
         return iterator {
-            yield(operatorToken)
+            yield(operatorSyntaxToken)
             yield(operand)
         }
     }

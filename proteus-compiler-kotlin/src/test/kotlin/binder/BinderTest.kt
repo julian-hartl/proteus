@@ -142,5 +142,53 @@ class BinderTest {
         assertTrue(!binder.hasErrors())
     }
 
+    @Test
+    fun xorShouldNotHaveErrorWhenUsingOnBooleans() {
+        useExpression("true xor false")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun xorShouldHaveErrorWhenUsingOnNonBooleans() {
+        useExpression("1 xor 2")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun bitwiseXorShouldNotHaveErrorWhenUsingOnNumbers() {
+        useExpression("1 ^ 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun bitwiseXorShouldHaveErrorWhenUsingOnNonNumbers() {
+        useExpression("true ^ false")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun leftShiftShouldNotHaveErrorWhenUsingOnNumbers() {
+        useExpression("1 << 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun leftShiftShouldHaveErrorWhenUsingOnNonNumbers() {
+        useExpression("true << false")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun rightShiftShouldNotHaveErrorWhenUsingOnNumbers() {
+        useExpression("1 >> 2")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun rightShiftShouldHaveErrorWhenUsingOnNonNumbers() {
+        useExpression("true >> false")
+        assertTrue(binder.hasErrors())
+    }
+
 
 }

@@ -1,15 +1,15 @@
 package syntax.parser
 
-import syntax.lexer.SyntaxKind
 import syntax.lexer.SyntaxToken
+import syntax.lexer.Token
 
 class ParenthesizedExpressionSyntax(
     val openParenthesesToken: SyntaxToken<*>,
     val expressionSyntax: ExpressionSyntax,
     val closeParenthesisToken: SyntaxToken<*>
 ) : ExpressionSyntax() {
-    override val kind: SyntaxKind
-        get() = SyntaxKind.ParenthesizedExpression
+    override val token: Token
+        get() = expressionSyntax.token
 
     override fun getChildren(): Iterator<SyntaxNode> {
         return iterator {

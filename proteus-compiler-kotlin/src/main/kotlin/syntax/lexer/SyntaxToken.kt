@@ -2,58 +2,44 @@ package syntax.lexer
 
 import syntax.parser.SyntaxNode
 
-class SyntaxToken<T>(
-    override val kind: SyntaxKind,
+class SyntaxToken<T : Token>(
+    override val token: T,
     var position: Int,
     val literal: String,
-    val value: T
+    val value: Any?
 ) : SyntaxNode() {
     companion object {
 
 
         fun keywordToken(position: Int, literal: String): SyntaxToken<*> {
             val keyword = Keyword.fromString(literal) ?: return identifierToken(position, literal)
-            return SyntaxToken(
-                SyntaxKind.fromKeyword(keyword),
-                position,
-                literal,
-                keyword
-            )
+            return keyword.toSyntaxToken(position, null)
         }
 
-        fun identifierToken(position: Int, literal: String): SyntaxToken<*> {
-            return SyntaxToken(
-                SyntaxKind.IdentifierToken,
-                position,
-                literal,
-                null
-            )
+        fun identifierToken(position: Int, literal: String): SyntaxToken<Token.Identifier> {
+            return Token.Identifier.toSyntaxToken(position, literal) as SyntaxToken<Token.Identifier>
         }
 
-        fun numberToken(position: Int, literal: String): SyntaxToken<Int?> {
-            return SyntaxToken(SyntaxKind.NumberToken, position, literal, literal.toIntOrNull())
+        fun numberToken(position: Int, literal: String): SyntaxToken<Token.Number> {
+            return Token.Number.toSyntaxToken(position, literal, literal.toIntOrNull()) as SyntaxToken<Token.Number>
         }
 
-        fun whiteSpaceToken(position: Int, literal: String): SyntaxToken<Nothing?> {
-            return SyntaxToken(SyntaxKind.WhiteSpaceToken, position, literal, null)
+        fun whiteSpaceToken(position: Int, literal: String): SyntaxToken<Token.Whitespace> {
+            return Token.Whitespace.toSyntaxToken(position, literal, null) as SyntaxToken<Token.Whitespace>
         }
 
-        fun operator(position: Int, operatorLiteral: String): SyntaxToken<Nothing?>? {
+        fun operator(position: Int, operatorLiteral: String): SyntaxToken<Operator>? {
             val operator = Operator.fromLiteral(operatorLiteral) ?: return null
-            return SyntaxToken(SyntaxKind.fromOperator(operator), position, operatorLiteral, null)
+            return operator.toSyntaxToken(position)
         }
 
-        fun badToken(position: Int, literal: String): SyntaxToken<Nothing?> {
-            return SyntaxToken(SyntaxKind.BadToken, position, literal, null)
+        fun badToken(position: Int, literal: String): SyntaxToken<Token.Bad> {
+            return Token.Bad.toSyntaxToken(position, literal) as SyntaxToken<Token.Bad>
         }
     }
 
     override fun getChildren(): Iterator<SyntaxNode> {
         return iterator { }
-    }
-
-    override fun toString(): String {
-        return "SyntaxToken(kind=$kind, position=$position, literal=$literal, value=$value)"
     }
 
 

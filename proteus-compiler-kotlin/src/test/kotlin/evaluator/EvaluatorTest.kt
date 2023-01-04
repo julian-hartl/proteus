@@ -299,4 +299,53 @@ class EvaluatorTest {
         assertEquals(4, result)
     }
 
+    @Test
+    fun shouldEvalXor() {
+        initEvaluator("true xor false")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvalXor2() {
+        initEvaluator("false xor true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldEvalXor3() {
+        initEvaluator("false xor false")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvalXor4() {
+        initEvaluator("true xor true")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun shouldEvalBitwiseXor() {
+        initEvaluator("1 ^ 2")
+        val result = evaluator.evaluate()
+        assertEquals(3, result)
+    }
+
+    @Test
+    fun shouldEvalRightShift() {
+        initEvaluator("1 >> 1")
+        val result = evaluator.evaluate()
+        assertEquals(0, result)
+    }
+
+    @Test
+    fun shouldEvalLeftShift() {
+        initEvaluator("1 << 1")
+        val result = evaluator.evaluate()
+        assertEquals(2, result)
+    }
+
 }

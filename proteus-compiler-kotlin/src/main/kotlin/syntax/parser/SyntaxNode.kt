@@ -1,9 +1,8 @@
 package syntax.parser
 
-import syntax.lexer.SyntaxKind
+import syntax.lexer.Token
 
 abstract class SyntaxNode {
-    abstract val kind: SyntaxKind
-
+    abstract val token: Token
     abstract fun getChildren(): Iterator<SyntaxNode>
 }

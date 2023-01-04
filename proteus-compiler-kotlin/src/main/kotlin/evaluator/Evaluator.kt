@@ -38,6 +38,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBinaryOperator.BoundMultiplicationBinaryOperator -> left as Int * right as Int
             BoundBinaryOperator.BoundExponentiationBinaryOperator -> (left as Int).toDouble().pow(right as Int).toInt()
             BoundBinaryOperator.BoundBitwiseAndBinaryOperator -> left as Int and right as Int
+            BoundBinaryOperator.BoundBitwiseXorBinaryOperator -> left as Int xor  right as Int
             BoundBinaryOperator.BoundBitwiseOrBinaryOperator -> left as Int or right as Int
             BoundBinaryOperator.BoundBitwiseLogicalAndBinaryOperator -> left as Boolean and right as Boolean
             BoundBinaryOperator.BoundBitwiseLogicalOrBinaryOperator -> left as Boolean or right as Boolean
@@ -48,6 +49,8 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBinaryOperator.BoundGreaterThanOrEqualsBinaryOperator -> left as Int >= right as Int
             BoundBinaryOperator.BoundLessThanBinaryOperator -> (left as Int) < (right as Int)
             BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
+            BoundBinaryOperator.BoundLeftShiftBinaryOperator -> left as Int shl right as Int
+            BoundBinaryOperator.BoundRightShiftBinaryOperator -> left as Int shr right as Int
         }
 
     }
@@ -59,6 +62,10 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
             BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
+
+            else -> {
+                throw Exception("Unexpected unary operator ${expression.operator}")
+            }
         }
     }
 

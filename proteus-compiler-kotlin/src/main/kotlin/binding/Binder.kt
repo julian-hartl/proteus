@@ -2,10 +2,7 @@ package binding
 
 import diagnostics.Diagnosable
 import diagnostics.Diagnostics
-import syntax.lexer.SyntaxKind
 import syntax.parser.*
-import kotlin.reflect.KType
-import kotlin.reflect.full.createType
 
 class Binder : Diagnosable {
 
@@ -17,30 +14,29 @@ class Binder : Diagnosable {
     }
 
     fun bind(syntax: ExpressionSyntax): BoundExpression {
-        return when (syntax.kind) {
-            SyntaxKind.LiteralExpression -> {
-                bindLiteralExpression(syntax as LiteralExpressionSyntax)
+        return when (syntax) {
+            is LiteralExpressionSyntax -> {
+                bindLiteralExpression(syntax)
             }
 
-            SyntaxKind.UnaryExpression -> {
-                bindUnaryExpression(syntax as UnaryExpressionSyntax)
+            is UnaryExpressionSyntax -> {
+                bindUnaryExpression(syntax)
             }
 
-            SyntaxKind.BinaryExpression -> {
-                bindBinaryExpression(syntax as BinaryExpression)
+            is BinaryExpressionSyntax -> {
+                bindBinaryExpression(syntax)
             }
 
 
-            SyntaxKind.ParenthesizedExpression -> {
-                bind((syntax as ParenthesizedExpressionSyntax).expressionSyntax)
+            is ParenthesizedExpressionSyntax -> {
+                bind(syntax.expressionSyntax)
             }
 
-            else -> throw Exception("Unexpected syntax ${syntax.kind}")
         }
     }
 
 
-    private fun bindBinaryExpression(binaryExpression: BinaryExpression): BoundExpression {
+    private fun bindBinaryExpression(binaryExpression: BinaryExpressionSyntax): BoundExpression {
 
         val boundLeft = bind(binaryExpression.left)
         val boundRight = bind(binaryExpression.right)
@@ -52,8 +48,9 @@ class Binder : Diagnosable {
             )
             return boundLeft
         }
-        val binaryOperator = BoundBinaryOperator.bind(binaryExpression.operatorToken.kind, boundLeft.type, boundRight.type)
-        if(binaryOperator == null) {
+        val binaryOperator =
+            BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
+        if (binaryOperator == null) {
             diagnostics.add(
                 "Binary operator ${binaryExpression.operatorToken.literal} is not defined for types ${boundLeft.type} and ${boundRight.type}",
                 binaryExpression.operatorToken.literal,
@@ -66,16 +63,14 @@ class Binder : Diagnosable {
     }
 
 
-
-
     private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
         val boundOperand = bind(unaryExpression.operand)
-        val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorToken.kind, boundOperand.type)
+        val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
             diagnostics.add(
-                "Unary operator '${unaryExpression.operatorToken.literal}' cannot be applied to operand of type ${boundOperand.type}",
-                unaryExpression.operatorToken.literal,
-                unaryExpression.operatorToken.position
+                "Unary operator '${unaryExpression.operatorSyntaxToken.literal}' cannot be applied to operand of type ${boundOperand.type}",
+                unaryExpression.operatorSyntaxToken.literal,
+                unaryExpression.operatorSyntaxToken.position
             )
             return boundOperand
         }

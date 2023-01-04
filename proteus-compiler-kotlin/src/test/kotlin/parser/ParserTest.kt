@@ -1,9 +1,11 @@
 package parser
 
-import syntax.lexer.SyntaxKind
 import org.junit.jupiter.api.Test
-import syntax.parser.Parser
+import syntax.lexer.Operator
+import syntax.lexer.Token
+import syntax.parser.*
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ParserTest {
     private lateinit var parser: Parser
@@ -16,90 +18,90 @@ class ParserTest {
     fun shouldParseBasicPlusOperation() {
         initParser("1 + 2")
         val ast = parser.parse()
-        assertEquals(SyntaxKind.BinaryExpression, ast.root.kind)
+        assertTrue(ast.root is BinaryExpressionSyntax)
         val rootChildren = ast.root.getChildren()
-        assertEquals(SyntaxKind.LiteralExpression, rootChildren.next().kind)
-        assertEquals(SyntaxKind.PlusToken, rootChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, rootChildren.next().kind)
+        assertTrue(rootChildren.next().token is Token.Number)
+        assertEquals(Operator.Plus, rootChildren.next().token)
+        assertTrue(rootChildren.next().token is Token.Number)
     }
 
     @Test
     fun shouldParseOperationWithPlusAndMinus() {
         initParser("1 + 2 - 3")
         val ast = parser.parse()
-        assertEquals(SyntaxKind.BinaryExpression, ast.root.kind)
+        assertTrue(ast.root is BinaryExpressionSyntax)
         val rootChildren = ast.root.getChildren()
         val plusNode = rootChildren.next()
-        assertEquals(SyntaxKind.BinaryExpression, plusNode.kind)
+        assertTrue(plusNode is BinaryExpressionSyntax)
         val plusNodeChildren = plusNode.getChildren()
-        assertEquals(SyntaxKind.LiteralExpression, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.PlusToken, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.MinusToken, rootChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, rootChildren.next().kind)
+        assertTrue(plusNodeChildren.next().token is Token.Number)
+        assertEquals(plusNodeChildren.next().token, Operator.Plus)
+        assertTrue(plusNodeChildren.next().token is Token.Number)
+        assertEquals(Operator.Minus, rootChildren.next().token)
+        assertTrue(rootChildren.next().token is Token.Number)
     }
 
     @Test
     fun shouldParseOperationWithPlusAndMinusAndAsterisk() {
         initParser("1 + 2 - 3 * 4")
         val ast = parser.parse()
-        assertEquals(SyntaxKind.BinaryExpression, ast.root.kind)
+        assertTrue(ast.root is BinaryExpressionSyntax)
         val rootChildren = ast.root.getChildren()
         val plusNode = rootChildren.next()
-        assertEquals(SyntaxKind.BinaryExpression, plusNode.kind)
+        assertTrue(plusNode is BinaryExpressionSyntax)
         val plusNodeChildren = plusNode.getChildren()
-        assertEquals(SyntaxKind.LiteralExpression, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.PlusToken, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.MinusToken, rootChildren.next().kind)
+        assertTrue(plusNodeChildren.next().token is Token.Number)
+        assertEquals(plusNodeChildren.next().token, Operator.Plus)
+        assertTrue(plusNodeChildren.next().token is Token.Number)
+        assertEquals(Operator.Minus, rootChildren.next().token)
         val asteriskNode = rootChildren.next()
-        assertEquals(SyntaxKind.BinaryExpression, asteriskNode.kind)
+        assertTrue(asteriskNode is BinaryExpressionSyntax)
         val asteriskNodeChildren = asteriskNode.getChildren()
-        assertEquals(SyntaxKind.LiteralExpression, asteriskNodeChildren.next().kind)
-        assertEquals(SyntaxKind.AsteriskToken, asteriskNodeChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, asteriskNodeChildren.next().kind)
+        assertTrue(asteriskNodeChildren.next() is LiteralExpressionSyntax)
+        assertEquals(Operator.Asterisk, asteriskNodeChildren.next().token)
+        assertTrue(asteriskNodeChildren.next() is LiteralExpressionSyntax)
     }
 
     @Test
     fun shouldParseOperationWithParenthesis() {
         initParser("(1 + 2) - 3 * 4")
         val ast = parser.parse()
-        assertEquals(SyntaxKind.BinaryExpression, ast.root.kind)
+        assertTrue(ast.root is BinaryExpressionSyntax)
         val rootChildren = ast.root.getChildren()
         val parenthesisNode = rootChildren.next()
-        assertEquals(SyntaxKind.ParenthesizedExpression, parenthesisNode.kind)
+        assertTrue(parenthesisNode is ParenthesizedExpressionSyntax)
         val parenthesisChildren = parenthesisNode.getChildren()
 
-        assertEquals(SyntaxKind.OpenParenthesisToken, parenthesisChildren.next().kind)
+        assertEquals(Operator.OpenParenthesis, parenthesisChildren.next().token)
         val plusNode = parenthesisChildren.next()
-        assertEquals(SyntaxKind.BinaryExpression, plusNode.kind)
+        assertTrue(plusNode is BinaryExpressionSyntax)
         val plusNodeChildren = plusNode.getChildren()
-        assertEquals(SyntaxKind.LiteralExpression, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.PlusToken, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, plusNodeChildren.next().kind)
-        assertEquals(SyntaxKind.CloseParenthesisToken, parenthesisChildren.next().kind)
-        assertEquals(SyntaxKind.MinusToken, rootChildren.next().kind)
+        assertTrue(plusNodeChildren.next().token is Token.Number)
+        assertEquals(plusNodeChildren.next().token, Operator.Plus)
+        assertTrue(plusNodeChildren.next().token is Token.Number)
+        assertEquals(Operator.CloseParenthesis, parenthesisChildren.next().token)
+        assertEquals(Operator.Minus, rootChildren.next().token)
         val asteriskNode = rootChildren.next()
-        assertEquals(SyntaxKind.BinaryExpression, asteriskNode.kind)
+        assertTrue(asteriskNode is BinaryExpressionSyntax)
         val asteriskNodeChildren = asteriskNode.getChildren()
-        assertEquals(SyntaxKind.LiteralExpression, asteriskNodeChildren.next().kind)
-        assertEquals(SyntaxKind.AsteriskToken, asteriskNodeChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, asteriskNodeChildren.next().kind)
+        assertTrue(asteriskNodeChildren.next() is LiteralExpressionSyntax)
+        assertEquals(Operator.Asterisk, asteriskNodeChildren.next().token)
+        assertTrue(asteriskNodeChildren.next() is LiteralExpressionSyntax)
     }
 
     @Test
     fun shouldParseExpressionWithUnaryOperator() {
         initParser("-1 + 2")
         val ast = parser.parse()
-        assertEquals(SyntaxKind.BinaryExpression, ast.root.kind)
+        assertTrue(ast.root is BinaryExpressionSyntax)
         val rootChildren = ast.root.getChildren()
         val unaryNode = rootChildren.next()
-        assertEquals(SyntaxKind.UnaryExpression, unaryNode.kind)
+        assertTrue(unaryNode is UnaryExpressionSyntax)
         val unaryNodeChildren = unaryNode.getChildren()
-        assertEquals(SyntaxKind.MinusToken, unaryNodeChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, unaryNodeChildren.next().kind)
-        assertEquals(SyntaxKind.PlusToken, rootChildren.next().kind)
-        assertEquals(SyntaxKind.LiteralExpression, rootChildren.next().kind)
+        assertEquals(Operator.Minus, unaryNodeChildren.next().token)
+        assertTrue(unaryNodeChildren.next() is LiteralExpressionSyntax)
+        assertEquals(Operator.Plus, rootChildren.next().token)
+        assertTrue(rootChildren.next().token is Token.Number)
     }
 
 }

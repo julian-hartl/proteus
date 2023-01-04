@@ -1,11 +1,9 @@
 package syntax.lexer
 
 sealed class Operator(
-    val syntaxKind: SyntaxKind,
     val literal: String,
-    val operatorType: OperatorType,
     val precedence: Int
-) {
+) : Token() {
     companion object {
         val all
             get() = Operator::class.sealedSubclasses
@@ -27,52 +25,57 @@ sealed class Operator(
             return fromLiteral(literal) ?: throw IllegalArgumentException("Unknown operator: $literal")
         }
 
-        fun fromSyntaxKind(syntaxKind: SyntaxKind): Operator {
-            return all.find { it.syntaxKind == syntaxKind }
-                ?: throw IllegalArgumentException("Unknown syntax kind: $syntaxKind")
-        }
+    }
+
+    fun toSyntaxToken(position: Int): SyntaxToken<Operator> {
+        return super.toSyntaxToken(position, literal, null) as SyntaxToken<Operator>
     }
 
     fun unaryPrecedence(): Int {
         return when (this) {
-            is PlusOperator -> 100
-            is MinusOperator -> 100
-            is NotOperator -> 100
+            is Plus -> 100
+            is Minus -> 100
+            is Not -> 100
             else -> 0
         }
     }
+
+    object Plus : Operator("+", 1)
+
+    object Minus : Operator("-", 1)
+
+    object Asterisk : Operator("*", 2)
+
+    object Slash : Operator("/", 2)
+    object DoubleCircumflex : Operator("^^", 3)
+    object DoubleGreaterThan : Operator(">>", 3)
+    object DoubleLessThan : Operator("<<", 3)
+
+    object Ampersand : Operator("&", 3)
+
+    object Pipe : Operator("|", 3)
+    object Circumflex : Operator("^", 3)
+
+    object OpenParenthesis : Operator("(", 0)
+
+    object CloseParenthesis : Operator(")", 0)
+
+    object Not : Operator("not", 3)
+
+    object And : Operator("and", 2)
+    object DoubleEquals : Operator("==", 1)
+    object NotEquals : Operator("!=", 1)
+
+    object LessThan : Operator("<", 1)
+    object GreaterThan : Operator(">", 1)
+    object GreaterThanEquals : Operator(">=", 1)
+    object LessThanEquals : Operator("<=", 1)
+
+    object Or : Operator("or", 2)
+    object Xor : Operator("xor", 2)
 }
 
-object PlusOperator : Operator(SyntaxKind.PlusToken, "+", OperatorType.Arithmetic, 1)
 
-object MinusOperator : Operator(SyntaxKind.MinusToken, "-", OperatorType.Arithmetic, 1)
-
-object AsteriskOperator : Operator(SyntaxKind.AsteriskToken, "*", OperatorType.Arithmetic, 2)
-
-object SlashOperator : Operator(SyntaxKind.SlashToken, "/", OperatorType.Arithmetic, 2)
-object DoubleCircumflexOperator  : Operator(SyntaxKind.DoubleCircumflexToken, "^^", OperatorType.Arithmetic, 3)
-
-object AmpersandOperator : Operator(SyntaxKind.AmpersandToken, "&", OperatorType.Bitwise, 3)
-
-object PipeOperator : Operator(SyntaxKind.PipeToken, "|", OperatorType.Bitwise, 3)
-
-object OpenParenthesisOperator : Operator(SyntaxKind.OpenParenthesisToken, "(", OperatorType.Other, 0)
-
-object CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")", OperatorType.Other, 0)
-
-object NotOperator : Operator(SyntaxKind.NotToken, "not", OperatorType.Logical, 3)
-
-object AndOperator : Operator(SyntaxKind.AndToken, "and", OperatorType.Logical, 2)
-object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Relational, 1)
-object NotEqualityOperator : Operator(SyntaxKind.NotEqualityToken, "!=", OperatorType.Relational, 1)
-
-object LessThanOperator : Operator(SyntaxKind.LessThanToken, "<", OperatorType.Relational, 1)
-object GreaterThanOperator : Operator(SyntaxKind.GreaterThanToken, ">", OperatorType.Relational, 1)
-object GreaterThanOrEqualsOperator : Operator(SyntaxKind.GreaterThanOrEqualsToken, ">=", OperatorType.Relational, 1)
-object LessThanOrEqualsToken : Operator(SyntaxKind.LessThanOrEqualsToken, "<=", OperatorType.Relational, 1)
-
-object OrOperator : Operator(SyntaxKind.OrToken, "or", OperatorType.Logical, 2)
-object XorOperator : Operator(SyntaxKind.XorToken, "xor", OperatorType.Logical, 2)
 
 
 

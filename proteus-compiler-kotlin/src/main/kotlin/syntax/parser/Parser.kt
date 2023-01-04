@@ -2,10 +2,7 @@ package syntax.parser
 
 import diagnostics.Diagnosable
 import diagnostics.Diagnostics
-import syntax.lexer.Lexer
-import syntax.lexer.Operator
-import syntax.lexer.SyntaxKind
-import syntax.lexer.SyntaxToken
+import syntax.lexer.*
 
 class Parser private constructor(
     private val input: String,
@@ -18,16 +15,16 @@ class Parser private constructor(
 
     companion object {
         private fun parseInput(lexer: Lexer): Array<SyntaxToken<*>> {
-            val tokens = mutableListOf<SyntaxToken<*>>()
-            var token: SyntaxToken<*>
+            val syntaxTokens = mutableListOf<SyntaxToken<*>>()
+            var syntaxToken: SyntaxToken<*>
             do {
-                token = lexer.nextToken()
-                if (token.kind != SyntaxKind.WhiteSpaceToken && token.kind != SyntaxKind.BadToken) {
-                    tokens.add(token)
+                syntaxToken = lexer.nextToken()
+                if (syntaxToken.token != Token.Whitespace && syntaxToken.token != Token.Bad) {
+                    syntaxTokens.add(syntaxToken)
                 }
-            } while (token.kind != SyntaxKind.EndOfFileToken)
+            } while (syntaxToken.token != Token.EndOfFile)
 
-            return tokens.toTypedArray()
+            return syntaxTokens.toTypedArray()
         }
 
         fun verbose(input: String): Parser {
@@ -45,7 +42,7 @@ class Parser private constructor(
         printInput()
         printLexerTokens()
         val expression = parseExpression()
-        val endOfFileToken = matchToken(SyntaxKind.EndOfFileToken)
+        val endOfFileToken = matchToken(Token.EndOfFile)
 
         return SyntaxTree(expression, endOfFileToken, diagnostics)
     }
@@ -57,7 +54,7 @@ class Parser private constructor(
             if (unaryOperatorPrecedence != 0 && unaryOperatorPrecedence >= parentPrecedence) {
                 val operatorToken = nextToken()
                 val operand = parseExpression(unaryOperatorPrecedence)
-                UnaryExpressionSyntax(operatorToken, operand)
+                UnaryExpressionSyntax(operatorToken as SyntaxToken<Operator>, operand)
             } else {
                 parsePrimaryExpression()
             }
@@ -71,7 +68,7 @@ class Parser private constructor(
 
             val operatorToken = nextToken()
             val right = parseExpression(precedence)
-            left = BinaryExpression(left, operatorToken, right)
+            left = BinaryExpressionSyntax(left, operatorToken as SyntaxToken<Operator>, right)
         }
 
         return left
@@ -91,23 +88,23 @@ class Parser private constructor(
     }
 
     private fun parsePrimaryExpression(): ExpressionSyntax {
-        when (current.kind) {
-            SyntaxKind.OpenParenthesisToken -> {
+        when (current.token) {
+            Operator.OpenParenthesis -> {
                 val left = nextToken()
                 val expression = parseExpression()
-                val right = matchToken(SyntaxKind.CloseParenthesisToken)
+                val right = matchToken(Operator.CloseParenthesis)
                 return ParenthesizedExpressionSyntax(left, expression, right)
             }
 
-            SyntaxKind.FalseKeyword, SyntaxKind.TrueKeyword -> {
-                val value = current.kind == SyntaxKind.TrueKeyword
+            Keyword.False, Keyword.True -> {
+                val value = current.token == Keyword.True
                 val token = current
                 nextToken()
                 return LiteralExpressionSyntax(token, value)
             }
 
             else -> {
-                val numberToken = matchToken(SyntaxKind.NumberToken)
+                val numberToken = matchToken(Token.Number)
 
                 if (numberToken.value !is Int) {
                     diagnostics.add(
@@ -122,16 +119,16 @@ class Parser private constructor(
 
     }
 
-    private fun matchToken(syntaxKind: SyntaxKind): SyntaxToken<*> {
-        if (current.kind == syntaxKind) {
+    private fun matchToken(token: Token): SyntaxToken<*> {
+        if (current.token == token) {
             return nextToken()
         }
         diagnostics.add(
-            "Unexpected token <${current.kind}>, expected <$syntaxKind>",
+            "Unexpected token <${current.token}>, expected <$token>",
             current.literal,
             current.position
         )
-        return SyntaxToken(syntaxKind, current.position, current.literal, null)
+        return SyntaxToken(token, current.position, current.literal, null)
     }
 
     private fun nextToken(): SyntaxToken<*> {

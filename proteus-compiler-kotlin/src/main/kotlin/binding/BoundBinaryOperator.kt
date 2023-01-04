@@ -1,16 +1,17 @@
 package binding
 
-import syntax.lexer.SyntaxKind
+import syntax.lexer.Operator
+
 
 internal sealed class BoundBinaryOperator(
-    val syntaxKind: SyntaxKind, val leftType: BoundType, val rightType: BoundType, val resultType: BoundType
+    val operator: Operator, val leftType: BoundType, val rightType: BoundType, val resultType: BoundType
 ) {
 
 
-    constructor(syntaxKind: SyntaxKind, type: BoundType) : this(syntaxKind, type, type, type)
+    constructor(operator: Operator, type: BoundType) : this(operator, type, type, type)
 
-    constructor(syntaxKind: SyntaxKind, type: BoundType, resultType: BoundType) : this(
-        syntaxKind,
+    constructor(operator: Operator, type: BoundType, resultType: BoundType) : this(
+        operator,
         type,
         type,
         resultType
@@ -19,50 +20,53 @@ internal sealed class BoundBinaryOperator(
     companion object {
         private val operators = BoundBinaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
 
-        fun bind(syntaxKind: SyntaxKind, leftType: BoundType, rightType: BoundType): BoundBinaryOperator? {
+        fun bind(operator: Operator, leftType: BoundType, rightType: BoundType): BoundBinaryOperator? {
             return operators.firstOrNull {
-                it.syntaxKind == syntaxKind && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
+                it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
                     rightType
                 )
             }
         }
     }
 
-    object BoundAdditionBinaryOperator : BoundBinaryOperator(SyntaxKind.PlusToken, BoundType.Int)
+    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, BoundType.Int)
 
-    object BoundSubtractionBinaryOperator : BoundBinaryOperator(SyntaxKind.MinusToken, BoundType.Int)
+    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, BoundType.Int)
 
-    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(SyntaxKind.AsteriskToken, BoundType.Int)
+    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, BoundType.Int)
 
-    object BoundDivisionBinaryOperator : BoundBinaryOperator(SyntaxKind.SlashToken, BoundType.Int)
+    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, BoundType.Int)
 
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(SyntaxKind.DoubleCircumflexToken, BoundType.Int)
+    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleCircumflex, BoundType.Int)
 
-    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(SyntaxKind.AmpersandToken, BoundType.Int)
+    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, BoundType.Int)
+    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, BoundType.Int)
 
-    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(SyntaxKind.PipeToken, BoundType.Int)
+    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, BoundType.Int)
+    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, BoundType.Int)
+    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, BoundType.Int)
 
-    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(SyntaxKind.AndToken, BoundType.Boolean)
+    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, BoundType.Boolean)
 
-    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(SyntaxKind.OrToken, BoundType.Boolean)
+    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, BoundType.Boolean)
 
-    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(SyntaxKind.XorToken, BoundType.Boolean)
+    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, BoundType.Boolean)
     object BoundEqualsBinaryOperator :
-        BoundBinaryOperator(SyntaxKind.EqualityToken, BoundType.Object, BoundType.Boolean)
+        BoundBinaryOperator(Operator.DoubleEquals, BoundType.Object, BoundType.Boolean)
 
     object BoundNotEqualsBinaryOperator :
-        BoundBinaryOperator(SyntaxKind.NotEqualityToken, BoundType.Object, BoundType.Boolean)
+        BoundBinaryOperator(Operator.NotEquals, BoundType.Object, BoundType.Boolean)
 
-    object BoundLessThanBinaryOperator : BoundBinaryOperator(SyntaxKind.LessThanToken, BoundType.Int, BoundType.Boolean)
+    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, BoundType.Int, BoundType.Boolean)
 
     object BoundGreaterThanBinaryOperator :
-        BoundBinaryOperator(SyntaxKind.GreaterThanToken, BoundType.Int, BoundType.Boolean)
+        BoundBinaryOperator(Operator.GreaterThan, BoundType.Int, BoundType.Boolean)
 
     object BoundLessThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(SyntaxKind.LessThanOrEqualsToken, BoundType.Int, BoundType.Boolean)
+        BoundBinaryOperator(Operator.LessThanEquals, BoundType.Int, BoundType.Boolean)
 
     object BoundGreaterThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(SyntaxKind.GreaterThanOrEqualsToken, BoundType.Int, BoundType.Boolean)
+        BoundBinaryOperator(Operator.GreaterThanEquals, BoundType.Int, BoundType.Boolean)
 
 
 }
