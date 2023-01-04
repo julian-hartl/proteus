@@ -2,6 +2,7 @@ package evaluator
 
 import binding.*
 import syntax.parser.*
+import kotlin.math.pow
 
 class Evaluator(private val boundExpression: BoundExpression) {
 
@@ -15,17 +16,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
 
         return when (expression) {
             is BoundLiteralExpression<*> -> expression.value
-            is BoundNumberBinaryExpression -> {
-                evaluateNumberBinaryExpression(expression)
-            }
-
-            is BoundGenericBinaryExpression -> {
-                evaluateGenericBinaryExpression(expression)
-            }
-
-            is BoundBooleanBinaryExpression -> {
-                evaluateBooleanBinaryExpression(expression)
-            }
+            is BoundBinaryExpression -> evaluateBinaryExpression(expression)
 
             is BoundUnaryExpression -> {
                 evaluateUnaryExpression(expression)
@@ -36,52 +27,40 @@ class Evaluator(private val boundExpression: BoundExpression) {
 
     }
 
-    private fun evaluateGenericBinaryExpression(expression: BoundGenericBinaryExpression): Any {
-        val right = evaluateExpression(expression.right)
-        val left = evaluateExpression(expression.left)
-        return when (expression.operatorKind) {
-            BoundGenericBinaryOperatorKind.Equals -> left == right
-            BoundGenericBinaryOperatorKind.NotEquals -> left != right
-        }
-
-    }
-
-    private fun evaluateBooleanBinaryExpression(expression: BoundBooleanBinaryExpression): Any {
+    private fun evaluateBinaryExpression(expression: BoundBinaryExpression): Any {
         val left = evaluateExpression(expression.left)
         val right = evaluateExpression(expression.right)
 
-        return when (expression.operatorKind) {
-            BoundBooleanBinaryOperatorKind.And -> left as Boolean && right as Boolean
-            BoundBooleanBinaryOperatorKind.Or -> left as Boolean || right as Boolean
-            BoundBooleanBinaryOperatorKind.Xor -> left as Boolean xor right as Boolean
+        return when (expression.operator) {
+            BoundBinaryOperator.BoundAdditionBinaryOperator -> left as Int + right as Int
+            BoundBinaryOperator.BoundSubtractionBinaryOperator -> left as Int - right as Int
+            BoundBinaryOperator.BoundDivisionBinaryOperator -> left as Int / right as Int
+            BoundBinaryOperator.BoundMultiplicationBinaryOperator -> left as Int * right as Int
+            BoundBinaryOperator.BoundExponentiationBinaryOperator -> (left as Int).toDouble().pow(right as Int).toInt()
+            BoundBinaryOperator.BoundBitwiseAndBinaryOperator -> left as Int and right as Int
+            BoundBinaryOperator.BoundBitwiseOrBinaryOperator -> left as Int or right as Int
+            BoundBinaryOperator.BoundBitwiseLogicalAndBinaryOperator -> left as Boolean and right as Boolean
+            BoundBinaryOperator.BoundBitwiseLogicalOrBinaryOperator -> left as Boolean or right as Boolean
+            BoundBinaryOperator.BoundBitwiseLogicalXorBinaryOperator -> left as Boolean xor right as Boolean
+            BoundBinaryOperator.BoundEqualsBinaryOperator -> left == right
+            BoundBinaryOperator.BoundNotEqualsBinaryOperator -> left != right
+            BoundBinaryOperator.BoundGreaterThanBinaryOperator -> left as Int > right as Int
+            BoundBinaryOperator.BoundGreaterThanOrEqualsBinaryOperator -> left as Int >= right as Int
+            BoundBinaryOperator.BoundLessThanBinaryOperator -> (left as Int) < (right as Int)
+            BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
         }
+
     }
 
 
     private fun evaluateUnaryExpression(expression: BoundUnaryExpression): Any {
         val operand = evaluateExpression(expression.operand)
-        return when (expression.operatorKind) {
-            BoundUnaryOperatorKind.Identity -> operand as Int
-            BoundUnaryOperatorKind.Negation -> -(operand as Int)
-            BoundUnaryOperatorKind.Invert -> !(operand as Boolean)
+        return when (expression.operator) {
+            BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
+            BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
+            BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
         }
     }
 
-    private fun evaluateNumberBinaryExpression(expression: BoundNumberBinaryExpression): Any {
-        val left = evaluateExpression(expression.left) as Int
-        val right = evaluateExpression(expression.right) as Int
-        return when (expression.operatorKind) {
-            BoundNumberBinaryOperatorKind.Addition -> left + right
-            BoundNumberBinaryOperatorKind.Subtraction -> left - right
-            BoundNumberBinaryOperatorKind.Multiplication -> left * right
-            BoundNumberBinaryOperatorKind.Division -> left / right
-            BoundNumberBinaryOperatorKind.LogicalAnd -> left and right
-            BoundNumberBinaryOperatorKind.LogicalOr -> left or right
-            BoundNumberBinaryOperatorKind.GreaterThan -> left > right
-            BoundNumberBinaryOperatorKind.LessThan -> left < right
-            BoundNumberBinaryOperatorKind.GreaterThanOrEqual -> left >= right
-            BoundNumberBinaryOperatorKind.LessThanOrEqual -> left <= right
-        }
-    }
 
 }

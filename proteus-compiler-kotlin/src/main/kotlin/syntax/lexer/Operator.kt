@@ -50,6 +50,7 @@ object MinusOperator : Operator(SyntaxKind.MinusToken, "-", OperatorType.Arithme
 object AsteriskOperator : Operator(SyntaxKind.AsteriskToken, "*", OperatorType.Arithmetic, 2)
 
 object SlashOperator : Operator(SyntaxKind.SlashToken, "/", OperatorType.Arithmetic, 2)
+object DoubleCircumflexOperator  : Operator(SyntaxKind.DoubleCircumflexToken, "^^", OperatorType.Arithmetic, 3)
 
 object AmpersandOperator : Operator(SyntaxKind.AmpersandToken, "&", OperatorType.Bitwise, 3)
 

@@ -29,7 +29,8 @@ enum class SyntaxKind {
     LessThanToken,
     GreaterThanToken,
     LessThanOrEqualsToken,
-    `GreaterThanOrEqualsToken`;
+    GreaterThanOrEqualsToken,
+    DoubleCircumflexToken;
 
     companion object {
         fun fromOperator(operator: Operator): SyntaxKind {

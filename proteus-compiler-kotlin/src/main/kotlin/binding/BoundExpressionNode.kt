@@ -1,180 +1,35 @@
 package binding
 
-import syntax.lexer.SyntaxKind
-import syntax.lexer.SyntaxToken
-import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 
 sealed class BoundExpression : BoundNode() {
-    abstract val type: KType
+    abstract val type: BoundType
 }
 
 internal class BoundLiteralExpression<T : Any>(val value: T) : BoundExpression() {
-    override val kind: BoundNodeKind
-        get() = BoundNodeKind.LiteralExpression
 
-    override val type: KType
-        get() = value::class.createType()
+    override val type: BoundType
+        get() = BoundType.fromKotlinTypeOrObject(value::class.createType())
 }
 
-internal class BoundUnaryExpression(val operand: BoundExpression, val operatorKind: BoundUnaryOperatorKind) :
-    BoundExpression() {
-
-    override val type: KType
-        get() = operand.type
-
-    override val kind: BoundNodeKind
-        get() = BoundNodeKind.UnaryExpression
-}
-
-internal enum class BoundUnaryOperatorKind {
-    Identity,
-    Negation, Invert;
-
-    companion object {
-        fun fromSyntaxToken(operatorToken: SyntaxToken<*>, operandType: KType): BoundUnaryOperatorKind? {
-            val operatorKind = when (operatorToken.kind) {
-                SyntaxKind.PlusToken -> Identity
-                SyntaxKind.MinusToken -> Negation
-                SyntaxKind.NotToken -> Invert
-                else -> throw Exception("Unexpected token ${operatorToken.kind}")
-            }
-            if (operatorKind.allowsType(operandType)) {
-                return operatorKind
-            }
-            return null
-        }
-    }
-
-    fun allowsType(type: KType): Boolean {
-        return when (this) {
-            Identity -> type == Int::class.createType()
-            Negation -> type == Int::class.createType()
-            Invert -> type == Boolean::class.createType()
-        }
-    }
-}
-
-
-internal class BoundNumberBinaryExpression(
+internal class BoundBinaryExpression(
     val left: BoundExpression,
     val right: BoundExpression,
-    val operatorKind: BoundNumberBinaryOperatorKind
-) :
+    val operator: BoundBinaryOperator
+) : BoundExpression() {
+
+    override val type: BoundType
+        get() = operator.resultType
+}
+
+internal class BoundUnaryExpression(val operand: BoundExpression, val operator: BoundUnaryOperator) :
     BoundExpression() {
 
-    override val type: KType
-        get() = left.type
+    override val type: BoundType
+        get() = operator.resultType
 
-    override val kind: BoundNodeKind
-        get() = BoundNodeKind.ArithmeticBinaryExpression
 }
 
-internal enum class BoundNumberBinaryOperatorKind {
-    Addition,
-    Subtraction,
-    Division,
-    Multiplication,
-    LogicalAnd,
-    LogicalOr,
-    GreaterThan,
-    LessThan, GreaterThanOrEqual, LessThanOrEqual;
 
-    val syntaxKind: SyntaxKind
-        get() = when (this) {
-            Addition -> SyntaxKind.PlusToken
-            Subtraction -> SyntaxKind.MinusToken
-            Division -> SyntaxKind.SlashToken
-            Multiplication -> SyntaxKind.AsteriskToken
-            LogicalAnd -> SyntaxKind.AmpersandToken
-            LogicalOr -> SyntaxKind.PipeToken
-            GreaterThan -> SyntaxKind.GreaterThanToken
-            LessThan -> SyntaxKind.LessThanToken
-            GreaterThanOrEqual -> SyntaxKind.GreaterThanOrEqualsToken
-            LessThanOrEqual -> SyntaxKind.LessThanOrEqualsToken
-        }
 
-    companion object {
-        fun fromSyntaxToken(token: SyntaxToken<*>): BoundNumberBinaryOperatorKind? {
-            for (operatorKind in values()) {
-                if (operatorKind.syntaxKind == token.kind) {
-                    return operatorKind
-                }
-            }
-            return null
-        }
-    }
-}
 
-internal class BoundBooleanBinaryExpression(
-    val left: BoundExpression,
-    val right: BoundExpression,
-    val operatorKind: BoundBooleanBinaryOperatorKind
-) :
-    BoundExpression() {
-
-    override val type: KType
-        get() = Boolean::class.createType()
-
-    override val kind: BoundNodeKind
-        get() = BoundNodeKind.BooleanBinaryExpression
-}
-
-internal enum class BoundBooleanBinaryOperatorKind {
-    Or,
-    And,
-    Xor;
-
-    val syntaxKind: SyntaxKind
-        get() = when (this) {
-            Or -> SyntaxKind.OrToken
-            And -> SyntaxKind.AndToken
-            Xor -> SyntaxKind.XorToken
-        }
-
-    companion object {
-        fun fromSyntaxToken(token: SyntaxToken<*>): BoundBooleanBinaryOperatorKind? {
-            for (operatorKind in values()) {
-                if (operatorKind.syntaxKind == token.kind) {
-                    return operatorKind
-                }
-            }
-            return null
-        }
-    }
-}
-
-internal class BoundGenericBinaryExpression(
-    val left: BoundExpression,
-    val right: BoundExpression,
-    val operatorKind: BoundGenericBinaryOperatorKind
-) :
-    BoundExpression() {
-
-    override val type: KType
-        get() = left.type
-
-    override val kind: BoundNodeKind
-        get() = BoundNodeKind.BooleanBinaryExpression
-}
-
-internal enum class BoundGenericBinaryOperatorKind {
-    Equals, NotEquals;
-
-    val syntaxKind: SyntaxKind
-        get() = when (this) {
-            Equals -> SyntaxKind.EqualityToken
-            NotEquals -> SyntaxKind.NotEqualityToken
-        }
-
-    companion object {
-        fun fromSyntaxToken(token: SyntaxToken<*>): BoundGenericBinaryOperatorKind? {
-            for (operatorKind in values()) {
-                if (operatorKind.syntaxKind == token.kind) {
-                    return operatorKind
-                }
-            }
-            return null
-        }
-    }
-}

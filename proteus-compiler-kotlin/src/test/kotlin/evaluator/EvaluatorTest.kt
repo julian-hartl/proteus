@@ -292,4 +292,11 @@ class EvaluatorTest {
         assertEquals(true, result)
     }
 
+    @Test
+    fun shouldEvaluatePower() {
+        initEvaluator("2 ^^ 2")
+        val result = evaluator.evaluate()
+        assertEquals(4, result)
+    }
+
 }

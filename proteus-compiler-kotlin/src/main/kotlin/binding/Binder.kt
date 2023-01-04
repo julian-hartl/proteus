@@ -52,83 +52,26 @@ class Binder : Diagnosable {
             )
             return boundLeft
         }
-        val genericBinaryExpression = tryBindGenericBinaryExpression(boundLeft, boundRight, binaryExpression)
-        if (genericBinaryExpression != null) {
-            return genericBinaryExpression
-        }
-        return when (boundLeft.type) {
-            Int::class.createType() -> {
-                bindArithmeticBinaryExpression(boundLeft, boundRight, binaryExpression)
-            }
-
-            Boolean::class.createType() -> {
-                bindLogicalBinaryExpression(boundLeft, boundRight, binaryExpression)
-            }
-
-            else -> {
-                diagnostics.add(
-                    "Binary operator ${binaryExpression.operatorToken.literal} can only be applied to values of type int or boolean",
-                    binaryExpression.operatorToken.literal,
-                    binaryExpression.operatorToken.position
-                )
-                boundLeft
-            }
-        }
-
-    }
-
-    private fun tryBindGenericBinaryExpression(
-        boundLeft: BoundExpression,
-        boundRight: BoundExpression,
-        binaryExpression: BinaryExpression,
-    ): BoundExpression? {
-        val operatorKind = BoundGenericBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken) ?: return null
-        return BoundGenericBinaryExpression(boundLeft, boundRight, operatorKind)
-    }
-
-    private fun bindLogicalBinaryExpression(
-        boundLeft: BoundExpression,
-        boundRight: BoundExpression,
-        binaryExpression: BinaryExpression
-    ): BoundExpression {
-        val operatorKind = BoundBooleanBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken)
-        if (operatorKind == null) {
+        val binaryOperator = BoundBinaryOperator.bind(binaryExpression.operatorToken.kind, boundLeft.type, boundRight.type)
+        if(binaryOperator == null) {
             diagnostics.add(
-                "Operator '${binaryExpression.operatorToken.literal}' cannot be applied to boolean values",
+                "Binary operator ${binaryExpression.operatorToken.literal} is not defined for types ${boundLeft.type} and ${boundRight.type}",
                 binaryExpression.operatorToken.literal,
                 binaryExpression.operatorToken.position
             )
             return boundLeft
         }
-        return BoundBooleanBinaryExpression(boundLeft, boundRight, operatorKind)
+        return BoundBinaryExpression(boundLeft, boundRight, binaryOperator)
+
     }
 
-    private fun bindArithmeticBinaryExpression(
-        boundLeft: BoundExpression,
-        boundRight: BoundExpression,
-        binaryExpression: BinaryExpression,
-    ): BoundExpression {
-        val boundOperatorKind = BoundNumberBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken)
-        if (boundOperatorKind == null) {
-            diagnostics.add(
-                "Operator '${binaryExpression.operatorToken.literal}' cannot be applied to int values",
-                binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.position
-            )
-            return boundLeft
-        }
-        return BoundNumberBinaryExpression(
-            boundLeft,
-            boundRight,
-            boundOperatorKind
-        )
-    }
+
 
 
     private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
         val boundOperand = bind(unaryExpression.operand)
-        val boundOperatorKind = bindUnaryOperatorKind(unaryExpression, boundOperand.type)
-        if (boundOperatorKind == null) {
+        val boundOperator = BoundUnaryOperator.bind(unaryExpression.kind, boundOperand.type)
+        if (boundOperator == null) {
             diagnostics.add(
                 "Unary operator '${unaryExpression.operatorToken.literal}' cannot be applied to operand of type ${boundOperand.type}",
                 unaryExpression.operatorToken.literal,
@@ -136,15 +79,9 @@ class Binder : Diagnosable {
             )
             return boundOperand
         }
-        return BoundUnaryExpression(boundOperand, boundOperatorKind)
+        return BoundUnaryExpression(boundOperand, boundOperator)
     }
 
-    private fun bindUnaryOperatorKind(
-        unaryExpression: UnaryExpressionSyntax,
-        operandType: KType
-    ): BoundUnaryOperatorKind? {
-        return BoundUnaryOperatorKind.fromSyntaxToken(unaryExpression.operatorToken, operandType)
-    }
 
     private fun bindLiteralExpression(syntax: LiteralExpressionSyntax): BoundLiteralExpression<*> {
         val value = evaluateValueOfLiteralExpression(syntax)
