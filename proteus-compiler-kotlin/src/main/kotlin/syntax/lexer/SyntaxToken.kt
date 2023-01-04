@@ -1,5 +1,6 @@
 package syntax.lexer
 
+import binding.BoundType
 import syntax.parser.SyntaxNode
 
 class SyntaxToken<T : Token>(
@@ -11,9 +12,13 @@ class SyntaxToken<T : Token>(
     companion object {
 
 
+        fun typeToken(position: Int, literal: String, type: BoundType): SyntaxToken<Token> {
+            return Token.Type.toSyntaxToken(position, literal, value = type)
+        }
+
         fun keywordToken(position: Int, literal: String): SyntaxToken<*> {
             val keyword = Keyword.fromString(literal) ?: return identifierToken(position, literal)
-            return keyword.toSyntaxToken(position, null)
+            return keyword.toSyntaxToken(position)
         }
 
         fun identifierToken(position: Int, literal: String): SyntaxToken<Token.Identifier> {

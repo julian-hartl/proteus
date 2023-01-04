@@ -73,6 +73,7 @@ sealed class Operator(
 
     object Or : Operator("or", 2)
     object Xor : Operator("xor", 2)
+    object Is : Operator("is", 4)
 }
 
 

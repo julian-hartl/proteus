@@ -348,4 +348,25 @@ class EvaluatorTest {
         assertEquals(2, result)
     }
 
+    @Test
+    fun isShouldEvalToTrueIfUsedWithSameType() {
+        initEvaluator("1 is Int")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun isShouldEvalToFalseIfUsedWithDifferentType() {
+        initEvaluator("1 is Boolean")
+        val result = evaluator.evaluate()
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun isShouldBindStrongerThanAnd() {
+        initEvaluator("1 is Int and true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
 }

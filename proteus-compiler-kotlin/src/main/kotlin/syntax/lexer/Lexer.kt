@@ -1,5 +1,6 @@
 package syntax.lexer
 
+import binding.BoundType
 import diagnostics.Diagnostics
 
 class Lexer private constructor(private val input: String, private var position: Int, val diagnostics: Diagnostics) {
@@ -41,6 +42,10 @@ class Lexer private constructor(private val input: String, private var position:
                 next()
             }
             val literal = input.substring(start, position)
+            val type = BoundType.fromName(literal)
+            if (type != null) {
+                return SyntaxToken.typeToken(start, literal, type)
+            }
             return SyntaxToken.keywordToken(start, literal)
         }
 

@@ -191,4 +191,15 @@ class BinderTest {
     }
 
 
+    @Test
+    fun shouldHaveErrorWhenUsingIsOperatorOnValueAndValue() {
+        useExpression("1 is 2")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorWhenUsingIsOperatorOnValueAndType() {
+        useExpression("1 is Int")
+        assertTrue(!binder.hasErrors())
+    }
 }

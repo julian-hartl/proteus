@@ -7,6 +7,8 @@ sealed class Token {
     object Number : Token()
     object Bad : Token()
 
+    object Type : Token()
+
     fun toSyntaxToken(position: Int, literal: String, value: Any? = null): SyntaxToken<Token> {
         return SyntaxToken(this, position, literal, value)
     }

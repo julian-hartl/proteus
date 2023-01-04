@@ -9,7 +9,7 @@ sealed class BoundExpression : BoundNode() {
 internal class BoundLiteralExpression<T : Any>(val value: T) : BoundExpression() {
 
     override val type: BoundType
-        get() = BoundType.fromKotlinTypeOrObject(value::class.createType())
+        get() = if (value is BoundType) BoundType.Type else BoundType.fromKotlinTypeOrObject(value::class.createType())
 }
 
 internal class BoundBinaryExpression(
