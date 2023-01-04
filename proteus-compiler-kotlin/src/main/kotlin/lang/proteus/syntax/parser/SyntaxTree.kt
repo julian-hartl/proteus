@@ -2,7 +2,9 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.lexer.Token
 
 class SyntaxTree(
     val root: ExpressionSyntax,
@@ -14,6 +16,20 @@ class SyntaxTree(
         fun parse(text: String, verbose: Boolean): SyntaxTree {
             val parser = Parser(text, verbose = verbose)
             return parser.parse()
+        }
+
+        fun parseTokens(input: String): List<SyntaxToken<*>> {
+            val lexer = Lexer(input)
+            val tokens = mutableListOf<SyntaxToken<*>>()
+            while (true) {
+                val token = lexer.nextToken()
+                if (token.token is Token.EndOfFile) {
+                    break
+                }
+                tokens.add(token)
+            }
+            return tokens
+
         }
     }
 

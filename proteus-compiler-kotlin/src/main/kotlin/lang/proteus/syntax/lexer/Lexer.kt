@@ -3,7 +3,7 @@ package lang.proteus.syntax.lexer
 import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.DiagnosticsBag
 
-class Lexer private constructor(
+internal class Lexer private constructor(
     private val input: String,
     private var position: Int,
     val diagnosticsBag: DiagnosticsBag
