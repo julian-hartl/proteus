@@ -1,12 +1,10 @@
 package lang.proteus.evaluator
 
-import binding.*
 import lang.proteus.binding.*
 import lang.proteus.binding.BoundBinaryExpression
 import lang.proteus.binding.BoundLiteralExpression
 import lang.proteus.binding.BoundUnaryExpression
 import lang.proteus.binding.BoundUnaryOperator
-import syntax.parser.*
 import kotlin.math.pow
 
 class Evaluator(private val boundExpression: BoundExpression) {
