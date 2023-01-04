@@ -1,13 +1,13 @@
 package lang.proteus.syntax.parser
 
 import lang.proteus.diagnostics.Diagnosable
-import lang.proteus.diagnostics.MutableDiagnostics
+import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.syntax.lexer.SyntaxToken
 
 class SyntaxTree(
     val root: ExpressionSyntax,
     private val endOfFileToken: SyntaxToken<*>,
-    private val diagnostics: MutableDiagnostics
+    override val diagnostics: Diagnostics
 ) : Diagnosable {
 
     companion object {
@@ -39,11 +39,4 @@ class SyntaxTree(
     }
 
 
-    override fun hasErrors(): Boolean {
-        return diagnostics.size() > 0
-    }
-
-    override fun printDiagnostics() {
-        diagnostics.print()
-    }
 }

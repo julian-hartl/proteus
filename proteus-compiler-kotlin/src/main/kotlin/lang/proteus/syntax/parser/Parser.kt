@@ -2,6 +2,7 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.binding.BoundType
 import lang.proteus.diagnostics.Diagnosable
+import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.MutableDiagnostics
 import lang.proteus.syntax.lexer.*
 
@@ -10,7 +11,7 @@ class Parser private constructor(
     private var tokens: Array<SyntaxToken<*>>,
     private var position: Int,
     private val verbose: Boolean,
-    private var diagnostics: MutableDiagnostics
+    private var mutableDiagnostics: MutableDiagnostics
 ) : Diagnosable {
 
 
@@ -36,7 +37,7 @@ class Parser private constructor(
     constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, MutableDiagnostics()) {
         val lexer = Lexer(input)
         this.tokens = parseInput(lexer)
-        diagnostics = lexer.diagnostics
+        mutableDiagnostics = lexer.diagnostics
     }
 
     fun parse(): SyntaxTree {
@@ -45,7 +46,7 @@ class Parser private constructor(
         val expression = parseExpression()
         val endOfFileToken = matchToken(Token.EndOfFile)
 
-        return SyntaxTree(expression, endOfFileToken, diagnostics)
+        return SyntaxTree(expression, endOfFileToken, mutableDiagnostics)
     }
 
     private fun parseExpression(parentPrecedence: Int = 0): ExpressionSyntax {
@@ -120,7 +121,7 @@ class Parser private constructor(
                 val numberToken = matchToken(Token.Number)
 
                 if (numberToken.value !is Int) {
-                    diagnostics.add(
+                    mutableDiagnostics.add(
                         "The number ${numberToken.literal} isn't valid Int32.",
                         numberToken.literal,
                         numberToken.position
@@ -136,7 +137,7 @@ class Parser private constructor(
         if (current.token == token) {
             return nextToken() as SyntaxToken<T>
         }
-        diagnostics.add(
+        mutableDiagnostics.add(
             "Unexpected token <${current.token}>, expected <$token>",
             current.literal,
             current.position
@@ -162,12 +163,8 @@ class Parser private constructor(
     private val current: SyntaxToken<*>
         get() = peek(0)
 
-    override fun printDiagnostics() {
-        diagnostics.print()
-    }
 
-    override fun hasErrors(): Boolean {
-        return diagnostics.size() > 0
-    }
+    override val diagnostics: Diagnostics
+        get() = mutableDiagnostics
 
 }

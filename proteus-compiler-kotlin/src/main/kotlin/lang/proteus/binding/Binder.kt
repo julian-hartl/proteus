@@ -1,13 +1,13 @@
 package lang.proteus.binding
 
-import lang.proteus.syntax.parser.*
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.MutableDiagnostics
+import lang.proteus.syntax.parser.*
 
 class Binder : Diagnosable {
 
 
-    private val diagnostics = MutableDiagnostics()
+    override val diagnostics = MutableDiagnostics()
 
     fun bindSyntaxTree(tree: SyntaxTree): BoundExpression {
         return bind(tree.root)
@@ -85,12 +85,5 @@ class Binder : Diagnosable {
         return syntax.value
     }
 
-    override fun printDiagnostics() {
-        diagnostics.print()
-    }
-
-    override fun hasErrors(): Boolean {
-        return diagnostics.size() > 0
-    }
 
 }

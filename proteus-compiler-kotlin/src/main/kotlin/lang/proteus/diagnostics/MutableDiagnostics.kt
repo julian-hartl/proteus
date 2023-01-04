@@ -13,7 +13,6 @@ class MutableDiagnostics private constructor(private val mutableDiagnostics: Mut
         printer.setColor(PrinterColor.RED)
     }
 
-    override fun size() = mutableDiagnostics.size
 
     fun add(message: String, literal: String, position: Int) {
         mutableDiagnostics.add(Diagnostic(message, literal, position))
@@ -27,5 +26,16 @@ class MutableDiagnostics private constructor(private val mutableDiagnostics: Mut
 
     override val diagnostics: List<Diagnostic>
         get() = mutableDiagnostics.toList()
+
+    override fun hasErrors(): Boolean {
+        return mutableDiagnostics.size > 0
+    }
+
+    override fun concat(other: Diagnostics): Diagnostics {
+        val newDiagnostics = mutableListOf<Diagnostic>()
+        newDiagnostics.addAll(mutableDiagnostics)
+        newDiagnostics.addAll(other.diagnostics)
+        return MutableDiagnostics(newDiagnostics)
+    }
 
 }
