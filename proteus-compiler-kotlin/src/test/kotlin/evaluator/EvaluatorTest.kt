@@ -1,6 +1,7 @@
 package evaluator
 
 import lang.proteus.binding.Binder
+import lang.proteus.binding.VariableContainer
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.Parser
 import org.junit.jupiter.api.Test
@@ -14,18 +15,20 @@ class EvaluatorTest {
         private const val TEST_VARIABLE_VALUE = 1
     }
 
-    private var variables: MutableMap<String, Any> = mutableMapOf(
-        TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
-    )
+    private lateinit var variableContainer: VariableContainer
 
     private fun initEvaluator(input: String) {
+        val variables: Map<String, Any> = mapOf(
+            TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
+        )
         val parser = Parser(input)
         val syntaxTree = parser.parse()
+        variableContainer = VariableContainer.fromUntypedMap(variables)
         val binder = Binder(
-            variables
+            variableContainer
         )
         val boundExpression = binder.bindSyntaxTree(syntaxTree)
-        evaluator = Evaluator(boundExpression, variables)
+        evaluator = Evaluator(boundExpression, variableContainer)
     }
 
     @Test
@@ -385,7 +388,7 @@ class EvaluatorTest {
     fun shouldAssignValueToVariable() {
         initEvaluator("$TEST_VARIABLE_NAME = 3")
         assertEquals(3, evaluator.evaluate())
-        assertEquals(3, variables[TEST_VARIABLE_NAME])
+        assertEquals(3, variableContainer.getVariableValue(TEST_VARIABLE_NAME))
     }
 
     @Test

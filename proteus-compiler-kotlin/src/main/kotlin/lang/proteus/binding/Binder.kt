@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.parser.*
 
-class Binder(private val variables: Map<String, Any?>) : Diagnosable {
+class Binder(private val variableContainer: VariableContainer = VariableContainer()) : Diagnosable {
 
 
     private val diagnosticsBag = DiagnosticsBag()
@@ -41,24 +41,25 @@ class Binder(private val variables: Map<String, Any?>) : Diagnosable {
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
         val boundExpression = bind(syntax.expression)
-        val currentValue = variables[syntax.identifierToken.literal]
-        val currentType = if(currentValue == null) null else ProteusType.fromValueOrObject(currentValue)
+        val variableName = syntax.identifierToken.literal
+        val symbol = variableContainer.getVariableSymbol(variableName)
         val newType = boundExpression.type
-        if(currentType != null && !newType.isAssignableTo(currentType)) {
-            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span, currentType, newType)
+        if (symbol != null && !variableContainer.canAssignTo(symbol, newType)) {
+            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span, symbol.type, newType)
         }
-        return BoundAssignmentExpression(syntax.identifierToken.literal, boundExpression)
+        return BoundAssignmentExpression(VariableSymbol(variableName, newType), boundExpression)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
-        val value = variables[name]
+        val variableSymbol = variableContainer.getVariableSymbol(name)
+        val value = if(variableSymbol == null) null else variableContainer.getVariableValue(variableSymbol)
         if (value == null) {
             diagnosticsBag.reportUndefinedName(syntax.identifierToken.span, name)
             return BoundLiteralExpression(0)
         }
         val type = ProteusType.fromValueOrObject(value)
-        return BoundVariableExpression(name, type)
+        return BoundVariableExpression(VariableSymbol(name, type))
     }
 
 

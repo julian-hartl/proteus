@@ -107,7 +107,7 @@ class Parser private constructor(
         when (current.token) {
             Operator.OpenParenthesis -> {
                 val left = nextToken()
-                val expression = parseBinaryExpression()
+                val expression = parseExpression()
                 val right = matchToken(Operator.CloseParenthesis)
                 return ParenthesizedExpressionSyntax(left, expression, right)
             }

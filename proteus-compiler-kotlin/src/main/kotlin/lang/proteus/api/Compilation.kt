@@ -1,22 +1,24 @@
 package lang.proteus.api
 
 import lang.proteus.binding.Binder
+import lang.proteus.binding.VariableContainer
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.SyntaxTree
 
 class Compilation(val syntaxTree: SyntaxTree) {
-    fun evaluate(variables: MutableMap<String, Any>): EvaluationResult<*> {
+    fun evaluate(variables: Map<String, Any>): EvaluationResult<*> {
 
         val syntaxDiagnostics = syntaxTree.diagnostics
-        val binder = Binder(variables)
+        val variableContainer = VariableContainer.fromUntypedMap(variables)
+        val binder = Binder(variableContainer)
         val boundExpression = binder.bindSyntaxTree(syntaxTree)
         val diagnostics = binder.diagnostics.concat(syntaxDiagnostics)
         if (diagnostics.hasErrors()) {
-            return EvaluationResult(diagnostics, null)
+            return EvaluationResult(diagnostics, null, variableContainer)
         }
-        val evaluator = Evaluator(boundExpression, variables)
+        val evaluator = Evaluator(boundExpression, variableContainer)
         val value = evaluator.evaluate()
-        return EvaluationResult(diagnostics, value)
+        return EvaluationResult(diagnostics, value, variableContainer)
     }
 }

@@ -3,7 +3,7 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import kotlin.math.pow
 
-class Evaluator(private val boundExpression: BoundExpression, private val variables: MutableMap<String, Any>) {
+class Evaluator(private val boundExpression: BoundExpression, private val variableContainer: VariableContainer) {
 
     fun evaluate(): Any {
         return evaluateExpression(boundExpression)
@@ -31,12 +31,12 @@ class Evaluator(private val boundExpression: BoundExpression, private val variab
     }
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
-        return variables[expression.name] ?: throw Exception("Variable ${expression.name} is not defined")
+        return variableContainer.getVariableValue(expression.symbol) ?: throw Exception("Variable ${expression.symbol.name} is not defined")
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
         val value = evaluateExpression(expression.expression)
-        variables[expression.identifierName] = value
+        variableContainer.assignVariable(expression.symbol, value)
         return value
     }
 

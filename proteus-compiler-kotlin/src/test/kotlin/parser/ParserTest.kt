@@ -126,4 +126,25 @@ class ParserTest {
         assertTrue(rootChildren.next() is LiteralExpressionSyntax)
     }
 
+    @Test
+    fun shouldParseNestedAssignment() {
+        initParser("(b = 1) * 10")
+        val ast = parser.parse()
+        assertTrue(ast.root is BinaryExpressionSyntax)
+        val rootChildren = ast.root.getChildren()
+        val next = rootChildren.next()
+        assertTrue(next is ParenthesizedExpressionSyntax)
+        val nextChildren = next.getChildren()
+        assertEquals(Operator.OpenParenthesis, nextChildren.next().token)
+        val assigmentSyntax = nextChildren.next()
+        assertTrue(assigmentSyntax is AssignmentExpressionSyntax)
+        val assignmentChildren = assigmentSyntax.getChildren()
+        assertEquals(Token.Identifier, assignmentChildren.next().token)
+        assertEquals(Operator.Equals, assignmentChildren.next().token)
+        assertTrue(assignmentChildren.next() is LiteralExpressionSyntax)
+        assertEquals(Operator.CloseParenthesis, nextChildren.next().token)
+        assertEquals(Operator.Asterisk, rootChildren.next().token)
+        assertTrue(rootChildren.next() is LiteralExpressionSyntax)
+    }
+
 }

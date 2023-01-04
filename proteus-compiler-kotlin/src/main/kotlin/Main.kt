@@ -5,7 +5,7 @@ import lang.proteus.syntax.parser.SyntaxTree
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
-    val variables: MutableMap<String, Any> = mutableMapOf(
+    var variables: Map<String, Any> = mapOf(
         "x" to 1
     )
     while (true) {
@@ -52,6 +52,7 @@ fun main(args: Array<String>) {
         } else {
 
             println(compilationResult.value)
+            variables = compilationResult.variableContainer.untypedVariables
         }
     }
 
