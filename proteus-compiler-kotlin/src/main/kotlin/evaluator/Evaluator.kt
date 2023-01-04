@@ -19,6 +19,10 @@ class Evaluator(private val boundExpression: BoundExpression) {
                 evaluateArithmeticBinaryExpression(expression)
             }
 
+            is BoundGenericBinaryExpression -> {
+                evaluateGenericBinaryExpression(expression)
+            }
+
             is BoundBooleanBinaryExpression -> {
                 evaluateBooleanBinaryExpression(expression)
             }
@@ -27,8 +31,16 @@ class Evaluator(private val boundExpression: BoundExpression) {
                 evaluateUnaryExpression(expression)
             }
 
-
             else -> evaluateExpression(expression)
+        }
+
+    }
+
+    private fun evaluateGenericBinaryExpression(expression: BoundGenericBinaryExpression): Any {
+        val right = evaluateExpression(expression.right)
+        val left = evaluateExpression(expression.left)
+        return when (expression.operatorKind) {
+            BoundGenericBinaryOperatorKind.Equals -> left == right
         }
 
     }
@@ -41,7 +53,6 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBooleanBinaryOperatorKind.And -> left as Boolean && right as Boolean
             BoundBooleanBinaryOperatorKind.Or -> left as Boolean || right as Boolean
             BoundBooleanBinaryOperatorKind.Xor -> left as Boolean xor right as Boolean
-            BoundBooleanBinaryOperatorKind.Equals -> left == right
         }
     }
 

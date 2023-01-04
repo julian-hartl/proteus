@@ -31,6 +31,26 @@ class Lexer private constructor(private val input: String, private var position:
             return SyntaxToken.whiteSpaceToken(start, literal)
         }
         // check if it's an operator
+        val operatorToken = checkForOperator()
+        if (operatorToken != null) {
+            return operatorToken
+        }
+        val start = position
+        if (current.isLetter()) {
+            while (current.isLetter()) {
+                next()
+            }
+            val literal = input.substring(start, position)
+            return SyntaxToken.keywordToken(start, literal)
+        }
+
+        diagnostics.add("Unexpected character", current.toString(), position)
+        next()
+        return SyntaxToken.badToken(position, current.toString())
+
+    }
+
+    private fun checkForOperator(): SyntaxToken<*>? {
         val start = position
         var operatorPosition = 0
         val maxOperatorLength = Operator.maxOperatorLength
@@ -52,22 +72,7 @@ class Lexer private constructor(private val input: String, private var position:
             position += operatorPosition + 1
             return syntaxToken
         }
-        if (current.isLetter()) {
-            while (current.isLetter()) {
-                next()
-            }
-            val literal = input.substring(start, position)
-            return SyntaxToken.keywordToken(start, literal)
-        }
-
-        diagnostics.add("Unexpected character", current.toString(), position)
-        next()
-        return SyntaxToken.badToken(position, current.toString())
-
-    }
-
-    private fun isCurrentOperator(): Boolean {
-        return Operator.isOperator(current.toString())
+        return null
     }
 
     private fun next() {

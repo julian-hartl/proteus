@@ -31,7 +31,6 @@ class Binder : Diagnosable {
             }
 
 
-
             SyntaxKind.ParenthesizedExpression -> {
                 bind((syntax as ParenthesizedExpressionSyntax).expressionSyntax)
             }
@@ -53,19 +52,38 @@ class Binder : Diagnosable {
             )
             return boundLeft
         }
-        return if (boundLeft.type == Int::class.createType()) {
-            bindArithmeticBinaryExpression(boundLeft, boundRight, binaryExpression)
-        } else if (boundLeft.type == Boolean::class.createType()) {
-            bindLogicalBinaryExpression(boundLeft, boundRight, binaryExpression)
-        } else {
-            diagnostics.add(
-                "Binary operator ${binaryExpression.operatorToken.literal} can only be applied to values of type int or boolean",
-                binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.position
-            )
-            boundLeft
+        val genericBinaryExpression = tryBindGenericBinaryExpression(boundLeft, boundRight, binaryExpression)
+        if (genericBinaryExpression != null) {
+            return genericBinaryExpression
+        }
+        return when (boundLeft.type) {
+            Int::class.createType() -> {
+                bindArithmeticBinaryExpression(boundLeft, boundRight, binaryExpression)
+            }
+
+            Boolean::class.createType() -> {
+                bindLogicalBinaryExpression(boundLeft, boundRight, binaryExpression)
+            }
+
+            else -> {
+                diagnostics.add(
+                    "Binary operator ${binaryExpression.operatorToken.literal} can only be applied to values of type int or boolean",
+                    binaryExpression.operatorToken.literal,
+                    binaryExpression.operatorToken.position
+                )
+                boundLeft
+            }
         }
 
+    }
+
+    private fun tryBindGenericBinaryExpression(
+        boundLeft: BoundExpression,
+        boundRight: BoundExpression,
+        binaryExpression: BinaryExpression,
+    ): BoundExpression? {
+        val operatorKind = BoundGenericBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken) ?: return null
+        return BoundGenericBinaryExpression(boundLeft, boundRight, operatorKind)
     }
 
     private fun bindLogicalBinaryExpression(
@@ -74,7 +92,7 @@ class Binder : Diagnosable {
         binaryExpression: BinaryExpression
     ): BoundExpression {
         val operatorKind = BoundBooleanBinaryOperatorKind.fromSyntaxToken(binaryExpression.operatorToken)
-        if(operatorKind == null){
+        if (operatorKind == null) {
             diagnostics.add(
                 "Operator '${binaryExpression.operatorToken.literal}' cannot be applied to boolean values",
                 binaryExpression.operatorToken.literal,

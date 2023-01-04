@@ -174,15 +174,22 @@ class EvaluatorTest {
     }
 
     @Test
-    fun equalsShouldBindStrongerThanAnyOtherOperator() {
+    fun equalsShouldBindWeakerThanArithmeticOperators() {
         initEvaluator("1 + 2 == 3")
         val result = evaluator.evaluate()
         assertEquals(true, result)
     }
 
     @Test
-    fun equalsShouldBindStrongerThanAnyOtherBooleanOperator() {
+    fun equalsShouldBindStrongerThanAnd() {
         initEvaluator("1 + 2 == 3 and true")
+        val result = evaluator.evaluate()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun equalsShouldNotBindStrongerThanNot() {
+        initEvaluator("false == not true")
         val result = evaluator.evaluate()
         assertEquals(true, result)
     }

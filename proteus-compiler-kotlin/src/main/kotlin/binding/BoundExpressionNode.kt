@@ -117,18 +117,51 @@ internal class BoundBooleanBinaryExpression(
 internal enum class BoundBooleanBinaryOperatorKind {
     Or,
     And,
-    Xor, Equals;
+    Xor;
 
     val syntaxKind: SyntaxKind
         get() = when (this) {
             Or -> SyntaxKind.OrToken
             And -> SyntaxKind.AndToken
             Xor -> SyntaxKind.XorToken
-            Equals -> SyntaxKind.EqualityToken
         }
 
     companion object {
         fun fromSyntaxToken(token: SyntaxToken<*>): BoundBooleanBinaryOperatorKind? {
+            for (operatorKind in values()) {
+                if (operatorKind.syntaxKind == token.kind) {
+                    return operatorKind
+                }
+            }
+            return null
+        }
+    }
+}
+
+internal class BoundGenericBinaryExpression(
+    val left: BoundExpression,
+    val right: BoundExpression,
+    val operatorKind: BoundGenericBinaryOperatorKind
+) :
+    BoundExpression() {
+
+    override val type: KType
+        get() = left.type
+
+    override val kind: BoundNodeKind
+        get() = BoundNodeKind.BooleanBinaryExpression
+}
+
+internal enum class BoundGenericBinaryOperatorKind {
+    Equals;
+
+    val syntaxKind: SyntaxKind
+        get() = when (this) {
+            Equals -> SyntaxKind.EqualityToken
+        }
+
+    companion object {
+        fun fromSyntaxToken(token: SyntaxToken<*>): BoundGenericBinaryOperatorKind? {
             for (operatorKind in values()) {
                 if (operatorKind.syntaxKind == token.kind) {
                     return operatorKind

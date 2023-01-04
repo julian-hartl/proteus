@@ -6,7 +6,7 @@ import syntax.parser.SyntaxTree
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
     var filePath = args.getOrNull(0)
-    if(filePath?.startsWith("-") == true) {
+    if (filePath?.startsWith("-") == true) {
         filePath = null
     }
     while (true) {
@@ -28,17 +28,21 @@ fun main(args: Array<String>) {
 
         if (tree.hasErrors()) {
             tree.printDiagnostics()
-            continue
-        }
+            if (filePath == null) {
+                continue
+            }
 
+        }
         if (verbose)
             tree.prettyPrint()
 
         val binder = Binder()
         val boundExpression = binder.bindSyntaxTree(tree)
-        if(binder.hasErrors()) {
+        if (binder.hasErrors()) {
             binder.printDiagnostics()
-            continue
+            if (filePath == null) {
+                continue
+            }
         }
         val evaluator = Evaluator(boundExpression)
 
@@ -48,6 +52,5 @@ fun main(args: Array<String>) {
             break
         }
     }
-
 
 }

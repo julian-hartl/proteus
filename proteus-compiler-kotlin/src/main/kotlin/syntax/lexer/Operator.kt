@@ -59,13 +59,13 @@ object OpenParenthesisOperator : Operator(SyntaxKind.OpenParenthesisToken, "(", 
 
 object CloseParenthesisOperator : Operator(SyntaxKind.CloseParenthesisToken, ")", OperatorType.Other, 0)
 
-object NotOperator : Operator(SyntaxKind.NotToken, "not", OperatorType.Logical, 7)
+object NotOperator : Operator(SyntaxKind.NotToken, "not", OperatorType.Logical, 3)
 
-object AndOperator : Operator(SyntaxKind.AndToken, "and", OperatorType.Logical, 5)
-object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Logical, 5)
+object AndOperator : Operator(SyntaxKind.AndToken, "and", OperatorType.Logical, 2)
+object EqualityOperator : Operator(SyntaxKind.EqualityToken, "==", OperatorType.Logical, 1)
 
-object OrOperator : Operator(SyntaxKind.OrToken, "or", OperatorType.Logical, 4)
-object XorOperator : Operator(SyntaxKind.XorToken, "xor", OperatorType.Logical, 4)
+object OrOperator : Operator(SyntaxKind.OrToken, "or", OperatorType.Logical, 2)
+object XorOperator : Operator(SyntaxKind.XorToken, "xor", OperatorType.Logical, 2)
 
 
 
