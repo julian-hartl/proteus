@@ -26,4 +26,6 @@ internal sealed class BoundUnaryOperator(
     object BoundUnaryIdentityOperator : BoundUnaryOperator(Operator.Plus, ProteusType.Int)
     object BoundUnaryNegationOperator : BoundUnaryOperator(Operator.Minus, ProteusType.Int)
 
+    object BoundUnaryTypeOfOperator : BoundUnaryOperator(Operator.TypeOf, ProteusType.Object, ProteusType.Type)
+
 }

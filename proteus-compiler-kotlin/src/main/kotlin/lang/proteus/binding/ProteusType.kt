@@ -12,10 +12,14 @@ sealed class ProteusType(val kType: KType) {
 
     object Type : ProteusType(KType::class.createType())
 
-    object Identifier : ProteusType(Any::class.createType())
 
     override fun toString(): String {
-        return this::class.simpleName!!
+        return when (this) {
+            Int -> "Int"
+            Boolean -> "Boolean"
+            Object -> "Object"
+            Type -> "Type"
+        }
     }
 
     fun isAssignableTo(other: ProteusType): kotlin.Boolean {
@@ -35,6 +39,9 @@ sealed class ProteusType(val kType: KType) {
         }
 
         fun fromValue(value: Any): ProteusType? {
+            if (value is ProteusType) {
+                return Type
+            }
             return when (value) {
                 is kotlin.Int -> Int
                 is kotlin.Boolean -> Boolean

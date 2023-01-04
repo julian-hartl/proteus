@@ -36,6 +36,7 @@ sealed class Operator(
             is Plus -> 100
             is Minus -> 100
             is Not -> 100
+            is TypeOf -> 100
             else -> 0
         }
     }
@@ -76,6 +77,8 @@ sealed class Operator(
     object Is : Operator("is", 4)
 
     object Equals : Operator("=", 1)
+
+    object TypeOf : Operator("typeof", 4)
 }
 
 
