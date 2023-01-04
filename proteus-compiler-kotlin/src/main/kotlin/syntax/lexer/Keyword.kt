@@ -14,8 +14,8 @@ sealed class Keyword(val literal: String) : Token() {
 
     }
 
-    fun toSyntaxToken(position: Int, value: Any?): SyntaxToken<Keyword> {
-        return super.toSyntaxToken(position, literal, value) as SyntaxToken<Keyword>
+    fun toSyntaxToken(position: Int): SyntaxToken<Keyword> {
+        return super.toSyntaxToken(position, literal, null) as SyntaxToken<Keyword>
     }
 
 

@@ -52,6 +52,7 @@ class Evaluator(private val boundExpression: BoundExpression) {
             BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
             BoundBinaryOperator.BoundLeftShiftBinaryOperator -> left as Int shl right as Int
             BoundBinaryOperator.BoundRightShiftBinaryOperator -> left as Int shr right as Int
+            BoundBinaryOperator.BoundIsBinaryOperator -> (right as BoundType).isAssignableTo(BoundType.fromValue(left))
         }
 
     }

@@ -4,7 +4,8 @@ import syntax.lexer.Operator
 
 
 internal sealed class BoundBinaryOperator(
-    val operator: Operator, val leftType: BoundType, val rightType: BoundType, val resultType: BoundType
+    val operator: Operator, val leftType: BoundType, val rightType: BoundType, val resultType: BoundType,
+    val requiresSameTypes: Boolean = true
 ) {
 
 
@@ -21,11 +22,14 @@ internal sealed class BoundBinaryOperator(
         private val operators = BoundBinaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
 
         fun bind(operator: Operator, leftType: BoundType, rightType: BoundType): BoundBinaryOperator? {
-            if(rightType != leftType) return null
             return operators.firstOrNull {
-                it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
+                val isSuited = it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
                     rightType
                 )
+                if(isSuited && it.requiresSameTypes) {
+                    return@firstOrNull leftType == rightType
+                }
+                isSuited
             }
         }
     }
@@ -68,6 +72,8 @@ internal sealed class BoundBinaryOperator(
 
     object BoundGreaterThanOrEqualsBinaryOperator :
         BoundBinaryOperator(Operator.GreaterThanEquals, BoundType.Int, BoundType.Boolean)
+
+    object BoundIsBinaryOperator : BoundBinaryOperator(Operator.Is, BoundType.Object, BoundType.Type, BoundType.Boolean, requiresSameTypes = false)
 
 
 }

@@ -32,7 +32,13 @@ class Binder : Diagnosable {
                 bind(syntax.expressionSyntax)
             }
 
+            is IdentifierExpressionSyntax -> bindIdentifierExpression(syntax)
+
         }
+    }
+
+    private fun bindIdentifierExpression(syntax: IdentifierExpressionSyntax): BoundExpression {
+        return BoundIdentifierExpression(syntax.identifierToken)
     }
 
 

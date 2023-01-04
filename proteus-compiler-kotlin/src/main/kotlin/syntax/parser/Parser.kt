@@ -1,5 +1,6 @@
 package syntax.parser
 
+import binding.BoundType
 import diagnostics.Diagnosable
 import diagnostics.Diagnostics
 import syntax.lexer.*
@@ -103,6 +104,18 @@ class Parser private constructor(
                 return LiteralExpressionSyntax(token, value)
             }
 
+            Token.Type -> {
+                val token = current
+                nextToken()
+                return LiteralExpressionSyntax(token, token.value as BoundType)
+            }
+
+            Token.Identifier -> {
+                val token = current
+                nextToken()
+                return IdentifierExpressionSyntax(token as SyntaxToken<Token.Identifier>)
+            }
+
             else -> {
                 val numberToken = matchToken(Token.Number)
 
@@ -119,9 +132,9 @@ class Parser private constructor(
 
     }
 
-    private fun matchToken(token: Token): SyntaxToken<*> {
+    private fun <T : Token> matchToken(token: T): SyntaxToken<T> {
         if (current.token == token) {
-            return nextToken()
+            return nextToken() as SyntaxToken<T>
         }
         diagnostics.add(
             "Unexpected token <${current.token}>, expected <$token>",
