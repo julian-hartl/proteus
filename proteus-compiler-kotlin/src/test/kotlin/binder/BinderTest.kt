@@ -1,9 +1,9 @@
 package binder
 
-import binding.Binder
+import de.proteus.binding.Binder
 import org.junit.jupiter.api.Test
-import syntax.parser.ExpressionSyntax
-import syntax.parser.Parser
+import de.proteus.syntax.parser.ExpressionSyntax
+import de.proteus.syntax.parser.Parser
 import kotlin.test.assertTrue
 
 class BinderTest {

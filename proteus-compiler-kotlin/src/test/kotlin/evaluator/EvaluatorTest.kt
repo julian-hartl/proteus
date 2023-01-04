@@ -1,8 +1,9 @@
 package evaluator
 
-import binding.Binder
+import de.proteus.binding.Binder
+import de.proteus.evaluator.Evaluator
 import org.junit.jupiter.api.Test
-import syntax.parser.Parser
+import de.proteus.syntax.parser.Parser
 import kotlin.test.assertEquals
 
 class EvaluatorTest {
