@@ -48,10 +48,6 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     override val diagnostics = diagnosticsBag.diagnostics
 
-    fun bindSyntaxTree(tree: SyntaxTree): BoundExpression {
-        return bind(tree.root.expression)
-    }
-
     fun bind(syntax: ExpressionSyntax): BoundExpression {
         return when (syntax) {
             is LiteralExpressionSyntax -> {

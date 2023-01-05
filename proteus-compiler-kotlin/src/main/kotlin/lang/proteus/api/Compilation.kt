@@ -8,7 +8,7 @@ import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.SyntaxTree
 
-internal class Compilation private constructor(val previous: Compilation?, val syntaxTree: SyntaxTree) {
+internal class Compilation internal constructor(val previous: Compilation?, val syntaxTree: SyntaxTree) {
 
     private var _globalScope: BoundGlobalScope? = null
 
