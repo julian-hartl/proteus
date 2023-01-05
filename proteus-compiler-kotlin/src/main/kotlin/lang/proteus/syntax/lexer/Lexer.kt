@@ -1,78 +1,18 @@
 package lang.proteus.syntax.lexer
 
-import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.syntax.lexer.token_lexers.*
 
 internal object Lexers {
     val allLexers: List<TokenLexer>
-        get() = TokenLexer::class.sealedSubclasses
-            .map {
-                it.objectInstance!!
-            }
+        get() = listOf(
+            WhiteSpaceTokenLexer,
+            NumberTokenLexer,
+            LetterTokenLexer,
+            NonLetterTokenLexer,
+            EndOfFileTokenLexer
+        )
 }
-
-internal sealed class TokenLexer {
-    abstract fun match(current: Char): Boolean
-
-    abstract fun submit(start: Int, position: Int, literal: String): SyntaxToken<*>?
-}
-
-internal object NumberTokenLexer : TokenLexer() {
-    override fun match(current: Char): Boolean {
-        return current.isDigit()
-    }
-
-    override fun submit(start: Int, position: Int, literal: String): SyntaxToken<*> {
-        return SyntaxToken.numberToken(start, literal)
-    }
-
-}
-
-internal object LetterTokenLexer : TokenLexer() {
-    override fun match(current: Char): Boolean {
-        return current.isLetter()
-    }
-
-    override fun submit(start: Int, position: Int, literal: String): SyntaxToken<*> {
-        val type = ProteusType.fromName(literal)
-        if (type != null) {
-            return SyntaxToken.typeToken(start, literal, type)
-        }
-        val operator = Operators.fromLiteral(literal)
-        if (operator != null) {
-            return operator.toSyntaxToken(start)
-        }
-        return SyntaxToken.keywordToken(start, literal)
-    }
-
-}
-
-internal object NonLetterTokenLexer : TokenLexer() {
-    override fun match(current: Char): Boolean {
-        return !current.isLetter()
-    }
-
-    override fun submit(start: Int, position: Int, literal: String): SyntaxToken<*>? {
-        val operator = Operators.fromLiteral(literal)
-        if (operator != null) {
-            return operator.toSyntaxToken(start)
-        }
-        return null
-    }
-
-}
-
-internal object WhiteSpaceTokenLexer : TokenLexer() {
-    override fun match(current: Char): Boolean {
-        return current.isWhitespace()
-    }
-
-    override fun submit(start: Int, position: Int, literal: String): SyntaxToken<*> {
-        return SyntaxToken.whiteSpaceToken(start, literal)
-    }
-
-}
-
 
 internal class Lexer private constructor(
     private val input: String,
@@ -90,18 +30,22 @@ internal class Lexer private constructor(
 
         val matchingLexer = tokenLexers.firstOrNull { it.match(current) }
         if (matchingLexer != null) {
+            var length = 0
             val start = position
-            while (matchingLexer.match(current)) {
+            val literal = StringBuilder()
+            while (matchingLexer.match(current) && length < (matchingLexer.maxLength ?: Int.MAX_VALUE)) {
+                length++
+                literal.append(current)
                 next()
             }
-            val literal = input.substring(start, position)
-            val token = matchingLexer.submit(start, position, literal)
+            val token = matchingLexer.submit(start, position, literal.toString())
             if (token != null) {
+                val span = token.span
+                val spanLength = span.end - span.start
+                val difference = length - spanLength
+                position -= difference
                 return token
             }
-        }
-        if (current == '\u0000') {
-            return SyntaxToken.endOfFile(position)
         }
 
         diagnosticsBag.reportUnexpectedCharacter(current, position)

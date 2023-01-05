@@ -21,8 +21,7 @@ class SyntaxToken<T : Token>(
             return Token.Type.toSyntaxToken(position, literal, value = type)
         }
 
-        fun keywordToken(position: Int, literal: String): SyntaxToken<*> {
-            val keyword = Keyword.fromString(literal) ?: return identifierToken(position, literal)
+        fun keywordToken(position: Int, keyword: Keyword): SyntaxToken<*> {
             return keyword.toSyntaxToken(position)
         }
 
