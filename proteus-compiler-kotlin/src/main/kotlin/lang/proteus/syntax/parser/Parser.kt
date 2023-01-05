@@ -29,9 +29,6 @@ class Parser private constructor(
             return syntaxTokens.toTypedArray()
         }
 
-        fun verbose(input: String): Parser {
-            return Parser(input, true)
-        }
     }
 
     constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, DiagnosticsBag()) {
@@ -41,8 +38,6 @@ class Parser private constructor(
     }
 
     fun parse(): SyntaxTree {
-        printInput()
-        printLexerTokens()
         val expression = parseExpression()
         val endOfFileToken = matchToken(Token.EndOfFile)
 
@@ -93,15 +88,6 @@ class Parser private constructor(
     private val currentOperator
         get() = Operators.fromLiteral(current.literal)
 
-    private fun printLexerTokens() {
-        if (verbose)
-            println("Lexer tokens: ${tokens.map { it.literal }}")
-    }
-
-    private fun printInput() {
-        if (verbose)
-            println("Input: $input")
-    }
 
     private fun parsePrimaryExpression(): ExpressionSyntax {
         when (current.token) {
