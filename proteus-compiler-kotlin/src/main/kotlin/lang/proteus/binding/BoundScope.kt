@@ -5,13 +5,14 @@ internal class BoundScope internal constructor(val parent: BoundScope?) {
 
     fun getDeclaredVariables(): List<VariableSymbol> = variables.values.toList()
 
-    fun tryDeclare(variable: VariableSymbol): Boolean {
-        if (variables.containsKey(variable.name)) {
-            return false
+    fun tryDeclare(variable: VariableSymbol): VariableSymbol? {
+        val declaredVariable = variables[variable.name]
+        if (declaredVariable != null && declaredVariable.isFinal) {
+            return null
         }
 
         variables[variable.name] = variable
-        return true
+        return variables[variable.name]
     }
 
     fun tryLookup(variable: String): VariableSymbol? {

@@ -41,12 +41,16 @@ class DiagnosticsBag {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
-    fun reportCannotAssign(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
-        report("Cannot assign '${newType}' to '${currentType}'", span)
+    fun reportCannotConvert(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
+        report("Cannot convert '${newType}' to '${currentType}'", span)
     }
 
     fun reportVariableAlreadyDeclared(span: TextSpan, variableName: String) {
         report("Variable '$variableName' already declared", span)
+    }
+
+    fun reportFinalVariableCannotBeReassigned(span: TextSpan, variableName: String) {
+        report("Final variable '$variableName' cannot be reassigned", span)
     }
 
 

@@ -77,12 +77,19 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val variableName = syntax.identifierToken.literal
         val variableType = boundExpression.type
         val variableSymbol = VariableSymbol(variableName, variableType)
-        if (!scope.tryDeclare(variableSymbol)) {
-            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifierToken.span(), variableName)
+        val declaredVariable = scope.tryLookup(variableName)
+        if (declaredVariable != null && declaredVariable.isFinal) {
+            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
         }
-//        if (!variableType.isAssignableTo(ProteusType.Object)) {
-//            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span(), variableType, variableType)
-//        }
+        if (declaredVariable != null) {
+            if (!variableType.isAssignableTo(declaredVariable.type)) {
+                diagnosticsBag.reportCannotConvert(syntax.equalsToken.span(), declaredVariable.type, variableType)
+            } else {
+                scope.tryDeclare(variableSymbol)
+            }
+        } else {
+            scope.tryDeclare(variableSymbol)
+        }
         return BoundAssignmentExpression(variableSymbol, boundExpression)
     }
 
