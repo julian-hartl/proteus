@@ -14,7 +14,7 @@ abstract class SyntaxNode {
         val first = getChildren().firstOrNull()
         val last = getChildren().lastOrNull()
         return if (first != null && last != null) {
-            TextSpan(first.span().start, last.span().end)
+            TextSpan.fromBounds(first.span().start, last.span().end)
         } else {
             TextSpan(0, 0)
         }
