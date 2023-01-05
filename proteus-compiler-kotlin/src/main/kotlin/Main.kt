@@ -1,4 +1,6 @@
 import lang.proteus.api.ProteusCompiler
+import lang.proteus.printing.ConsolePrinter
+import lang.proteus.printing.PrinterColor
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
@@ -6,10 +8,12 @@ fun main(args: Array<String>) {
         "x" to 1
     )
     val compiler = ProteusCompiler(variables)
+    val consolePrinter = ConsolePrinter()
+    consolePrinter.setColor(PrinterColor.GREEN)
     while (true) {
         val line =
             run {
-                print("> ")
+                consolePrinter.print("> ")
                 readlnOrNull()
             } ?: continue
 

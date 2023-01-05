@@ -4,6 +4,7 @@ import lang.proteus.api.performance.CompilationPerformance
 import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
+import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.evaluator.EvaluationResult
@@ -14,12 +15,6 @@ import lang.proteus.text.SourceText
 
 class ProteusCompiler(private var variables: Map<String, Any>) {
     fun compile(text: String, verbose: Boolean = false): CompilationResult {
-        if (verbose) {
-            val consolePrinter = ConsolePrinter()
-            consolePrinter.print("Compiling line: ")
-            consolePrinter.setColor(PrinterColor.BLUE)
-            consolePrinter.println(text)
-        }
         val sourceText = SourceText.from(text)
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
@@ -58,10 +53,22 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
 
     private fun printResult(compilationResult: EvaluationResult<*>) {
         val consolePrinter = ConsolePrinter()
-        consolePrinter.setColor(PrinterColor.CYAN)
-        consolePrinter.println()
-        consolePrinter.println(compilationResult.value?.toString() ?: "null")
-        consolePrinter.println()
+        val value = compilationResult.value
+        if (value != null) {
+            consolePrinter.setColor(getColorFromType(ProteusType.fromValueOrObject(value)))
+            consolePrinter.println()
+            consolePrinter.println(value.toString())
+            consolePrinter.println()
+        }
+    }
+
+    private fun getColorFromType(type: ProteusType): PrinterColor {
+        return when (type) {
+            ProteusType.Int -> PrinterColor.BLUE
+            ProteusType.Boolean -> PrinterColor.MAGENTA
+            ProteusType.Object -> PrinterColor.CYAN
+            ProteusType.Type -> PrinterColor.RED
+        }
     }
 
     private fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {
