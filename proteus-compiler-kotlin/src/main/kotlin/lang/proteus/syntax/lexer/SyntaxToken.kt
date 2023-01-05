@@ -13,6 +13,10 @@ class SyntaxToken<T : Token>(
     companion object {
 
 
+        fun endOfFile(position: Int): SyntaxToken<Token.EndOfFile> {
+            return SyntaxToken(Token.EndOfFile, position, "", null)
+        }
+
         fun typeToken(position: Int, literal: String, type: ProteusType): SyntaxToken<Token> {
             return Token.Type.toSyntaxToken(position, literal, value = type)
         }

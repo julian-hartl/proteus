@@ -69,6 +69,11 @@ class LexerTest {
         @JvmStatic
         private fun getTokens(): List<Arguments> {
             return listOf(
+                Arguments.of(Operator.Not, "not"),
+                Arguments.of(Operator.And, "and"),
+                Arguments.of(Operator.Or, "or"),
+                Arguments.of(Operator.Xor, "xor"),
+
                 Arguments.of(Token.Identifier, "a"),
                 Arguments.of(Token.Identifier, "abc"),
 
@@ -78,10 +83,6 @@ class LexerTest {
                 Arguments.of(Operator.OpenParenthesis, "("),
                 Arguments.of(Operator.CloseParenthesis, ")"),
 
-                Arguments.of(Operator.Not, "not"),
-                Arguments.of(Operator.And, "and"),
-                Arguments.of(Operator.Or, "or"),
-                Arguments.of(Operator.Xor, "xor"),
 
                 Arguments.of(Operator.Ampersand, "&"),
                 Arguments.of(Operator.Pipe, "|"),
@@ -139,6 +140,7 @@ class LexerTest {
             if (isSecondIdentifierOrKeyword) {
                 return isWordOperator(t1Token)
             }
+            if(isWordOperator(t1Token) && isWordOperator(t2Token)) return true
             if (t1Token is Operator.Equals && t2Token is Operator.Equals) return true
             if (t1Token is Operator.Equals && t2Token is Operator.DoubleEquals) return true
             if (t1Token is Operator.LessThan && t2Token is Operator.LessThan) return true

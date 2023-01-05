@@ -28,6 +28,11 @@ object Operators {
     val maxOperatorLength: Int
         get() = allOperators.maxOfOrNull { it.literal.length } ?: 0
 
+    val maxNonLetterOperatorLength: Int
+        get() = allOperators.filter {
+            !it.literal[0].isLetter()
+        }.maxOfOrNull { it.literal.length } ?: 0
+
     fun isOperator(literal: String): Boolean {
         return fromLiteral(literal) != null
     }
