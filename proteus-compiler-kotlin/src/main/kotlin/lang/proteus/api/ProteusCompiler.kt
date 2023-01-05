@@ -45,7 +45,7 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
     fun compile(line: String, verbose: Boolean = false): CompilationResult {
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
-        val tree = SyntaxTree.parse(line, verbose = verbose)
+        val tree = SyntaxTree.parse(line)
         val lexerTime = computationTimeStopper.stop()
 
         if (verbose)
