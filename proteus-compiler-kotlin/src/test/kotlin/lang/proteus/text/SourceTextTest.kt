@@ -31,6 +31,8 @@ class SourceTextTest {
         fun `should return correct line position`(): Stream<Arguments> {
             return Stream.of(
                 Arguments.of("single line", 3, 0, 1),
+                Arguments.of("+", 0, 0, 1),
+                Arguments.of("+\r\n", 0, 0, 2),
                 Arguments.of("single line", 0, 0, 1),
                 Arguments.of("single line", 10, 0, 1),
                 Arguments.of("first\nsecond", 6, 1, 2),
