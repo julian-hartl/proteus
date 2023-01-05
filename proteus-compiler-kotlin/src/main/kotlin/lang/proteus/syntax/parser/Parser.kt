@@ -106,49 +106,69 @@ class Parser private constructor(
     private fun parsePrimaryExpression(): ExpressionSyntax {
         when (current.token) {
             Operator.OpenParenthesis -> {
-                val left = nextToken()
-                val expression = parseExpression()
-                val right = matchToken(Operator.CloseParenthesis)
-                return ParenthesizedExpressionSyntax(left, expression, right)
+                return parseParenthesizedExpression()
             }
 
             Keyword.False, Keyword.True -> {
-                val value = current.token == Keyword.True
-                val token = current
-                nextToken()
-                return LiteralExpressionSyntax(token, value)
+                return parseBooleanLiteral()
             }
 
             Token.Type -> {
-                val token = current
-                nextToken()
-                return LiteralExpressionSyntax(token, token.value as ProteusType)
+                return parseTypeExpression()
             }
 
             Token.Identifier -> {
-                val token = nextToken()
-
-                return NameExpressionSyntax(token as SyntaxToken<Token.Identifier>)
+                return parseNameExpression()
             }
 
             Token.Number -> {
-                val numberToken = matchToken(Token.Number)
-
-                if (numberToken.value !is Int) {
-                    diagnosticsBag.reportInvalidNumber(
-                        numberToken.span,
-                        ProteusType.Int
-                    )
-                }
-                return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
+                return parseNumberExpression()
             }
 
             else -> {
                 diagnosticsBag.reportUnexpectedToken(current.span, current.token, Token.Expression)
-                return LiteralExpressionSyntax(current, -1)
+                return parseNameExpression()
             }
         }
 
+    }
+
+    private fun parseTypeExpression(): LiteralExpressionSyntax {
+        val token = current
+        nextToken()
+        return LiteralExpressionSyntax(token, token.value as ProteusType)
+    }
+
+    private fun parseNumberExpression(): LiteralExpressionSyntax {
+        val numberToken = matchToken(Token.Number)
+
+        if (numberToken.value !is Int) {
+            diagnosticsBag.reportInvalidNumber(
+                numberToken.span,
+                ProteusType.Int
+            )
+        }
+        return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
+    }
+
+    private fun parseParenthesizedExpression(): ParenthesizedExpressionSyntax {
+        val left = nextToken()
+        val expression = parseExpression()
+        val right = matchToken(Operator.CloseParenthesis)
+        return ParenthesizedExpressionSyntax(left, expression, right)
+    }
+
+    private fun parseBooleanLiteral(): LiteralExpressionSyntax {
+        val value = current.token == Keyword.True
+        val token = current
+        nextToken()
+        return LiteralExpressionSyntax(token, value)
+    }
+
+    private fun parseNameExpression(): NameExpressionSyntax {
+        val token = matchToken(Token.Identifier)
+
+        return NameExpressionSyntax(token)
     }
 
     private fun <T : Token> matchToken(token: T): SyntaxToken<T> {
