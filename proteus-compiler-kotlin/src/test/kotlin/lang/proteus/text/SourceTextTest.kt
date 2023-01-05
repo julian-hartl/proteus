@@ -11,7 +11,7 @@ class SourceTextTest {
     @ParameterizedTest
     @MethodSource
     fun `should return correct line position`(
-        text: kotlin.String,
+        text: String,
         position: Int,
         expectedLine: Int,
         amountOfLines: Int,

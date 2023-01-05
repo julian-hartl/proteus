@@ -14,7 +14,7 @@ class SyntaxTree(
 ) : Diagnosable {
 
     companion object {
-        fun parse(text: kotlin.String): SyntaxTree {
+        fun parse(text: String): SyntaxTree {
             val sourceText = SourceText.from(text)
             return parse(sourceText)
         }
@@ -24,7 +24,7 @@ class SyntaxTree(
             return parser.parse()
         }
 
-        fun parseTokens(text: kotlin.String): List<SyntaxToken<*>> {
+        fun parseTokens(text: String): List<SyntaxToken<*>> {
             val sourceText = SourceText.from(text)
             return parseTokens(sourceText)
         }
@@ -48,7 +48,7 @@ class SyntaxTree(
         h_prettyPrint(root, "")
     }
 
-    private fun h_prettyPrint(node: SyntaxNode, indent: kotlin.String) {
+    private fun h_prettyPrint(node: SyntaxNode, indent: String) {
         var currentIndent = indent
         print(indent)
         if (node is ExpressionSyntax) {
