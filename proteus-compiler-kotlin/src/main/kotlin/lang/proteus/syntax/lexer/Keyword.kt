@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer
 
-sealed class Keyword(val literal: String) : Token() {
+sealed class Keyword(override val literal: String) : Token() {
 
     companion object {
 

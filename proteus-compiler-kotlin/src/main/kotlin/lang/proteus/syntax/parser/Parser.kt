@@ -91,7 +91,7 @@ class Parser private constructor(
     }
 
     private val currentOperator
-        get() = Operator.fromLiteral(current.literal)
+        get() = Operators.fromLiteral(current.literal)
 
     private fun printLexerTokens() {
         if (verbose)

@@ -8,15 +8,13 @@ class BinaryExpressionSyntax(
     val operatorToken: SyntaxToken<Operator>,
     val right: ExpressionSyntax
 ) : ExpressionSyntax() {
-    override val token: Operator
-        get() = operatorToken.token
 
 
-    override fun getChildren(): Iterator<SyntaxNode> {
-        return iterator {
-            yield(left)
-            yield(operatorToken)
-            yield(right)
-        }
+    override fun getChildren(): List<SyntaxNode> {
+        return listOf(
+            left,
+            operatorToken,
+            right
+        )
     }
 }

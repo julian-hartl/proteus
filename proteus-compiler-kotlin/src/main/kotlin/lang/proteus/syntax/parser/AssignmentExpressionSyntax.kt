@@ -9,15 +9,13 @@ class AssignmentExpressionSyntax(
     val equalsToken: SyntaxToken<Operator.Equals>,
     val expression: ExpressionSyntax
 ) : ExpressionSyntax() {
-    override val token: Token
-        get() = identifierToken.token
 
-    override fun getChildren(): Iterator<SyntaxNode> {
-        return iterator {
-            yield(identifierToken)
-            yield(equalsToken)
-            yield(expression)
-        }
+    override fun getChildren(): List<SyntaxNode> {
+        return listOf(
+            identifierToken,
+            equalsToken,
+            expression
+        )
 
     }
 }

@@ -3,7 +3,7 @@ package lang.proteus.syntax.lexer
 import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.DiagnosticsBag
 
-class Lexer private constructor(
+internal class Lexer private constructor(
     private val input: String,
     private var position: Int,
     val diagnosticsBag: DiagnosticsBag
@@ -62,7 +62,7 @@ class Lexer private constructor(
     private fun checkForOperator(): SyntaxToken<*>? {
         val start = position
         var operatorPosition = 0
-        val maxOperatorLength = Operator.maxOperatorLength
+        val maxOperatorLength = Operators.maxOperatorLength
         var lastFoundOperatorPosition = 0
 
         var next = peek(operatorPosition)
