@@ -1,16 +1,14 @@
 package lang.proteus.syntax.lexer.token_lexers
 
+import lang.proteus.syntax.lexer.Grammar
 import lang.proteus.syntax.lexer.Operators
 import lang.proteus.syntax.lexer.SyntaxToken
 
 internal object NonLetterTokenLexer : TokenLexer() {
 
-    private val SUPPORTED_NON_LETTER_CHARACTER = listOf(
-        '(', ')', '=', '+', '-', '*', '/', '^', '!', '<', '>', '&', '|', '^',
-    )
 
     override fun match(current: Char): Boolean {
-        return SUPPORTED_NON_LETTER_CHARACTER.contains(current)
+        return Grammar.allowedNonAlphanumericCharacters.contains(current)
     }
 
     override fun submit(start: Int, position: Int, literal: String): SyntaxToken<*>? {
