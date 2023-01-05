@@ -48,8 +48,7 @@ class SyntaxToken<T : Token>(
     }
 
 
-    val span: TextSpan
-        get() = TextSpan(position, literal)
+    override fun span(): TextSpan = TextSpan.fromLiteral(position, literal)
 
 
 }

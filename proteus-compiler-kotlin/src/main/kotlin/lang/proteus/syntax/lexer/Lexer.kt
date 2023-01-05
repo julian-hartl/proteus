@@ -40,7 +40,7 @@ internal class Lexer private constructor(
             }
             val token = matchingLexer.submit(start, position, literal.toString())
             if (token != null) {
-                val span = token.span
+                val span = token.span()
                 val spanLength = span.end - span.start
                 val difference = length - spanLength
                 position -= difference

@@ -1,11 +1,25 @@
 package lang.proteus.syntax.parser
 
+import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.lexer.Token
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
 abstract class SyntaxNode {
     abstract val token: Token
+
+    // Note: This needs to be a method to prevent it from being called when `this::class.memberProperties` is called in the getChildren method,
+    // because that would cause an infinite loop.
+    open fun span(): TextSpan {
+        val first = getChildren().firstOrNull()
+        val last = getChildren().lastOrNull()
+        return if (first != null && last != null) {
+            TextSpan(first.span().start, last.span().end)
+        } else {
+            TextSpan(0, 0)
+        }
+    }
+
     fun getChildren(): List<SyntaxNode> {
         val children = mutableListOf<SyntaxNode>()
 

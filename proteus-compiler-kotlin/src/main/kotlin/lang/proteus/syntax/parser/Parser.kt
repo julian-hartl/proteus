@@ -111,7 +111,7 @@ class Parser private constructor(
             }
 
             else -> {
-                diagnosticsBag.reportUnexpectedToken(current.span, current.token, Token.Expression)
+                diagnosticsBag.reportUnexpectedToken(current.span(), current.token, Token.Expression)
                 return parseNameExpression()
             }
         }
@@ -129,7 +129,8 @@ class Parser private constructor(
 
         if (numberToken.value !is Int) {
             diagnosticsBag.reportInvalidNumber(
-                numberToken.span,
+                numberToken.value.toString(),
+                numberToken.span(),
                 ProteusType.Int
             )
         }
@@ -162,7 +163,7 @@ class Parser private constructor(
         }
         diagnosticsBag.reportUnexpectedToken(
 
-            current.span,
+            current.span(),
             actual = current.token,
             expected = token,
         )

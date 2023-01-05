@@ -45,7 +45,7 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
         val symbol = variableContainer.getVariableSymbol(variableName)
         val newType = boundExpression.type
         if (symbol != null && !variableContainer.canAssignTo(symbol, newType)) {
-            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span, symbol.type, newType)
+            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span(), symbol.type, newType)
         }
         return BoundAssignmentExpression(VariableSymbol(variableName, newType), boundExpression)
     }
@@ -53,9 +53,9 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
         val variableSymbol = variableContainer.getVariableSymbol(name)
-        val value = if(variableSymbol == null) null else variableContainer.getVariableValue(variableSymbol)
+        val value = if (variableSymbol == null) null else variableContainer.getVariableValue(variableSymbol)
         if (value == null) {
-            diagnosticsBag.reportUndefinedName(syntax.identifierToken.span, name)
+            diagnosticsBag.reportUndefinedName(syntax.identifierToken.span(), name)
             return BoundLiteralExpression(0)
         }
         val type = ProteusType.fromValueOrObject(value)
@@ -71,7 +71,8 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
             diagnosticsBag.reportBinaryOperatorMismatch(
-                binaryExpression.operatorToken.span,
+                binaryExpression.operatorToken.literal,
+                binaryExpression.operatorToken.span(),
                 boundLeft.type,
                 boundRight.type
             )
@@ -87,7 +88,8 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
         val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
             diagnosticsBag.reportUnaryOperatorMismatch(
-                unaryExpression.operatorSyntaxToken.span,
+                unaryExpression.operatorSyntaxToken.literal,
+                unaryExpression.operatorSyntaxToken.span(),
                 boundOperand.type
             )
             return boundOperand
