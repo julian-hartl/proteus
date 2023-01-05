@@ -12,7 +12,7 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
     override val diagnostics = diagnosticsBag.diagnostics
 
     fun bindSyntaxTree(tree: SyntaxTree): BoundExpression {
-        return bind(tree.root)
+        return bind(tree.root.expressionSyntax)
     }
 
     fun bind(syntax: ExpressionSyntax): BoundExpression {

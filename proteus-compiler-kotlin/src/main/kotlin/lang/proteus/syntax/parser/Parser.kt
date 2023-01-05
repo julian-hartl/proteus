@@ -39,11 +39,11 @@ class Parser private constructor(
         diagnosticsBag.concat(lexer.diagnosticsBag)
     }
 
-    fun parse(): SyntaxTree {
+
+    fun parseCompilationUnit(): CompilationUnitSyntax {
         val expression = parseExpression()
         val endOfFileToken = matchToken(Token.EndOfFile)
-
-        return SyntaxTree(expression, endOfFileToken, diagnosticsBag.diagnostics)
+        return CompilationUnitSyntax(expression, endOfFileToken)
     }
 
     private fun parseExpression(): ExpressionSyntax {
@@ -187,6 +187,7 @@ class Parser private constructor(
         }
         return tokens[index]
     }
+
 
     private val current: SyntaxToken<*>
         get() = peek(0)

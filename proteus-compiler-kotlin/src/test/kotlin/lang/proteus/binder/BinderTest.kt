@@ -28,8 +28,8 @@ class BinderTest {
 
     private fun parseExpression(input: kotlin.String): ExpressionSyntax {
         val parser = Parser(SourceText.from(input))
-        val syntaxTree = parser.parse()
-        return syntaxTree.root
+        val compilationUnitSyntax = parser.parseCompilationUnit()
+        return compilationUnitSyntax.expressionSyntax
     }
 
     @Test

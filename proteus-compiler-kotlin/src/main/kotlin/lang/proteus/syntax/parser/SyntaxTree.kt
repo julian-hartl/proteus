@@ -7,11 +7,18 @@ import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
 import lang.proteus.text.SourceText
 
-class SyntaxTree(
-    val root: ExpressionSyntax,
-    private val endOfFileToken: SyntaxToken<*>,
-    override val diagnostics: Diagnostics,
+class SyntaxTree private constructor(
 ) : Diagnosable {
+    lateinit var root: CompilationUnitSyntax;
+
+    override lateinit var diagnostics: Diagnostics;
+
+    constructor(text: SourceText) : this() {
+        val parser = Parser(text)
+        root = parser.parseCompilationUnit()
+        diagnostics = parser.diagnostics
+    }
+
 
     companion object {
         fun parse(text: String): SyntaxTree {
@@ -20,8 +27,7 @@ class SyntaxTree(
         }
 
         fun parse(sourceText: SourceText): SyntaxTree {
-            val parser = Parser(sourceText)
-            return parser.parse()
+            return SyntaxTree(sourceText)
         }
 
         fun parseTokens(text: String): List<SyntaxToken<*>> {
