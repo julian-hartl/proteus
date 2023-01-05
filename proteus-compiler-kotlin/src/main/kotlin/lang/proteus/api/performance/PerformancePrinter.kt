@@ -7,6 +7,8 @@ class PerformancePrinter {
 
     private val consolePrinter = ConsolePrinter()
     fun print(performance: CompilationPerformance) {
+        consolePrinter.setColor(PrinterColor.MAGENTA)
+        consolePrinter.println("Performance")
         printComputationTime("Lexing", performance.lexingTime)
         printComputationTime("Parsing", performance.parsingTime)
         printComputationTime("Evaluation", performance.evaluationTime)

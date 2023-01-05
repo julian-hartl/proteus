@@ -47,10 +47,6 @@ class SyntaxToken<T : Token>(
         }
     }
 
-    override fun getChildren(): List<SyntaxNode> {
-        return emptyList()
-    }
-
 
     val span: TextSpan
         get() = TextSpan(position, literal)

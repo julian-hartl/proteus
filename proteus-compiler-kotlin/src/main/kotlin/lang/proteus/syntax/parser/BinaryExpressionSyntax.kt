@@ -7,14 +7,5 @@ class BinaryExpressionSyntax(
     val left: ExpressionSyntax,
     val operatorToken: SyntaxToken<Operator>,
     val right: ExpressionSyntax
-) : ExpressionSyntax() {
+) : ExpressionSyntax()
 
-
-    override fun getChildren(): List<SyntaxNode> {
-        return listOf(
-            left,
-            operatorToken,
-            right
-        )
-    }
-}
