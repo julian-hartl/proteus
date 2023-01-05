@@ -8,7 +8,7 @@ sealed class Keyword(override val literal: String) : Token() {
             get() = Keyword::class.sealedSubclasses
                 .map { it.objectInstance!! }
 
-        fun fromString(value: String): Keyword? {
+        fun fromLiteral(value: String): Keyword? {
             return all.find { it.literal == value }
         }
 
