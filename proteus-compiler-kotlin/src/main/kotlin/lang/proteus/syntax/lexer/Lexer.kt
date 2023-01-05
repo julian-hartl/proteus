@@ -62,7 +62,7 @@ internal class Lexer private constructor(
     private fun checkForOperator(): SyntaxToken<*>? {
         val start = position
         var operatorPosition = 0
-        val maxOperatorLength = Operator.maxOperatorLength
+        val maxOperatorLength = Operators.maxOperatorLength
         var lastFoundOperatorPosition = 0
 
         var next = peek(operatorPosition)

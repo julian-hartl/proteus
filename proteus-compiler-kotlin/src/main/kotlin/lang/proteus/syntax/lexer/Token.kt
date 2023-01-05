@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer
 
-sealed class Token {
+sealed class Token(open val literal: String? = null) {
     object EndOfFile : Token()
     object Identifier : Token()
     object Whitespace : Token()

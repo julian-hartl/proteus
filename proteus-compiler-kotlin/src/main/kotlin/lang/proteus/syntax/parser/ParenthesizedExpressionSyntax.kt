@@ -8,14 +8,12 @@ class ParenthesizedExpressionSyntax(
     val expressionSyntax: ExpressionSyntax,
     val closeParenthesisToken: SyntaxToken<*>
 ) : ExpressionSyntax() {
-    override val token: Token
-        get() = expressionSyntax.token
 
-    override fun getChildren(): Iterator<SyntaxNode> {
-        return iterator {
-            yield(openParenthesesToken)
-            yield(expressionSyntax)
-            yield(closeParenthesisToken)
-        }
+    override fun getChildren(): List<SyntaxNode> {
+        return listOf(
+            openParenthesesToken,
+            expressionSyntax,
+            openParenthesesToken
+        )
     }
 }

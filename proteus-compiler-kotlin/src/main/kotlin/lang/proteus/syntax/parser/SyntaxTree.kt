@@ -13,7 +13,7 @@ class SyntaxTree(
 ) : Diagnosable {
 
     companion object {
-        fun parse(text: String, verbose: Boolean): SyntaxTree {
+        fun parse(text: String, verbose: Boolean = false): SyntaxTree {
             val parser = Parser(text, verbose = verbose)
             return parser.parse()
         }

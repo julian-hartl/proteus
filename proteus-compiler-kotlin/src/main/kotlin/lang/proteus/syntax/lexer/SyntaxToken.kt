@@ -35,7 +35,7 @@ class SyntaxToken<T : Token>(
         }
 
         fun operator(position: Int, operatorLiteral: String): SyntaxToken<Operator>? {
-            val operator = Operator.fromLiteral(operatorLiteral) ?: return null
+            val operator = Operators.fromLiteral(operatorLiteral) ?: return null
             return operator.toSyntaxToken(position)
         }
 
@@ -44,8 +44,8 @@ class SyntaxToken<T : Token>(
         }
     }
 
-    override fun getChildren(): Iterator<SyntaxNode> {
-        return iterator { }
+    override fun getChildren(): List<SyntaxNode> {
+        return emptyList()
     }
 
 

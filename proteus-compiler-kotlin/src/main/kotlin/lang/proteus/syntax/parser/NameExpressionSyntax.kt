@@ -8,8 +8,8 @@ class NameExpressionSyntax(val identifierToken: SyntaxToken<Token.Identifier>) :
     override val token: Token
         get() = Token.Expression
 
-    override fun getChildren(): Iterator<SyntaxNode> {
-        return iterator { yield(identifierToken) }
+    override fun getChildren(): List<SyntaxNode> {
+        return listOf(identifierToken)
     }
 
 }

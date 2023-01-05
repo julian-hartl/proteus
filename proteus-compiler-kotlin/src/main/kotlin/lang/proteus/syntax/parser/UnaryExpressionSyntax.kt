@@ -9,11 +9,11 @@ class UnaryExpressionSyntax(val operatorSyntaxToken: SyntaxToken<Operator>, val 
         get() = operatorSyntaxToken.token
 
 
-    override fun getChildren(): Iterator<SyntaxNode> {
-        return iterator {
-            yield(operatorSyntaxToken)
-            yield(operand)
-        }
+    override fun getChildren(): List<SyntaxNode> {
+        return listOf(
+            operatorSyntaxToken,
+            operand
+        )
     }
 
 }

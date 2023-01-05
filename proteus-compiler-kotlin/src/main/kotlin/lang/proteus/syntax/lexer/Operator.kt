@@ -1,84 +1,88 @@
 package lang.proteus.syntax.lexer
 
+sealed class BinaryOperator(literal: String, precedence: Int) : Operator(
+    isBinaryOperator = true,
+    isUnaryOperator = false,
+    literal = literal,
+    precedence = precedence
+)
+
+sealed class UnaryOperator(literal: String, precedence: Int) : Operator(
+    isBinaryOperator = false,
+    isUnaryOperator = true,
+    literal = literal,
+    precedence = precedence
+)
+
+sealed class UnaryAndBinaryOperator(literal: String, precedence: Int) : Operator(
+    isBinaryOperator = true,
+    isUnaryOperator = true,
+    literal = literal,
+    precedence = precedence
+)
+
+sealed class AssignmentOperator(literal: String, precedence: Int) : Operator(
+    isBinaryOperator = false,
+    isUnaryOperator = false,
+    isAssignmentOperator = true,
+    literal = literal,
+    precedence = precedence
+)
+
 sealed class Operator(
-    val literal: String,
-    val precedence: Int
+    override val literal: String,
+    val precedence: Int,
+    val isUnaryOperator: Boolean = false,
+    val isBinaryOperator: Boolean = false,
+    val isAssignmentOperator: Boolean = false
 ) : Token() {
-    companion object {
-        val all
-            get() = Operator::class.sealedSubclasses
-                .map { it.objectInstance!! }
-
-
-        val maxOperatorLength: Int
-            get() = all.maxOfOrNull { it.literal.length } ?: 0
-
-        fun isOperator(literal: String): Boolean {
-            return fromLiteral(literal) != null
-        }
-
-        fun fromLiteral(literal: String): Operator? {
-            return all.find { it.literal == literal }
-        }
-
-        fun fromLiteralOrThrow(literal: String): Operator {
-            return fromLiteral(literal) ?: throw IllegalArgumentException("Unknown operator: $literal")
-        }
-
-    }
 
     fun toSyntaxToken(position: Int): SyntaxToken<Operator> {
         return super.toSyntaxToken(position, literal, null) as SyntaxToken<Operator>
     }
 
     fun unaryPrecedence(): Int {
-        return when (this) {
-            is Plus -> 100
-            is Minus -> 100
-            is Not -> 100
-            is TypeOf -> 100
-            else -> 0
-        }
+        return if (isUnaryOperator) 100 else 0
     }
 
-    object Plus : Operator("+", 1)
+    object Plus : UnaryAndBinaryOperator("+", 1)
 
-    object Minus : Operator("-", 1)
+    object Minus : UnaryAndBinaryOperator("-", 1)
 
-    object Asterisk : Operator("*", 2)
+    object Asterisk : BinaryOperator("*", 2)
 
-    object Slash : Operator("/", 2)
-    object DoubleCircumflex : Operator("^^", 3)
-    object DoubleGreaterThan : Operator(">>", 3)
-    object DoubleLessThan : Operator("<<", 3)
+    object Slash : BinaryOperator("/", 2)
+    object DoubleCircumflex : BinaryOperator("^^", 3)
+    object DoubleGreaterThan : BinaryOperator(">>", 3)
+    object DoubleLessThan : BinaryOperator("<<", 3)
 
-    object Ampersand : Operator("&", 3)
+    object Ampersand : BinaryOperator("&", 3)
 
-    object Pipe : Operator("|", 3)
-    object Circumflex : Operator("^", 3)
+    object Pipe : BinaryOperator("|", 3)
+    object Circumflex : BinaryOperator("^", 3)
 
-    object OpenParenthesis : Operator("(", 0)
+    object OpenParenthesis : BinaryOperator("(", 0)
 
-    object CloseParenthesis : Operator(")", 0)
+    object CloseParenthesis : BinaryOperator(")", 0)
 
-    object Not : Operator("not", 3)
+    object Not : UnaryOperator("not", 3)
 
-    object And : Operator("and", 2)
-    object DoubleEquals : Operator("==", 1)
-    object NotEquals : Operator("!=", 1)
+    object And : BinaryOperator("and", 2)
+    object DoubleEquals : BinaryOperator("==", 1)
+    object NotEquals : BinaryOperator("!=", 1)
 
-    object LessThan : Operator("<", 1)
-    object GreaterThan : Operator(">", 1)
-    object GreaterThanEquals : Operator(">=", 1)
-    object LessThanEquals : Operator("<=", 1)
+    object LessThan : BinaryOperator("<", 1)
+    object GreaterThan : BinaryOperator(">", 1)
+    object GreaterThanEquals : BinaryOperator(">=", 1)
+    object LessThanEquals : BinaryOperator("<=", 1)
 
-    object Or : Operator("or", 2)
-    object Xor : Operator("xor", 2)
-    object Is : Operator("is", 4)
+    object Or : BinaryOperator("or", 2)
+    object Xor : BinaryOperator("xor", 2)
+    object Is : BinaryOperator("is", 4)
 
-    object Equals : Operator("=", 1)
+    object Equals : AssignmentOperator("=", 1)
 
-    object TypeOf : Operator("typeof", 4)
+    object TypeOf : UnaryOperator("typeof", 4)
 }
 
 
