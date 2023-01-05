@@ -15,7 +15,7 @@ class EvaluationTest {
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
         val expression = SyntaxTree.parse(input)
         val compilation = Compilation(expression)
-        val variables: Map<String, Any> = mapOf(
+        val variables: MutableMap<String, Any> = mutableMapOf(
             "a" to 42,
             "b" to -4,
         )

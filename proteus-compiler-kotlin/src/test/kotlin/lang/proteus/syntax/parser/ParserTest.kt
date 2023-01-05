@@ -19,7 +19,7 @@ class ParserTest {
         val expression = SyntaxTree.parse(text)
         if (expression.hasErrors()) return;
 
-        val e = AssertingEnumerator.fromExpression(expression.root.expressionSyntax)
+        val e = AssertingEnumerator.fromExpression(expression.root.expression)
         if (precedence1 >= precedence2) {
             e.assertExpression(BinaryExpressionSyntax::class)
             e.assertExpression(BinaryExpressionSyntax::class)

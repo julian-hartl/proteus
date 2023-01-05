@@ -13,7 +13,12 @@ import lang.proteus.printing.PrinterColor
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 
-class ProteusCompiler(private var variables: Map<String, Any>) {
+class ProteusCompiler() {
+
+    private var previous: Compilation? = null
+
+    private val variables = mutableMapOf<String, Any>()
+
     fun compile(text: String, verbose: Boolean = false): CompilationResult {
         val sourceText = SourceText.from(text)
         val computationTimeStopper = ComputationTimeStopper()
@@ -30,14 +35,14 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
         val lexerTime = computationTimeStopper.stop()
 
 
-        val compilation = Compilation(tree)
+        val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
         val compilationResult = compilation.evaluate(variables)
         if (compilationResult.diagnostics.hasErrors()) {
             printDiagnostics(compilationResult.diagnostics, sourceText)
         } else {
 
             printResult(compilationResult)
-            variables = compilationResult.variableContainer.untypedVariables
+            previous = compilation
         }
         val performance = CompilationPerformance(
             lexerTime,

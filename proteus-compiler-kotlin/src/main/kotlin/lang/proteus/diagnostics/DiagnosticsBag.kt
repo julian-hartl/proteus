@@ -29,8 +29,8 @@ class DiagnosticsBag {
         report("Operator '${literal}' cannot be applied to '${type}'", span)
     }
 
-    fun reportUndefinedReference(span: TextSpan, name: String) {
-        report("Undefined reference '$name'", span)
+    fun reportUndeclaredVariable(span: TextSpan, name: String) {
+        report("Variable '$name' not declared", span)
     }
 
     private fun report(message: String, span: TextSpan) {
@@ -43,6 +43,10 @@ class DiagnosticsBag {
 
     fun reportCannotAssign(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
         report("Cannot assign '${newType}' to '${currentType}'", span)
+    }
+
+    fun reportVariableAlreadyDeclared(span: TextSpan, variableName: String) {
+        report("Variable '$variableName' already declared", span)
     }
 
 

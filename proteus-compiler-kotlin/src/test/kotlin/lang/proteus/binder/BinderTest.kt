@@ -1,11 +1,11 @@
 package lang.proteus.binder
 
 import lang.proteus.binding.Binder
-import lang.proteus.binding.VariableContainer
-import org.junit.jupiter.api.Test
+import lang.proteus.binding.BoundScope
 import lang.proteus.syntax.parser.ExpressionSyntax
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.text.SourceText
+import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
 class BinderTest {
@@ -17,19 +17,19 @@ class BinderTest {
         private const val TEST_VARIABLE_VALUE = 1
     }
 
-    private fun useExpression(input: kotlin.String) {
+    private fun useExpression(input: String) {
         val expression = parseExpression(input)
-        val variables: MutableMap<kotlin.String, Any> = mutableMapOf(
+        val variables: MutableMap<String, Any> = mutableMapOf(
             TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
         )
-        binder = Binder(VariableContainer.fromUntypedMap(variables))
+        binder = Binder(BoundScope(null))
         binder.bind(expression)
     }
 
-    private fun parseExpression(input: kotlin.String): ExpressionSyntax {
+    private fun parseExpression(input: String): ExpressionSyntax {
         val parser = Parser(SourceText.from(input))
         val compilationUnitSyntax = parser.parseCompilationUnit()
-        return compilationUnitSyntax.expressionSyntax
+        return compilationUnitSyntax.expression
     }
 
     @Test

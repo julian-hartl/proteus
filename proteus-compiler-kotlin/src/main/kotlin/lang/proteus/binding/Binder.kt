@@ -3,16 +3,53 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.parser.*
+import java.util.*
 
-class Binder(private val variableContainer: VariableContainer = VariableContainer()) : Diagnosable {
+internal class Binder(private var scope: BoundScope) : Diagnosable {
 
+
+    companion object {
+        fun bindGlobalScope(previous: BoundGlobalScope?, syntax: CompilationUnitSyntax): BoundGlobalScope {
+            val parentScope = createParentScopes(previous)
+            val binder = Binder(parentScope ?: BoundScope(null))
+            val boundExpression = binder.bind(syntax.expression)
+            val variables = binder.scope.getDeclaredVariables()
+            val diagnostics = binder.diagnostics
+            if (previous != null) {
+                diagnostics.concat(previous.diagnostics)
+            }
+            return BoundGlobalScope(previous, diagnostics, variables, boundExpression)
+        }
+
+        private fun createParentScopes(scope: BoundGlobalScope?): BoundScope? {
+            var previous: BoundGlobalScope? = scope
+            val stack = Stack<BoundGlobalScope>()
+            while (previous != null) {
+                stack.push(previous)
+                previous = previous.previous
+            }
+
+            var parent: BoundScope? = null
+
+            while (stack.size > 0) {
+                previous = stack.pop()
+                val scope = BoundScope(parent)
+                for (variable in previous.variables) {
+                    scope.tryDeclare(variable)
+                }
+
+                parent = scope
+            }
+            return parent;
+        }
+    }
 
     private val diagnosticsBag = DiagnosticsBag()
 
     override val diagnostics = diagnosticsBag.diagnostics
 
     fun bindSyntaxTree(tree: SyntaxTree): BoundExpression {
-        return bind(tree.root.expressionSyntax)
+        return bind(tree.root.expression)
     }
 
     fun bind(syntax: ExpressionSyntax): BoundExpression {
@@ -42,24 +79,25 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
         val boundExpression = bind(syntax.expression)
         val variableName = syntax.identifierToken.literal
-        val symbol = variableContainer.getVariableSymbol(variableName)
-        val newType = boundExpression.type
-        if (symbol != null && !variableContainer.canAssignTo(symbol, newType)) {
-            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span(), symbol.type, newType)
+        val variableType = boundExpression.type
+        val variableSymbol = VariableSymbol(variableName, variableType)
+        if (!scope.tryDeclare(variableSymbol)) {
+            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifierToken.span(), variableName)
         }
-        return BoundAssignmentExpression(VariableSymbol(variableName, newType), boundExpression)
+//        if (!variableType.isAssignableTo(ProteusType.Object)) {
+//            diagnosticsBag.reportCannotAssign(syntax.equalsToken.span(), variableType, variableType)
+//        }
+        return BoundAssignmentExpression(variableSymbol, boundExpression)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
-        val variableSymbol = variableContainer.getVariableSymbol(name)
-        val value = if (variableSymbol == null) null else variableContainer.getVariableValue(variableSymbol)
-        if (value == null) {
-            diagnosticsBag.reportUndefinedReference(syntax.identifierToken.span(), name)
+        val variable = scope.tryLookup(name)
+        if (variable == null) {
+            diagnosticsBag.reportUndeclaredVariable(syntax.identifierToken.span(), name)
             return BoundLiteralExpression(0)
         }
-        val type = ProteusType.fromValueOrObject(value)
-        return BoundVariableExpression(VariableSymbol(name, type))
+        return BoundVariableExpression(variable)
     }
 
 

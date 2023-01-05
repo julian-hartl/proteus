@@ -2,6 +2,7 @@ package lang.proteus.binding
 
 class VariableContainer(private val variables: MutableMap<VariableSymbol, Any> = mutableMapOf()) {
 
+
     companion object {
         fun fromUntypedMap(variables: Map<String, Any>): VariableContainer {
             val typedVariables = mutableMapOf<VariableSymbol, Any>()
@@ -17,7 +18,7 @@ class VariableContainer(private val variables: MutableMap<VariableSymbol, Any> =
     }
 
     fun assignVariable(symbol: VariableSymbol, value: Any) {
-        if(symbol !in variables) {
+        if (symbol !in variables) {
             declareVariable(symbol, value)
         } else {
             variables[symbol] = value

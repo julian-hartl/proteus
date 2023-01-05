@@ -4,10 +4,7 @@ import lang.proteus.printing.PrinterColor
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
-    val variables: Map<String, Any> = mapOf(
-        "x" to 1
-    )
-    val compiler = ProteusCompiler(variables)
+    val compiler = ProteusCompiler()
     val consolePrinter = ConsolePrinter()
     consolePrinter.setColor(PrinterColor.GREEN)
     while (true) {
