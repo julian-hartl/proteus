@@ -4,22 +4,25 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 
-sealed class ProteusType(val kType: KType) {
-    object Int : ProteusType(kotlin.Int::class.createType())
-    object Boolean : ProteusType(kotlin.Boolean::class.createType())
+object ProteusTypes {
+    val allTypes: List<ProteusType>
+        get() = ProteusType::class.sealedSubclasses
+            .map {
+                it.objectInstance!!
+            }
+}
 
-    object Object : ProteusType(Any::class.createType())
+sealed class ProteusType(val kType: KType, val literal: String) {
+    object Int : ProteusType(kotlin.Int::class.createType(), "Int")
+    object Boolean : ProteusType(kotlin.Boolean::class.createType(), "Boolean")
 
-    object Type : ProteusType(KType::class.createType())
+    object Object : ProteusType(Any::class.createType(), "Object")
+
+    object Type : ProteusType(KType::class.createType(), "Type")
 
 
     override fun toString(): String {
-        return when (this) {
-            Int -> "Int"
-            Boolean -> "Boolean"
-            Object -> "Object"
-            Type -> "Type"
-        }
+        return literal
     }
 
     fun isAssignableTo(other: ProteusType): kotlin.Boolean {
@@ -29,13 +32,7 @@ sealed class ProteusType(val kType: KType) {
     companion object {
 
         fun fromName(name: String): ProteusType? {
-            return when (name) {
-                "Int" -> Int
-                "Boolean" -> Boolean
-                "Object" -> Object
-                "Type" -> Type
-                else -> null
-            }
+            return ProteusTypes.allTypes.find { it.literal == name }
         }
 
         fun fromValue(value: Any): ProteusType? {

@@ -119,6 +119,11 @@ class EvaluationTest {
                 Arguments.of("1 is Boolean", false),
                 Arguments.of("1 is Int and 1 is Boolean", false),
                 Arguments.of("1 is Int or 1 is Boolean", true),
+
+                Arguments.of("(a = 10) * 10", 100),
+                Arguments.of("a", 42),
+                Arguments.of("b", -4),
+                Arguments.of("a + b", 38),
             )
         }
     }
