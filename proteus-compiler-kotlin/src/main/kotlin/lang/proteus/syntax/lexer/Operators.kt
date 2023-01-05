@@ -1,20 +1,8 @@
 package lang.proteus.syntax.lexer
 
-import kotlin.reflect.KClass
-
 object Operators {
     val allOperators: List<Operator>
-        get() = Operator::class.sealedSubclasses
-            .map {
-                getSealedSubclasses(
-                    it
-                ) as List<Operator>
-            }.flatten()
-
-    private fun getSealedSubclasses(clazz: KClass<*>): List<*> {
-        return clazz.sealedSubclasses
-            .mapNotNull { it.objectInstance }
-    }
+        get() = Tokens.allTokens.filterIsInstance<Operator>()
 
     val assignmentOperators: List<Operator>
         get() = allOperators.filter { it.isAssignmentOperator }
