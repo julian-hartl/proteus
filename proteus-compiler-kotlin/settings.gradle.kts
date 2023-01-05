@@ -1,3 +1,3 @@
 
-rootProject.name = "proteus-compiler-kotlin"
+rootProject.name = "proteus-compiler"
 
