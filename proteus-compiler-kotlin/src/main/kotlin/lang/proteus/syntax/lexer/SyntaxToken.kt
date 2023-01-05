@@ -13,12 +13,15 @@ class SyntaxToken<T : Token>(
     companion object {
 
 
+        fun endOfFile(position: Int): SyntaxToken<Token.EndOfFile> {
+            return SyntaxToken(Token.EndOfFile, position, "", null)
+        }
+
         fun typeToken(position: Int, literal: String, type: ProteusType): SyntaxToken<Token> {
             return Token.Type.toSyntaxToken(position, literal, value = type)
         }
 
-        fun keywordToken(position: Int, literal: String): SyntaxToken<*> {
-            val keyword = Keyword.fromString(literal) ?: return identifierToken(position, literal)
+        fun keywordToken(position: Int, keyword: Keyword): SyntaxToken<*> {
             return keyword.toSyntaxToken(position)
         }
 
@@ -44,13 +47,8 @@ class SyntaxToken<T : Token>(
         }
     }
 
-    override fun getChildren(): List<SyntaxNode> {
-        return emptyList()
-    }
 
-
-    val span: TextSpan
-        get() = TextSpan(position, literal)
+    override fun span(): TextSpan = TextSpan.fromLiteral(position, literal)
 
 
 }

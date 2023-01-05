@@ -1,20 +1,8 @@
 package lang.proteus.syntax.lexer
 
-import kotlin.reflect.KClass
-
 object Operators {
     val allOperators: List<Operator>
-        get() = Operator::class.sealedSubclasses
-            .map {
-                getSealedSubclasses(
-                    it
-                ) as List<Operator>
-            }.flatten()
-
-    private fun getSealedSubclasses(clazz: KClass<*>): List<*> {
-        return clazz.sealedSubclasses
-            .mapNotNull { it.objectInstance }
-    }
+        get() = Tokens.allTokens.filterIsInstance<Operator>()
 
     val assignmentOperators: List<Operator>
         get() = allOperators.filter { it.isAssignmentOperator }
@@ -27,6 +15,11 @@ object Operators {
 
     val maxOperatorLength: Int
         get() = allOperators.maxOfOrNull { it.literal.length } ?: 0
+
+    val maxNonLetterOperatorLength: Int
+        get() = allOperators.filter {
+            !it.literal[0].isLetter()
+        }.maxOfOrNull { it.literal.length } ?: 0
 
     fun isOperator(literal: String): Boolean {
         return fromLiteral(literal) != null

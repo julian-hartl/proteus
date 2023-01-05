@@ -1,89 +1,61 @@
 package lang.proteus.syntax.lexer
 
-import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.syntax.lexer.token_lexers.*
+import lang.proteus.text.SourceText
+
+internal object Lexers {
+    val allLexers: List<TokenLexer>
+        get() = listOf(
+            WhiteSpaceTokenLexer,
+            NumberTokenLexer,
+            LetterTokenLexer,
+            NonLetterTokenLexer,
+            EndOfFileTokenLexer
+        )
+}
 
 internal class Lexer private constructor(
-    private val input: String,
+    private val sourceText: SourceText,
     private var position: Int,
     val diagnosticsBag: DiagnosticsBag
 ) {
 
 
-    constructor(input: String) : this(input, 0, DiagnosticsBag())
+    constructor(sourceText: SourceText) : this(sourceText, 0, DiagnosticsBag())
 
+
+    private val tokenLexers: List<TokenLexer> = Lexers.allLexers
 
     fun nextToken(): SyntaxToken<*> {
-        if (position >= input.length) {
-            return SyntaxToken(Token.EndOfFile, position, "", null)
-        }
 
-        if (current.isDigit()) {
+        val matchingLexer = tokenLexers.firstOrNull { it.match(current) }
+        if (matchingLexer != null) {
+            var length = 0
             val start = position
-            while (current.isDigit()) {
+            val literal = StringBuilder()
+            while (matchingLexer.match(current) && length < (matchingLexer.maxLength ?: Int.MAX_VALUE)) {
+                length++
+                literal.append(current)
                 next()
             }
-            val literal = input.substring(start, position)
-            return SyntaxToken.numberToken(start, literal)
-        }
-
-        if (current.isWhitespace()) {
-            val start = position
-            while (current.isWhitespace()) {
-                next()
+            val token = matchingLexer.submit(start, position, literal.toString())
+            if (token != null) {
+                val span = token.span()
+                val spanLength = span.end - span.start
+                val difference = length - spanLength
+                position -= difference
+                return token
             }
-            val literal = input.substring(start, position)
-            return SyntaxToken.whiteSpaceToken(start, literal)
-        }
-        // check if it's an operator
-        val operatorToken = checkForOperator()
-        if (operatorToken != null) {
-            return operatorToken
-        }
-        val start = position
-        if (current.isLetter()) {
-            while (current.isLetter()) {
-                next()
-            }
-            val literal = input.substring(start, position)
-            val type = ProteusType.fromName(literal)
-            if (type != null) {
-                return SyntaxToken.typeToken(start, literal, type)
-            }
-            return SyntaxToken.keywordToken(start, literal)
         }
 
         diagnosticsBag.reportUnexpectedCharacter(current, position)
         next()
         return SyntaxToken.badToken(position, current.toString())
 
+
     }
 
-    private fun checkForOperator(): SyntaxToken<*>? {
-        val start = position
-        var operatorPosition = 0
-        val maxOperatorLength = Operators.maxOperatorLength
-        var lastFoundOperatorPosition = 0
-
-        var next = peek(operatorPosition)
-        var operator = ""
-        var syntaxToken: SyntaxToken<*>? = null
-        do {
-            operator += next
-            val token = SyntaxToken.operator(start, operator)
-            if (token != null) {
-                syntaxToken = token
-                lastFoundOperatorPosition = operatorPosition
-            }
-            operatorPosition++
-            next = peek(operatorPosition)
-        } while (!next.isWhitespace() && operatorPosition < maxOperatorLength);
-        if (syntaxToken != null) {
-            position += lastFoundOperatorPosition + 1
-            return syntaxToken
-        }
-        return null
-    }
 
     private fun next() {
         position++
@@ -91,10 +63,10 @@ internal class Lexer private constructor(
 
     private fun peek(offset: Int): Char {
         val index = position + offset
-        if (index >= input.length) {
+        if (index >= sourceText.length) {
             return '\u0000'
         }
-        return input[index]
+        return sourceText[index]
     }
 
     private val current: Char

@@ -1,6 +1,7 @@
-package lang.proteus.source_file_reader
+package lang.proteus.text
 
 import java.io.File
+import kotlin.String
 
 class SourceFileReader {
 

@@ -4,9 +4,37 @@ import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class LexerTest {
+
+    @Test
+    fun thereShouldNotBeAnyUntestedTokens() {
+        val tokens = getTokensWithWhiteSpaces()
+
+        val testedTokens = tokens.map {
+            it.get()[0] as Token
+        }
+
+        val untestedTokens = Tokens.allTokens.filter { token ->
+            testedTokens.contains(token).not()
+        }.toMutableList()
+
+        untestedTokens.removeAll(
+            listOf(
+                Token.Bad,
+                Token.EndOfFile,
+                Token.Expression
+            )
+        )
+
+
+
+        assertEquals(0, untestedTokens.size, "There are untested tokens: $untestedTokens")
+
+    }
+
     @ParameterizedTest(name = "Input `{1}` should lex to `{0}`")
     @MethodSource("getTokensWithWhiteSpaces")
     fun `lexer lexes token`(kind: Token, text: String) {
@@ -18,7 +46,7 @@ class LexerTest {
         assertEquals(text, token.literal)
     }
 
-    @ParameterizedTest(name = "Pair of tokens `{0}` and `{2}` should be lexed correctly.")
+    @ParameterizedTest(name = "Pair of tokens `{0}` [{1}] and `{2}` [{3}] should be lexed correctly.")
     @MethodSource("getTokenPairs")
     fun `lexer lexes token pairs`(kind1: Token, text1: String, kind2: Token, text2: String) {
         val tokens = SyntaxTree.parseTokens(text1 + text2)
@@ -32,7 +60,7 @@ class LexerTest {
         assertEquals(text2, token2.literal)
     }
 
-    @ParameterizedTest(name = "Pair of tokens `{0}` and `{4}` with separator {2} should be lexed correctly.")
+    @ParameterizedTest(name = "Pair of tokens `{0}` {1} and `{4}`{5} with separator {2} should be lexed correctly.")
     @MethodSource("getTokenPairsWithWhiteSpaces")
     fun `lexer lexes token pairs`(
         kind1: Token,
@@ -69,6 +97,11 @@ class LexerTest {
         @JvmStatic
         private fun getTokens(): List<Arguments> {
             return listOf(
+                Arguments.of(Operator.Not, "not"),
+                Arguments.of(Operator.And, "and"),
+                Arguments.of(Operator.Or, "or"),
+                Arguments.of(Operator.Xor, "xor"),
+
                 Arguments.of(Token.Identifier, "a"),
                 Arguments.of(Token.Identifier, "abc"),
 
@@ -78,10 +111,6 @@ class LexerTest {
                 Arguments.of(Operator.OpenParenthesis, "("),
                 Arguments.of(Operator.CloseParenthesis, ")"),
 
-                Arguments.of(Operator.Not, "not"),
-                Arguments.of(Operator.And, "and"),
-                Arguments.of(Operator.Or, "or"),
-                Arguments.of(Operator.Xor, "xor"),
 
                 Arguments.of(Operator.Ampersand, "&"),
                 Arguments.of(Operator.Pipe, "|"),
@@ -111,6 +140,8 @@ class LexerTest {
                 Arguments.of(Token.Number, "1"),
                 Arguments.of(Token.Number, "200"),
 
+                Arguments.of(Token.Type, "Int"),
+
 
                 )
         }
@@ -131,14 +162,17 @@ class LexerTest {
             if (t1Token is Keyword && t2Token is Token.Identifier) return true
             if (t1Token is Token.Identifier && t2Token is Keyword) return true
             if (t1Token is Token.Number && t2Token is Token.Number) return true
+            if (t1Token is Token.Type || t2Token is Token.Type) return true
             val isFirstIdentifierOrKeyword = t1Token is Token.Identifier || t1Token is Keyword
             val isSecondIdentifierOrKeyword = t2Token is Token.Identifier || t2Token is Keyword
+
             if (isFirstIdentifierOrKeyword) {
                 return isWordOperator(t2Token)
             }
             if (isSecondIdentifierOrKeyword) {
                 return isWordOperator(t1Token)
             }
+            if (isWordOperator(t1Token) && isWordOperator(t2Token)) return true
             if (t1Token is Operator.Equals && t2Token is Operator.Equals) return true
             if (t1Token is Operator.Equals && t2Token is Operator.DoubleEquals) return true
             if (t1Token is Operator.LessThan && t2Token is Operator.LessThan) return true

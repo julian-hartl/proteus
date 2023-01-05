@@ -10,12 +10,4 @@ class AssignmentExpressionSyntax(
     val expression: ExpressionSyntax
 ) : ExpressionSyntax() {
 
-    override fun getChildren(): List<SyntaxNode> {
-        return listOf(
-            identifierToken,
-            equalsToken,
-            expression
-        )
-
-    }
 }
