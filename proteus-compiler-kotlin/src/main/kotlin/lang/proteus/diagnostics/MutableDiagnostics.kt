@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.TextSpan
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.PrinterColor
 
-class MutableDiagnostics private constructor(private val mutableDiagnostics: MutableList<Diagnostic>) : Diagnostics {
+class MutableDiagnostics private constructor(private var mutableDiagnostics: MutableList<Diagnostic>) : Diagnostics {
 
     constructor() : this(mutableListOf())
 
@@ -33,11 +33,11 @@ class MutableDiagnostics private constructor(private val mutableDiagnostics: Mut
         return mutableDiagnostics.size > 0
     }
 
-    override fun concat(other: Diagnostics): Diagnostics {
+    override fun concat(other: Diagnostics){
         val newDiagnostics = mutableListOf<Diagnostic>()
         newDiagnostics.addAll(mutableDiagnostics)
         newDiagnostics.addAll(other.diagnostics)
-        return MutableDiagnostics(newDiagnostics)
+        mutableDiagnostics = newDiagnostics
     }
 
 }
