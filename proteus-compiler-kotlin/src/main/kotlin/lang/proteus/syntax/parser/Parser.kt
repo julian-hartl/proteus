@@ -10,7 +10,6 @@ class Parser private constructor(
     private val input: String,
     private var tokens: Array<SyntaxToken<*>>,
     private var position: Int,
-    private val verbose: Boolean,
     private val diagnosticsBag: DiagnosticsBag
 ) : Diagnosable {
 
@@ -31,7 +30,7 @@ class Parser private constructor(
 
     }
 
-    constructor(input: String, verbose: Boolean = false) : this(input, arrayOf(), 0, verbose, DiagnosticsBag()) {
+    constructor(input: String) : this(input, arrayOf(), 0, DiagnosticsBag()) {
         val lexer = Lexer(input)
         this.tokens = parseInput(lexer)
         diagnosticsBag.concat(lexer.diagnosticsBag)
