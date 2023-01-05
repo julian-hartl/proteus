@@ -66,7 +66,7 @@ class SourceText private constructor(private val text: String) {
                 }
             }
 
-            if (position > lineStart) {
+            if (position >= lineStart) {
                 val lineLength = position - lineStart
                 val line = TextLine(sourceText, lineStart, position - lineStart, lineLength)
                 lines.add(line)
