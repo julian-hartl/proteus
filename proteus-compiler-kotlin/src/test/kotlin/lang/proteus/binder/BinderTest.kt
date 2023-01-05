@@ -2,6 +2,8 @@ package lang.proteus.binder
 
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
+import lang.proteus.binding.ProteusType
+import lang.proteus.binding.VariableSymbol
 import lang.proteus.syntax.parser.ExpressionSyntax
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.text.SourceText
@@ -22,7 +24,9 @@ class BinderTest {
         val variables: MutableMap<String, Any> = mutableMapOf(
             TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
         )
-        binder = Binder(BoundScope(null))
+        val scope = BoundScope(null)
+        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, ProteusType.Int))
+        binder = Binder(scope)
         binder.bind(expression)
     }
 
