@@ -5,9 +5,6 @@ import lang.proteus.syntax.lexer.Token
 
 
 class NameExpressionSyntax(val identifierToken: SyntaxToken<Token.Identifier>) : ExpressionSyntax() {
-    override val token: Token
-        get() = Token.Expression
-
     override fun getChildren(): List<SyntaxNode> {
         return listOf(identifierToken)
     }
