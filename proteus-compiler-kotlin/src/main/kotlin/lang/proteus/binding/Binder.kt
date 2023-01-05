@@ -55,7 +55,7 @@ class Binder(private val variableContainer: VariableContainer = VariableContaine
         val variableSymbol = variableContainer.getVariableSymbol(name)
         val value = if (variableSymbol == null) null else variableContainer.getVariableValue(variableSymbol)
         if (value == null) {
-            diagnosticsBag.reportUndefinedName(syntax.identifierToken.span(), name)
+            diagnosticsBag.reportUndefinedReference(syntax.identifierToken.span(), name)
             return BoundLiteralExpression(0)
         }
         val type = ProteusType.fromValueOrObject(value)

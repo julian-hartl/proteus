@@ -29,12 +29,12 @@ class DiagnosticsBag {
         report("Operator '${literal}' cannot be applied to '${type}'", span)
     }
 
-    fun reportUndefinedName(span: TextSpan, name: String) {
-        report("Undefined name '$name'", span)
+    fun reportUndefinedReference(span: TextSpan, name: String) {
+        report("Undefined reference '$name'", span)
     }
 
     private fun report(message: String, span: TextSpan) {
-        mutableDiagnostics.add(Diagnostic("ERROR: $message at position ${span.start}", span))
+        mutableDiagnostics.add(Diagnostic("ERROR: $message", span))
     }
 
     fun concat(other: DiagnosticsBag) {
