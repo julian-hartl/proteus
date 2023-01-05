@@ -55,19 +55,11 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
         val consolePrinter = ConsolePrinter()
         val value = compilationResult.value
         if (value != null) {
-            consolePrinter.setColor(getColorFromType(ProteusType.fromValueOrObject(value)))
+            val color = ProteusType.fromValueOrObject(value).getOutputColor()
+            consolePrinter.setColor(color)
             consolePrinter.println()
             consolePrinter.println(value.toString())
             consolePrinter.println()
-        }
-    }
-
-    private fun getColorFromType(type: ProteusType): PrinterColor {
-        return when (type) {
-            ProteusType.Int -> PrinterColor.BLUE
-            ProteusType.Boolean -> PrinterColor.MAGENTA
-            ProteusType.Object -> PrinterColor.CYAN
-            ProteusType.Type -> PrinterColor.RED
         }
     }
 
@@ -107,5 +99,14 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
             printer.println(suffix)
         }
         printer.println()
+    }
+}
+
+private fun ProteusType.getOutputColor(): PrinterColor {
+    return when (this) {
+        ProteusType.Int -> PrinterColor.BLUE
+        ProteusType.Boolean -> PrinterColor.MAGENTA
+        ProteusType.Object -> PrinterColor.CYAN
+        ProteusType.Type -> PrinterColor.RED
     }
 }
