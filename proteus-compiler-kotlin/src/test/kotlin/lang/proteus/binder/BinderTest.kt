@@ -1,4 +1,4 @@
-package binder
+package lang.proteus.binder
 
 import lang.proteus.binding.Binder
 import lang.proteus.binding.VariableContainer
