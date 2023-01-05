@@ -5,9 +5,10 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.*
+import lang.proteus.text.SourceText
 
 class Parser private constructor(
-    private val input: String,
+    private val input: SourceText,
     private var tokens: Array<SyntaxToken<*>>,
     private var position: Int,
     private val diagnosticsBag: DiagnosticsBag
@@ -30,8 +31,10 @@ class Parser private constructor(
 
     }
 
-    constructor(input: String) : this(input, arrayOf(), 0, DiagnosticsBag()) {
-        val lexer = Lexer(input)
+    constructor(input: String) :this(SourceText.from(input))
+
+    constructor(sourceText: SourceText) : this(sourceText, arrayOf(), 0, DiagnosticsBag()) {
+        val lexer = Lexer(sourceText)
         this.tokens = parseInput(lexer)
         diagnosticsBag.concat(lexer.diagnosticsBag)
     }

@@ -2,6 +2,7 @@ package lang.proteus.syntax.lexer
 
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.token_lexers.*
+import lang.proteus.text.SourceText
 
 internal object Lexers {
     val allLexers: List<TokenLexer>
@@ -15,13 +16,13 @@ internal object Lexers {
 }
 
 internal class Lexer private constructor(
-    private val input: String,
+    private val sourceText: SourceText,
     private var position: Int,
     val diagnosticsBag: DiagnosticsBag
 ) {
 
 
-    constructor(input: String) : this(input, 0, DiagnosticsBag())
+    constructor(sourceText: SourceText) : this(sourceText, 0, DiagnosticsBag())
 
 
     private val tokenLexers: List<TokenLexer> = Lexers.allLexers
@@ -62,10 +63,10 @@ internal class Lexer private constructor(
 
     private fun peek(offset: Int): Char {
         val index = position + offset
-        if (index >= input.length) {
+        if (index >= sourceText.length) {
             return '\u0000'
         }
-        return input[index]
+        return sourceText[index]
     }
 
     private val current: Char

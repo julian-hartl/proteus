@@ -5,6 +5,7 @@ import lang.proteus.binding.VariableContainer
 import org.junit.jupiter.api.Test
 import lang.proteus.syntax.parser.ExpressionSyntax
 import lang.proteus.syntax.parser.Parser
+import lang.proteus.text.SourceText
 import kotlin.test.assertTrue
 
 class BinderTest {
@@ -26,7 +27,7 @@ class BinderTest {
     }
 
     private fun parseExpression(input: String): ExpressionSyntax {
-        val parser = Parser(input)
+        val parser = Parser(SourceText.from(input))
         val syntaxTree = parser.parse()
         return syntaxTree.root
     }

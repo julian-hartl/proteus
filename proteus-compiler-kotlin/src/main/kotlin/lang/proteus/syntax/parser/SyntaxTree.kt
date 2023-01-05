@@ -5,21 +5,32 @@ import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
+import lang.proteus.text.SourceText
 
 class SyntaxTree(
     val root: ExpressionSyntax,
     private val endOfFileToken: SyntaxToken<*>,
-    override val diagnostics: Diagnostics
+    override val diagnostics: Diagnostics,
 ) : Diagnosable {
 
     companion object {
         fun parse(text: String): SyntaxTree {
-            val parser = Parser(text)
+            val sourceText = SourceText.from(text)
+            return parse(sourceText)
+        }
+
+        fun parse(sourceText: SourceText): SyntaxTree {
+            val parser = Parser(sourceText)
             return parser.parse()
         }
 
-        fun parseTokens(input: String): List<SyntaxToken<*>> {
-            val lexer = Lexer(input)
+        fun parseTokens(text: String): List<SyntaxToken<*>> {
+            val sourceText = SourceText.from(text)
+            return parseTokens(sourceText)
+        }
+
+        fun parseTokens(sourceText: SourceText): List<SyntaxToken<*>> {
+            val lexer = Lexer(sourceText)
             val tokens = mutableListOf<SyntaxToken<*>>()
             while (true) {
                 val token = lexer.nextToken()
