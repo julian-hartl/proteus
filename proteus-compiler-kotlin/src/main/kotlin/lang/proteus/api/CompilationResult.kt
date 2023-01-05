@@ -6,6 +6,6 @@ import lang.proteus.syntax.parser.SyntaxTree
 
 data class CompilationResult(
     val syntaxTree: SyntaxTree,
-    val evaluationResult: EvaluationResult<*>,
+    val evaluationResult: EvaluationResult<*>?,
     val performance: CompilationPerformance
 )

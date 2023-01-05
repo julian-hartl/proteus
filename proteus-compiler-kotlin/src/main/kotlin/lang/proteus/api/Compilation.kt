@@ -17,7 +17,8 @@ class Compilation(val syntaxTree: SyntaxTree) {
         val variableContainer = VariableContainer.fromUntypedMap(variables)
         val binder = Binder(variableContainer)
         val boundExpression = binder.bindSyntaxTree(syntaxTree)
-        val diagnostics = binder.diagnostics.concat(syntaxDiagnostics)
+        binder.diagnostics.concat(syntaxDiagnostics)
+        val diagnostics = binder.diagnostics
         val parseTime = computationTimeStopper.stop()
         if (diagnostics.hasErrors()) {
 

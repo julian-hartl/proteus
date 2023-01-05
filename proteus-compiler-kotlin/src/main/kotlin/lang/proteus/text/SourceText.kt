@@ -39,7 +39,7 @@ class SourceText private constructor(private val text: String) {
     }
 
     fun toString(span: TextSpan): String {
-        return toString(span.start, span.end)
+        return toString(span.start, span.length)
     }
 
     companion object {

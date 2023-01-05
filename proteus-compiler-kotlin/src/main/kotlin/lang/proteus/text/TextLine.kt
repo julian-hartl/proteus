@@ -8,6 +8,11 @@ class TextLine(
     val length: Int,
     val lengthIncludingLineBreak: Int,
 ) {
+    val end: Int
+        get() = start + length
+
+    val endIncludingLineBreak: Int
+        get() = start + lengthIncludingLineBreak
     val span: TextSpan get() = TextSpan(start, length)
     val spanIncludingLineBreak get() = TextSpan(start, lengthIncludingLineBreak)
 

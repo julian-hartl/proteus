@@ -6,16 +6,30 @@ fun main(args: Array<String>) {
         "x" to 1
     )
     val compiler = ProteusCompiler(variables)
+    val textBuilder = StringBuilder()
     while (true) {
         val line =
             run {
                 print("> ")
                 readlnOrNull()
             } ?: continue
-        if (line == "quit") {
-            break
+        if (textBuilder.isEmpty()) {
+
+            if (line == "quit") {
+                break
+            }
+            if (line.isBlank()) {
+                break
+            }
         }
-        compiler.compile(line, verbose = verbose)
+        textBuilder.appendLine(line)
+        println(textBuilder.toString())
+        try {
+            compiler.compile(textBuilder.toString(), verbose = verbose)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println()
+        }
     }
 
 }

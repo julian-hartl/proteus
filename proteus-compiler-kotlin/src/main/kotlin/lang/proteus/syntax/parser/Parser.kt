@@ -11,7 +11,7 @@ class Parser private constructor(
     private val input: SourceText,
     private var tokens: Array<SyntaxToken<*>>,
     private var position: Int,
-    private val diagnosticsBag: DiagnosticsBag
+    private val diagnosticsBag: DiagnosticsBag,
 ) : Diagnosable {
 
 
@@ -31,7 +31,7 @@ class Parser private constructor(
 
     }
 
-    constructor(input: kotlin.String) :this(SourceText.from(input))
+    constructor(input: String) : this(SourceText.from(input))
 
     constructor(sourceText: SourceText) : this(sourceText, arrayOf(), 0, DiagnosticsBag()) {
         val lexer = Lexer(sourceText)

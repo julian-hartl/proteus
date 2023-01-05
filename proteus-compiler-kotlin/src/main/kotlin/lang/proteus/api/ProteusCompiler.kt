@@ -1,9 +1,11 @@
 package lang.proteus.api
 
 import lang.proteus.api.performance.CompilationPerformance
+import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
 import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.diagnostics.TextSpan
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.PrinterColor
@@ -16,12 +18,20 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
             val consolePrinter = ConsolePrinter()
             consolePrinter.print("Compiling line: ")
             consolePrinter.setColor(PrinterColor.BLUE)
-            consolePrinter.println(text.toString())
+            consolePrinter.println(text)
         }
         val sourceText = SourceText.from(text)
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
+        if (tree.hasErrors()) {
+            printDiagnostics(tree.diagnostics, sourceText)
+            return CompilationResult(
+                tree,
+                null,
+                CompilationPerformance(computationTimeStopper.stop(), ComputationTime(0), ComputationTime(0))
+            )
+        }
         val lexerTime = computationTimeStopper.stop()
 
 
@@ -61,16 +71,21 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
 
             val lineIndex = sourceText.getLineIndex(diagnostic.span.start)
             val lineNumber = lineIndex + 1
-            val character = diagnostic.span.start - sourceText.lines[lineIndex].start
+            val line = sourceText.lines[lineIndex]
+            val character = diagnostic.span.start - line.start + 1
 
             printer.println()
 
-            val prefix = text.substring(0, diagnostic.span.start)
+            val prefixSpan = TextSpan.fromBounds(line.start, diagnostic.span.start)
+            val prefix = sourceText.toString(prefixSpan)
             val error = text.substring(diagnostic.span.start, diagnostic.span.end)
-            val suffix = text.substring(diagnostic.span.end)
+            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, line.endIncludingLineBreak)
+            val suffix = sourceText.toString(suffixSpan)
+
 
 
             printer.setColor(PrinterColor.RED)
+            printer.print("(${lineNumber}:${character}) ")
             printer.println(diagnostic.message)
             printer.reset()
 
@@ -79,7 +94,6 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
             printer.setColor(PrinterColor.RED)
 
 
-            printer.print("(${lineNumber}:${character}): ")
             printer.print(error)
             printer.reset()
 
