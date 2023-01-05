@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 class SourceTextTest {
     @ParameterizedTest
     @MethodSource
-    fun `should return correct line position`(text: String, position: Int, expectedLine: Int) {
+    fun `should return correct line position`(text: kotlin.String, position: Int, expectedLine: Int) {
         val sourceText = SourceText.from(text)
         val actualLine = sourceText.getLineIndex(position)
         assertEquals(expectedLine, actualLine, "Expected line $expectedLine, but got $actualLine")
@@ -70,7 +70,7 @@ class SourceTextTest {
                     first line
                     second line
                     third line
-                """.trimIndent(), 22, 2
+                """.trimIndent(), 23, 2
                 ),
             )
         }

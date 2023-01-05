@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.TextSpan
 
 class SourceText private constructor(private val text: String) {
 
-    private val lines: List<TextLine> = parseLines(this, text)
+    val lines: List<TextLine> = parseLines(this, text)
 
 
     val length get() = text.length
@@ -13,7 +13,7 @@ class SourceText private constructor(private val text: String) {
 
     fun getLineIndex(position: Int): Int {
         var lower = 0
-        var upper = text.length - 1
+        var upper = lines.size - 1
         while (lower <= upper) {
             val index = lower + (upper - lower) / 2
             val start = lines[index].start
@@ -68,7 +68,7 @@ class SourceText private constructor(private val text: String) {
 
             if (position > lineStart) {
                 val lineLength = position - lineStart
-                val line = TextLine(sourceText, position, position - lineStart, lineLength)
+                val line = TextLine(sourceText, lineStart, position - lineStart, lineLength)
                 lines.add(line)
             }
 

@@ -8,25 +8,27 @@ import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.PrinterColor
 import lang.proteus.syntax.parser.SyntaxTree
+import lang.proteus.text.SourceText
 
 class ProteusCompiler(private var variables: Map<String, Any>) {
-    fun compile(line: String, verbose: Boolean = false): CompilationResult {
+    fun compile(text: String, verbose: Boolean = false): CompilationResult {
         if (verbose) {
             val consolePrinter = ConsolePrinter()
             consolePrinter.print("Compiling line: ")
             consolePrinter.setColor(PrinterColor.BLUE)
-            consolePrinter.println(line)
+            consolePrinter.println(text.toString())
         }
+        val sourceText = SourceText.from(text)
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
-        val tree = SyntaxTree.parse(line)
+        val tree = SyntaxTree.parse(text)
         val lexerTime = computationTimeStopper.stop()
 
 
         val compilation = Compilation(tree)
         val compilationResult = compilation.evaluate(variables)
         if (compilationResult.diagnostics.hasErrors()) {
-            printDiagnostics(compilationResult.diagnostics, line)
+            printDiagnostics(compilationResult.diagnostics, sourceText)
         } else {
 
             printResult(compilationResult)
@@ -52,14 +54,20 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
         consolePrinter.println()
     }
 
-    private fun printDiagnostics(diagnostics: Diagnostics, line: String) {
+    private fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {
         val printer = ConsolePrinter()
+        val text = sourceText.toString()
         for (diagnostic in diagnostics.diagnostics) {
+
+            val lineIndex = sourceText.getLineIndex(diagnostic.span.start)
+            val lineNumber = lineIndex + 1
+            val character = diagnostic.span.start - sourceText.lines[lineIndex].start
+
             printer.println()
 
-            val prefix = line.substring(0, diagnostic.span.start)
-            val error = line.substring(diagnostic.span.start, diagnostic.span.end)
-            val suffix = line.substring(diagnostic.span.end)
+            val prefix = text.substring(0, diagnostic.span.start)
+            val error = text.substring(diagnostic.span.start, diagnostic.span.end)
+            val suffix = text.substring(diagnostic.span.end)
 
 
             printer.setColor(PrinterColor.RED)
@@ -70,6 +78,8 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
             printer.print(prefix)
             printer.setColor(PrinterColor.RED)
 
+
+            printer.print("(${lineNumber}:${character}): ")
             printer.print(error)
             printer.reset()
 

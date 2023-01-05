@@ -11,7 +11,7 @@ class TextLine(
     val span: TextSpan get() = TextSpan(start, length)
     val spanIncludingLineBreak get() = TextSpan(start, lengthIncludingLineBreak)
 
-    override fun toString(): String {
+    override fun toString(): kotlin.String {
         return text.toString(span)
     }
 

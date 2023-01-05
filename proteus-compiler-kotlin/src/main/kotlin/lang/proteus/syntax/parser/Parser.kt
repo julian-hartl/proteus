@@ -31,7 +31,7 @@ class Parser private constructor(
 
     }
 
-    constructor(input: String) :this(SourceText.from(input))
+    constructor(input: kotlin.String) :this(SourceText.from(input))
 
     constructor(sourceText: SourceText) : this(sourceText, arrayOf(), 0, DiagnosticsBag()) {
         val lexer = Lexer(sourceText)
