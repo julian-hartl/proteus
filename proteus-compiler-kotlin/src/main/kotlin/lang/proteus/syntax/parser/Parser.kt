@@ -97,6 +97,14 @@ class Parser private constructor(
                 return parseParenthesizedExpression()
             }
 
+            Operator.SingleQuote -> {
+                return parseCharLiteralExpression()
+            }
+
+            Operator.QuotationMark -> {
+                return parseStringLiteralExpression()
+            }
+
             Keyword.False, Keyword.True -> {
                 return parseBooleanLiteral()
             }
@@ -119,6 +127,24 @@ class Parser private constructor(
             }
         }
 
+    }
+
+    private fun parseCharLiteralExpression(): ExpressionSyntax {
+        val token = matchToken(Operator.SingleQuote)
+        val literalToken = nextToken()
+        val chars = literalToken.literal.toCharArray()
+        if (chars.size != 1) {
+            diagnosticsBag.reportInvalidCharLiteral(literalToken.literal, literalToken.span())
+        }
+        matchToken(Operator.SingleQuote)
+        return LiteralExpressionSyntax(token, chars[0])
+    }
+
+    private fun parseStringLiteralExpression(): ExpressionSyntax {
+        val token = matchToken(Operator.QuotationMark)
+        val expression = nextToken()
+        matchToken(Operator.QuotationMark)
+        return LiteralExpressionSyntax(token, expression.literal)
     }
 
     private fun parseTypeExpression(): LiteralExpressionSyntax {

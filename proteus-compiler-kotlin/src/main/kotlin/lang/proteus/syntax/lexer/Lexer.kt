@@ -49,7 +49,7 @@ internal class Lexer private constructor(
             }
         }
 
-        diagnosticsBag.reportUnexpectedCharacter(current, position)
+        diagnosticsBag.reportBadCharacter(current, position)
         next()
         return SyntaxToken.badToken(position, current.toString())
 

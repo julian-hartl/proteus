@@ -83,6 +83,11 @@ sealed class Operator(
     object Equals : AssignmentOperator("=", 1)
 
     object TypeOf : UnaryOperator("typeof", 4)
+
+    object QuotationMark: BinaryOperator("\"", 0)
+
+    object SingleQuote: BinaryOperator("'", 0)
+
 }
 
 

@@ -12,16 +12,18 @@ object ProteusTypes {
             }
 }
 
-sealed class ProteusType(val kType: KType, val literal: String) {
+sealed class ProteusType(val kType: KType, val literal: kotlin.String) {
     object Int : ProteusType(kotlin.Int::class.createType(), "Int")
+    object String : ProteusType(kotlin.String::class.createType(), "String")
     object Boolean : ProteusType(kotlin.Boolean::class.createType(), "Boolean")
+    object Char : ProteusType(kotlin.Char::class.createType(), "Char")
 
     object Object : ProteusType(Any::class.createType(), "Object")
 
     object Type : ProteusType(KType::class.createType(), "Type")
 
 
-    override fun toString(): String {
+    override fun toString(): kotlin.String {
         return literal
     }
 
@@ -31,19 +33,12 @@ sealed class ProteusType(val kType: KType, val literal: String) {
 
     companion object {
 
-        fun fromName(name: String): ProteusType? {
+        fun fromName(name: kotlin.String): ProteusType? {
             return ProteusTypes.allTypes.find { it.literal == name }
         }
 
         fun fromValue(value: Any): ProteusType? {
-            if (value is ProteusType) {
-                return Type
-            }
-            return when (value) {
-                is kotlin.Int -> Int
-                is kotlin.Boolean -> Boolean
-                else -> null
-            }
+            return fromKotlinType(value::class.createType())
         }
 
 
@@ -52,13 +47,7 @@ sealed class ProteusType(val kType: KType, val literal: String) {
         }
 
         fun fromKotlinType(kType: KType): ProteusType? {
-            return when {
-                kType.isSubtypeOf(Int.kType) -> Int
-                kType.isSubtypeOf(Boolean.kType) -> Boolean
-                kType.isSubtypeOf(Object.kType) -> Object
-                kType.isSubtypeOf(Type.kType) -> Type
-                else -> null
-            }
+            return ProteusTypes.allTypes.find { it.kType == kType }
         }
 
         fun fromValueOrObject(value: Any): ProteusType {

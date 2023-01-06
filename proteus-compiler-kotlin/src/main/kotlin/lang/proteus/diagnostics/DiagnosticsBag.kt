@@ -10,7 +10,7 @@ class DiagnosticsBag {
         report("Invalid literal for type $type: '${literal}'", span)
     }
 
-    fun reportUnexpectedCharacter(character: Char, position: Int) {
+    fun reportBadCharacter(character: Char, position: Int) {
         report("Bad character '${character}'", TextSpan.fromLiteral(position, character.toString()))
     }
 
@@ -51,6 +51,10 @@ class DiagnosticsBag {
 
     fun reportFinalVariableCannotBeReassigned(span: TextSpan, variableName: String) {
         report("Final variable '$variableName' cannot be reassigned", span)
+    }
+
+    fun reportInvalidCharLiteral(literal: String, span: TextSpan) {
+        report("Invalid character literal '$literal'", span)
     }
 
 
