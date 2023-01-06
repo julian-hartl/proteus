@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 
 internal class AssertingEnumerator<T> private constructor(
     private val flattenedTree: List<SyntaxNode>,
-    private val iterator: Iterator<SyntaxNode>
+    private val iterator: Iterator<SyntaxNode>,
 ) {
 
 
@@ -36,7 +36,7 @@ internal class AssertingEnumerator<T> private constructor(
     }
 
 
-    fun <T : ExpressionSyntax> assertExpression(expressionClass: KClass<T>) {
+    fun <T : ExpressionSyntax> assertExpression(expressionClass: KClass<T>, value: Any? = null) {
         assertTrue(iterator.hasNext(), "Expected an expression, but found nothing")
         val next = iterator.next()
         val isCorrectExpression = expressionClass.isInstance(next)
@@ -44,6 +44,9 @@ internal class AssertingEnumerator<T> private constructor(
             isCorrectExpression,
             "Expected ${expressionClass.simpleName} but got ${next::class.simpleName}\nTree: $flattenedTree"
         )
+        if (value != null) {
+            assertEquals(value, (next as LiteralExpressionSyntax).value, "Expected value $value")
+        }
 
     }
 

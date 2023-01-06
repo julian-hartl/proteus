@@ -3,12 +3,23 @@ package lang.proteus.syntax.parser
 import lang.proteus.syntax.lexer.Operator
 import lang.proteus.syntax.lexer.Operators
 import lang.proteus.syntax.lexer.Token
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
 class ParserTest {
+
+    @Test
+    fun `should allow empty string`() {
+        val expression = SyntaxTree.parse("\"\"")
+        val e = AssertingEnumerator.fromExpression(expression.root.expression)
+        e.assertExpression(LiteralExpressionSyntax::class, "");
+        e.dispose()
+
+
+    }
 
     @ParameterizedTest(name = "Precedence: a {0} b {1} c")
     @MethodSource

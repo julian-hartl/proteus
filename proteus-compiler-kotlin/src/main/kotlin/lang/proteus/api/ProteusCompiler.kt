@@ -115,5 +115,6 @@ private fun ProteusType.getOutputColor(): PrinterColor {
         ProteusType.Type -> PrinterColor.RED
         ProteusType.String -> PrinterColor.GREEN
         ProteusType.Char -> PrinterColor.BLACK
+        ProteusType.BinaryString -> PrinterColor.BLUE
     }
 }

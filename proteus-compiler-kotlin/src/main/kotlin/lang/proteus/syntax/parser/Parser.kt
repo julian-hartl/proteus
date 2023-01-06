@@ -1,6 +1,7 @@
 package lang.proteus.syntax.parser
 
 import lang.proteus.binding.ProteusType
+import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
@@ -118,6 +119,10 @@ class Parser private constructor(
             }
 
             Token.Number -> {
+                return parseBitStringLiteral()
+            }
+
+            Token.Number -> {
                 return parseNumberExpression()
             }
 
@@ -127,6 +132,33 @@ class Parser private constructor(
             }
         }
 
+    }
+
+    private fun parseBitStringLiteral(): ExpressionSyntax {
+        if (current.literal == "0" && peek(1).literal == "b") {
+            val numberToken = matchToken(Token.Number)
+            val bToken = matchToken(Token.Identifier)
+            if (bToken.literal.length != 1) {
+                diagnosticsBag.reportInvalidNumberStringIdentifier(bToken.span(), bToken.literal)
+            } else {
+                val binaryToken = matchToken(Token.Number)
+                val binaryString = binaryToken.literal
+                if (!isValidBinaryString(binaryString)) {
+                    diagnosticsBag.reportInvalidBinaryString(binaryToken.span(), binaryString)
+                }
+                return LiteralExpressionSyntax(numberToken, KotlinBinaryString(binaryString))
+            }
+        }
+        return parseNumberExpression()
+    }
+
+    private fun isValidBinaryString(binaryString: String): Boolean {
+        for (char in binaryString) {
+            if (char != '0' && char != '1') {
+                return false
+            }
+        }
+        return true
     }
 
     private fun parseCharLiteralExpression(): ExpressionSyntax {
@@ -143,6 +175,9 @@ class Parser private constructor(
     private fun parseStringLiteralExpression(): ExpressionSyntax {
         val token = matchToken(Operator.QuotationMark)
         val expression = nextToken()
+        if (expression.token is Operator.QuotationMark) {
+            return LiteralExpressionSyntax(token, "")
+        }
         matchToken(Operator.QuotationMark)
         return LiteralExpressionSyntax(token, expression.literal)
     }

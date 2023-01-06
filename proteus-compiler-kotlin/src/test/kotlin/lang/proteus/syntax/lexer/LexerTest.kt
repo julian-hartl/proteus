@@ -68,7 +68,7 @@ class LexerTest {
         separator: Token,
         separatorText: String,
         kind2: Token,
-        text2: String
+        text2: String,
     ) {
         val tokens = SyntaxTree.parseTokens(text1 + separatorText + text2)
 
@@ -141,6 +141,9 @@ class LexerTest {
                 Arguments.of(Token.Number, "200"),
 
                 Arguments.of(Token.Type, "Int"),
+
+                Arguments.of(Operator.QuotationMark, "\""),
+                Arguments.of(Operator.SingleQuote, "'"),
 
 
                 )

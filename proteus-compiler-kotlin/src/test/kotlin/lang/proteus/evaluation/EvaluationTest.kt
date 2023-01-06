@@ -118,6 +118,9 @@ class EvaluationTest {
 
                 Arguments.of("typeof 2", ProteusType.Int),
                 Arguments.of("typeof true", ProteusType.Boolean),
+                Arguments.of("typeof \"test\"", ProteusType.String),
+                Arguments.of("typeof 't'", ProteusType.Char),
+                Arguments.of("typeof 0b100", ProteusType.BinaryString),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
 

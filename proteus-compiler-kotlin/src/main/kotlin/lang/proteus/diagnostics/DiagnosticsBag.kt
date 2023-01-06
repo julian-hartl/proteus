@@ -57,6 +57,14 @@ class DiagnosticsBag {
         report("Invalid character literal '$literal'", span)
     }
 
+    fun reportInvalidBinaryString(span: TextSpan, binaryString: String) {
+        report("Invalid binary string '$binaryString'", span)
+    }
+
+    fun reportInvalidNumberStringIdentifier(span: TextSpan, literal: String) {
+        report("Invalid number string identifier '$literal'", span)
+    }
+
 
     val diagnostics: Diagnostics
         get() = mutableDiagnostics
