@@ -45,7 +45,7 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
             return EvaluationResult(diagnostics, null, parseTime, ComputationTime(0))
         }
         computationTimeStopper.start()
-        val evaluator = Evaluator(globalScope.expression, variables)
+        val evaluator = Evaluator(globalScope.statement, variables)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime)

@@ -2,6 +2,7 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
@@ -16,6 +17,7 @@ internal class AssertingEnumerator<T> private constructor(
     companion object {
         fun fromExpression(expression: SyntaxNode): AssertingEnumerator<SyntaxNode> {
             val flattenedTree = flatten(expression)
+            assertTrue(expression is ExpressionStatementSyntax, "root expression must be an expression statement")
             return AssertingEnumerator(flattenedTree, flattenedTree.iterator());
         }
 

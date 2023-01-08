@@ -3,6 +3,9 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.parser.*
+import lang.proteus.syntax.parser.statements.BlockStatementSyntax
+import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
+import lang.proteus.syntax.parser.statements.StatementSyntax
 import java.util.*
 
 internal class Binder(private var scope: BoundScope) : Diagnosable {
@@ -12,7 +15,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         fun bindGlobalScope(previous: BoundGlobalScope?, syntax: CompilationUnitSyntax): BoundGlobalScope {
             val parentScope = createParentScopes(previous)
             val binder = Binder(parentScope ?: BoundScope(null))
-            val boundExpression = binder.bind(syntax.expression)
+            val boundExpression = binder.bindStatement(syntax.statement)
             val variables = binder.scope.getDeclaredVariables()
             val diagnostics = binder.diagnostics
             if (previous != null) {
@@ -48,7 +51,28 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     override val diagnostics = diagnosticsBag.diagnostics
 
-    fun bind(syntax: ExpressionSyntax): BoundExpression {
+    fun bindStatement(syntax: StatementSyntax): BoundStatement {
+        return when (syntax) {
+            is BlockStatementSyntax -> bindBlockStatement(syntax)
+            is ExpressionStatementSyntax -> bindExpressionStatement(syntax)
+        }
+    }
+
+    private fun bindExpressionStatement(syntax: ExpressionStatementSyntax): BoundStatement {
+        val boundExpression = bindExpression(syntax.expression)
+        return BoundExpressionStatement(boundExpression)
+    }
+
+    private fun bindBlockStatement(syntax: BlockStatementSyntax): BoundStatement {
+        val statements = syntax.statements.map {
+            bindStatement(it)
+        }
+        return BoundBlockStatement(
+            statements
+        )
+    }
+
+    fun bindExpression(syntax: ExpressionSyntax): BoundExpression {
         return when (syntax) {
             is LiteralExpressionSyntax -> {
                 bindLiteralExpression(syntax)
@@ -64,7 +88,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
 
             is ParenthesizedExpressionSyntax -> {
-                bind(syntax.expressionSyntax)
+                bindExpression(syntax.expressionSyntax)
             }
 
             is NameExpressionSyntax -> bindNameExpressionSyntax(syntax)
@@ -73,7 +97,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
-        val boundExpression = bind(syntax.expression)
+        val boundExpression = bindExpression(syntax.expression)
         val variableName = syntax.identifierToken.literal
         val variableType = boundExpression.type
         val variableSymbol = VariableSymbol(variableName, variableType)
@@ -106,8 +130,8 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     private fun bindBinaryExpression(binaryExpression: BinaryExpressionSyntax): BoundExpression {
 
-        val boundLeft = bind(binaryExpression.left)
-        val boundRight = bind(binaryExpression.right)
+        val boundLeft = bindExpression(binaryExpression.left)
+        val boundRight = bindExpression(binaryExpression.right)
         val binaryOperator =
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
@@ -125,7 +149,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
 
     private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
-        val boundOperand = bind(unaryExpression.operand)
+        val boundOperand = bindExpression(unaryExpression.operand)
         val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
             diagnosticsBag.reportUnaryOperatorMismatch(

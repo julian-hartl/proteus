@@ -9,7 +9,7 @@ import lang.proteus.text.SourceText
 
 class SyntaxTree private constructor(
 ) : Diagnosable {
-    lateinit var root: CompilationUnitSyntax;
+    internal lateinit var root: CompilationUnitSyntax;
 
     override lateinit var diagnostics: Diagnostics;
 

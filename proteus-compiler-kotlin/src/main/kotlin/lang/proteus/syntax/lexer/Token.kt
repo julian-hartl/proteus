@@ -10,6 +10,11 @@ sealed class Token(open val literal: String? = null) {
     object Type : Token()
 
     object Expression : Token()
+    object Statement : Token()
+
+    object OpenBrace : Token("{")
+
+    object CloseBrace : Token("}")
 
     fun toSyntaxToken(position: Int, literal: String, value: Any? = null): SyntaxToken<Token> {
         return SyntaxToken(this, position, literal, value)

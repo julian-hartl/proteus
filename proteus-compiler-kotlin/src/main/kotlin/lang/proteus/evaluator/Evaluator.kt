@@ -3,10 +3,31 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import kotlin.math.pow
 
-internal class Evaluator(private val boundExpression: BoundExpression, private val variables: MutableMap<String, Any>) {
+internal class Evaluator(private val boundStatement: BoundStatement, private val variables: MutableMap<String, Any>) {
+
+    private var lastValue: Any? = null
 
     fun evaluate(): Any {
-        return evaluateExpression(boundExpression)
+        evaluateStatement(boundStatement)
+        return lastValue ?: ProteusType.Object
+    }
+
+    private fun evaluateStatement(statement: BoundStatement) {
+        when (statement) {
+            is BoundBlockStatement -> evaluateBlockStatement(statement)
+            is BoundExpressionStatement -> evaluateExpressionStatement(statement)
+        }
+    }
+
+    private fun evaluateBlockStatement(statement: BoundBlockStatement) {
+        for (s in statement.statements) {
+            evaluateStatement(s)
+        }
+    }
+
+    private fun evaluateExpressionStatement(statement: BoundExpressionStatement) {
+        val value = evaluateExpression(statement.expression)
+        lastValue = value
     }
 
     private fun evaluateExpression(expression: BoundExpression): Any {

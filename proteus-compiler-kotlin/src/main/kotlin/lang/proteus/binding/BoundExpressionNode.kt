@@ -1,6 +1,6 @@
 package lang.proteus.binding
 
-sealed class BoundExpression : BoundNode() {
+internal sealed class BoundExpression : BoundNode() {
     abstract val type: ProteusType
 }
 

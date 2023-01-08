@@ -4,8 +4,8 @@ import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
 import lang.proteus.binding.ProteusType
 import lang.proteus.binding.VariableSymbol
-import lang.proteus.syntax.parser.ExpressionSyntax
 import lang.proteus.syntax.parser.Parser
+import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
@@ -27,13 +27,13 @@ class BinderTest {
         val scope = BoundScope(null)
         scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, ProteusType.Int))
         binder = Binder(scope)
-        binder.bind(expression)
+        binder.bindStatement(expression)
     }
 
-    private fun parseExpression(input: String): ExpressionSyntax {
+    private fun parseExpression(input: String): StatementSyntax {
         val parser = Parser(SourceText.from(input))
         val compilationUnitSyntax = parser.parseCompilationUnit()
-        return compilationUnitSyntax.expression
+        return compilationUnitSyntax.statement
     }
 
     @Test

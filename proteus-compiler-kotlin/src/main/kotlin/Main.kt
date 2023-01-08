@@ -8,21 +8,28 @@ fun main(args: Array<String>) {
     val consolePrinter = ConsolePrinter()
     consolePrinter.setColor(PrinterColor.GREEN)
     while (true) {
-        val line =
+        val text =
             run {
+                val textBuilder = StringBuilder()
                 consolePrinter.print("> ")
-                readlnOrNull()
-            } ?: continue
+                var line = readlnOrNull()
+                while (line != null && line != "") {
+                    textBuilder.appendLine(line)
+                    consolePrinter.print("| ")
+                    line = readlnOrNull()
+                }
+                textBuilder.toString()
+            }
 
-        if (line == "quit") {
+        if (text == "quit") {
             break
         }
-        if (line.isBlank()) {
+        if (text.isBlank()) {
             break
         }
 
         try {
-            compiler.compile(line, verbose = verbose)
+            compiler.compile(text, verbose = verbose)
         } catch (e: Exception) {
             e.printStackTrace()
             println()

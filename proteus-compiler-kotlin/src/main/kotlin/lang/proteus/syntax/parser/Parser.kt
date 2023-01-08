@@ -6,6 +6,9 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.*
+import lang.proteus.syntax.parser.statements.BlockStatementSyntax
+import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
+import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText
 
 class Parser private constructor(
@@ -40,12 +43,35 @@ class Parser private constructor(
         diagnosticsBag.concat(lexer.diagnosticsBag)
     }
 
+    private fun parseStatement(): StatementSyntax {
+        if (current.token is Token.OpenBrace) {
+            return parseBlockStatement()
+        }
+        return parseExpressionStatement()
+    }
 
-    fun parseCompilationUnit(): CompilationUnitSyntax {
-        val expression = parseExpression()
+    internal fun parseCompilationUnit(): CompilationUnitSyntax {
+        val expression = parseStatement()
         val endOfFileToken = matchToken(Token.EndOfFile)
         return CompilationUnitSyntax(expression, endOfFileToken)
     }
+
+    private fun parseBlockStatement(): StatementSyntax {
+        val openBrace = matchToken(Token.OpenBrace)
+        val statements = mutableListOf<StatementSyntax>()
+        while (current.token !is Token.CloseBrace && current.token !is Token.EndOfFile) {
+            val statement = parseStatement()
+            statements.add(statement)
+        }
+        val closeBrace = matchToken(Token.CloseBrace)
+        return BlockStatementSyntax(openBrace, statements, closeBrace)
+    }
+
+    private fun parseExpressionStatement(): StatementSyntax {
+        val expression = parseExpression()
+        return ExpressionStatementSyntax(expression)
+    }
+
 
     private fun parseExpression(): ExpressionSyntax {
         return parseAssigmentExpression()

@@ -14,7 +14,7 @@ class ParserTest {
     @Test
     fun `should allow empty string`() {
         val expression = SyntaxTree.parse("\"\"")
-        val e = AssertingEnumerator.fromExpression(expression.root.expression)
+        val e = AssertingEnumerator.fromExpression(expression.root.statement)
         e.assertExpression(LiteralExpressionSyntax::class, "");
         e.dispose()
 
@@ -30,7 +30,7 @@ class ParserTest {
         val expression = SyntaxTree.parse(text)
         if (expression.hasErrors()) return;
 
-        val e = AssertingEnumerator.fromExpression(expression.root.expression)
+        val e = AssertingEnumerator.fromExpression(expression.root.statement)
         if (precedence1 >= precedence2) {
             e.assertExpression(BinaryExpressionSyntax::class)
             e.assertExpression(BinaryExpressionSyntax::class)

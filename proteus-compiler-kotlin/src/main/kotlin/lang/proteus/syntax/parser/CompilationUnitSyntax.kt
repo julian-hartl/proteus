@@ -2,9 +2,10 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.parser.statements.StatementSyntax
 
-class CompilationUnitSyntax(
-    val expression: ExpressionSyntax,
+internal class CompilationUnitSyntax(
+    val statement: StatementSyntax,
     val endOfFileToken: SyntaxToken<Token.EndOfFile>,
 ) :
     SyntaxNode() {
@@ -12,3 +13,4 @@ class CompilationUnitSyntax(
         get() = Token.Expression
 
 }
+

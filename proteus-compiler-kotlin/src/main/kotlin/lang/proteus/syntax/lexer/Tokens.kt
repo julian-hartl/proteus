@@ -16,4 +16,8 @@ object Tokens {
                 getSealedSubclasses(it)
             }.flatten()
     }
+
+    fun fromLiteral(currentLiteral: String): Token? {
+        return allTokens.firstOrNull { it.literal == currentLiteral }
+    }
 }
