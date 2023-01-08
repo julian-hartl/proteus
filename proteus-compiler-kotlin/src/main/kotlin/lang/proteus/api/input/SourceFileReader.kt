@@ -1,20 +1,22 @@
-package lang.proteus.text
+package lang.proteus.api.input
 
 import java.io.File
-import kotlin.String
 
-class SourceFileReader {
+class SourceFileReader(private val path: String) : ProteusSourceTextInputReader() {
 
-    companion object {
-        const val PROTEUS_FILE_EXTENSION = "psl"
+    private var hasRead = false
+
+    override fun read(): String? {
+        if (hasRead) {
+            return null
+        }
+        val file = File(path)
+        validateSourceFile(file)
+        hasRead = true
+        return file.readText()
     }
 
-    fun getSourceFile(path: String): File {
-
-        return java.io.File(path)
-    }
-
-    fun validateSourceFile(sourceFile: File) {
+    private fun validateSourceFile(sourceFile: File) {
         val path = sourceFile.absolutePath
         if (!sourceFile.isFile) {
             throw IllegalArgumentException("File $path does not exist")
@@ -29,14 +31,8 @@ class SourceFileReader {
         }
     }
 
-    fun readAndValidateSourceFile(sourcePath: String): String {
-        val file = getSourceFile(sourcePath)
-        validateSourceFile(file)
-        return readSourceFile(file)
-    }
-
-    fun readSourceFile(sourceFile: File): String {
-        return sourceFile.readText()
+    companion object {
+        private const val PROTEUS_FILE_EXTENSION: String = "psl"
     }
 
 }
