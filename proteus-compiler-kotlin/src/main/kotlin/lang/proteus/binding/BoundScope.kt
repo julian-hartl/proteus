@@ -7,7 +7,7 @@ internal class BoundScope internal constructor(val parent: BoundScope?) {
 
     fun tryDeclare(variable: VariableSymbol): VariableSymbol? {
         val declaredVariable = variables[variable.name]
-        if (declaredVariable != null && declaredVariable.isFinal) {
+        if (declaredVariable != null) {
             return null
         }
 

@@ -293,8 +293,10 @@ class BinderTest {
     fun shouldNotAllowAssignmentToImmutableVariableInScope() {
         useExpression(
             """
+                {
             val a = 1
             a = 2
+            }
         """.trimIndent()
         )
         assertTrue(binder.hasErrors())
@@ -304,9 +306,11 @@ class BinderTest {
     fun shouldAllowAssignmentToVariableInParentScope() {
         useExpression(
             """
+                {
             var a = 1
             {
                 a = 2
+            }
             }
         """.trimIndent()
         )
@@ -317,10 +321,12 @@ class BinderTest {
     fun shouldNotAllowAssignmentToImmutableVariableInParentScope() {
         useExpression(
             """
-            val a = 1
             {
-                a = 2
-            }
+    val a = 1
+    {
+        a = 2
+    }
+}
         """.trimIndent()
         )
         assertTrue(binder.hasErrors())
@@ -330,11 +336,13 @@ class BinderTest {
     fun shouldAllowAssignmentToVariableInGrandparentScope() {
         useExpression(
             """
+                {
             var a = 1
             {
                 {
                     a = 2
                 }
+            }
             }
         """.trimIndent()
         )
@@ -345,14 +353,31 @@ class BinderTest {
     fun shouldNotAllowAssignmentToImmutableVariableInGrandparentScope() {
         useExpression(
             """
+                {
             val a = 1
             {
                 {
                     a = 2
                 }
             }
+            }
         """.trimIndent()
         )
+        assertTrue(binder.hasErrors())
+    }
+
+
+    @Test
+    fun `should not allow duplicate declaration`() {
+        useExpression("""
+            {
+                val a = 1
+                {
+                    var x = 2
+                    val x = 2
+                }
+            }
+        """.trimIndent())
         assertTrue(binder.hasErrors())
     }
 

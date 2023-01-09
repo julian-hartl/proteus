@@ -4,6 +4,7 @@ import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.lexer.token.Token
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
 
 abstract class SyntaxNode {
     abstract val token: Token
@@ -26,7 +27,11 @@ abstract class SyntaxNode {
         val properties: Collection<KProperty1<out SyntaxNode, *>> = this::class.memberProperties
 
         for (property in properties) {
-            val value = (property as KProperty1<Any, *>).get(this)
+            val property = property as KProperty1<Any, *>
+            if (!property.isAccessible) {
+                property.isAccessible = true
+            }
+            val value = property.get(this)
             if (value is SyntaxNode) {
                 children.add(value)
             } else if (value is List<*>) {
