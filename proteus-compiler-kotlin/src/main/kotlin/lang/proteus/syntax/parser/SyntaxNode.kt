@@ -5,7 +5,7 @@ import lang.proteus.syntax.lexer.Token
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
-abstract class SyntaxNode {
+internal abstract class SyntaxNode {
     abstract val token: Token
 
     // Note: This needs to be a method to prevent it from being called when `this::class.memberProperties` is called in the getChildren method,

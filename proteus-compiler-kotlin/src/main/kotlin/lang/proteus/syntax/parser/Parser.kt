@@ -9,6 +9,7 @@ import lang.proteus.syntax.lexer.*
 import lang.proteus.syntax.parser.statements.BlockStatementSyntax
 import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import lang.proteus.syntax.parser.statements.StatementSyntax
+import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
 import lang.proteus.text.SourceText
 
 class Parser private constructor(
@@ -43,17 +44,27 @@ class Parser private constructor(
         diagnosticsBag.concat(lexer.diagnosticsBag)
     }
 
-    private fun parseStatement(): StatementSyntax {
-        if (current.token is Token.OpenBrace) {
-            return parseBlockStatement()
-        }
-        return parseExpressionStatement()
-    }
-
     internal fun parseCompilationUnit(): CompilationUnitSyntax {
         val expression = parseStatement()
         val endOfFileToken = matchToken(Token.EndOfFile)
         return CompilationUnitSyntax(expression, endOfFileToken)
+    }
+
+    private fun parseStatement(): StatementSyntax {
+        if (current.token is Token.OpenBrace) {
+            return parseBlockStatement()
+        } else if (current.token == Keyword.Var || current.token == Keyword.Val) {
+            return parseVariableDeclarationStatement()
+        }
+        return parseExpressionStatement()
+    }
+
+    private fun parseVariableDeclarationStatement(): StatementSyntax {
+        val keyword = nextToken().token as Keyword
+        val identifier = matchToken(Token.Identifier)
+        val equals = matchToken(Operator.Equals)
+        val expression = parseExpression()
+        return VariableDeclarationSyntax(keyword, identifier, equals, expression)
     }
 
     private fun parseBlockStatement(): StatementSyntax {
@@ -124,11 +135,11 @@ class Parser private constructor(
                 return parseParenthesizedExpression()
             }
 
-            Operator.SingleQuote -> {
+            Token.SingleQuote -> {
                 return parseCharLiteralExpression()
             }
 
-            Operator.QuotationMark -> {
+            Token.QuotationMark -> {
                 return parseStringLiteralExpression()
             }
 
@@ -188,23 +199,23 @@ class Parser private constructor(
     }
 
     private fun parseCharLiteralExpression(): ExpressionSyntax {
-        val token = matchToken(Operator.SingleQuote)
+        val token = matchToken(Token.SingleQuote)
         val literalToken = nextToken()
         val chars = literalToken.literal.toCharArray()
         if (chars.size != 1) {
             diagnosticsBag.reportInvalidCharLiteral(literalToken.literal, literalToken.span())
         }
-        matchToken(Operator.SingleQuote)
+        matchToken(Token.SingleQuote)
         return LiteralExpressionSyntax(token, chars[0])
     }
 
     private fun parseStringLiteralExpression(): ExpressionSyntax {
-        val token = matchToken(Operator.QuotationMark)
+        val token = matchToken(Token.QuotationMark)
         val expression = nextToken()
-        if (expression.token is Operator.QuotationMark) {
+        if (expression.token is Token.QuotationMark) {
             return LiteralExpressionSyntax(token, "")
         }
-        matchToken(Operator.QuotationMark)
+        matchToken(Token.QuotationMark)
         return LiteralExpressionSyntax(token, expression.literal)
     }
 

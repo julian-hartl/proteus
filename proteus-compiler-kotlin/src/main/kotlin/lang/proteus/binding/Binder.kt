@@ -2,10 +2,12 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.syntax.lexer.Keyword
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.BlockStatementSyntax
 import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import lang.proteus.syntax.parser.statements.StatementSyntax
+import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
 import java.util.*
 
 internal class Binder(private var scope: BoundScope) : Diagnosable {
@@ -55,7 +57,19 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         return when (syntax) {
             is BlockStatementSyntax -> bindBlockStatement(syntax)
             is ExpressionStatementSyntax -> bindExpressionStatement(syntax)
+            is VariableDeclarationSyntax -> bindVariableDeclaration(syntax)
         }
+    }
+
+    private fun bindVariableDeclaration(syntax: VariableDeclarationSyntax): BoundStatement {
+        val boundExpression = bindExpression(syntax.initializer)
+        val isFinal = syntax.keyword is Keyword.Val
+        val symbol = VariableSymbol(syntax.identifier.literal, boundExpression.type, isFinal)
+        val isVariableAlreadyDeclared = scope.tryLookup(symbol.name) != null
+        if (isVariableAlreadyDeclared) {
+            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
+        }
+        return BoundVariableDeclaration(symbol, boundExpression)
     }
 
     private fun bindExpressionStatement(syntax: ExpressionStatementSyntax): BoundStatement {
@@ -100,21 +114,19 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundExpression = bindExpression(syntax.expression)
         val variableName = syntax.identifierToken.literal
         val variableType = boundExpression.type
-        val variableSymbol = VariableSymbol(variableName, variableType)
         val declaredVariable = scope.tryLookup(variableName)
-        if (declaredVariable != null && declaredVariable.isFinal) {
-            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
+        if (declaredVariable == null) {
+            diagnosticsBag.reportUndeclaredVariable(syntax.identifierToken.span(), variableName)
+            return boundExpression
         }
-        if (declaredVariable != null) {
+        if (declaredVariable.isFinal) {
+            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
+        } else {
             if (!variableType.isAssignableTo(declaredVariable.type)) {
                 diagnosticsBag.reportCannotConvert(syntax.equalsToken.span(), declaredVariable.type, variableType)
-            } else {
-                scope.tryDeclare(variableSymbol)
             }
-        } else {
-            scope.tryDeclare(variableSymbol)
         }
-        return BoundAssignmentExpression(variableSymbol, boundExpression)
+        return BoundAssignmentExpression(declaredVariable, boundExpression)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {

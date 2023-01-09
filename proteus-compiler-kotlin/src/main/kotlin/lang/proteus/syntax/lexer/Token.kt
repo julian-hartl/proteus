@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer
 
-sealed class Token(open val literal: String? = null) {
+internal sealed class Token(open val literal: String? = null) {
     object EndOfFile : Token()
     object Identifier : Token()
     object Whitespace : Token()
@@ -15,6 +15,10 @@ sealed class Token(open val literal: String? = null) {
     object OpenBrace : Token("{")
 
     object CloseBrace : Token("}")
+    object QuotationMark: Token("\"")
+
+    object SingleQuote : Token("'")
+
 
     fun toSyntaxToken(position: Int, literal: String, value: Any? = null): SyntaxToken<Token> {
         return SyntaxToken(this, position, literal, value)

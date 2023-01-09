@@ -2,7 +2,7 @@ package lang.proteus.syntax.lexer
 
 import kotlin.reflect.KClass
 
-object Tokens {
+internal object Tokens {
     val allTokens: List<Token>
         get() = Token::class.sealedSubclasses
             .map {

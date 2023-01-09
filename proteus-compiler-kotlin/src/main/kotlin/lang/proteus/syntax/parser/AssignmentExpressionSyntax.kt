@@ -4,7 +4,7 @@ import lang.proteus.syntax.lexer.Operator
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
 
-class AssignmentExpressionSyntax(
+internal class AssignmentExpressionSyntax(
     val identifierToken: SyntaxToken<Token.Identifier>,
     val equalsToken: SyntaxToken<Operator.Equals>,
     val expression: ExpressionSyntax

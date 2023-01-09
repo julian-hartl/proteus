@@ -3,7 +3,7 @@ package lang.proteus.diagnostics
 import lang.proteus.binding.ProteusType
 import lang.proteus.syntax.lexer.Token
 
-class DiagnosticsBag {
+internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
 
     fun reportInvalidNumber(literal: String, span: TextSpan, type: ProteusType) {

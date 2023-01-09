@@ -4,11 +4,11 @@ import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.parser.SyntaxNode
 
-class SyntaxToken<T : Token>(
+internal class SyntaxToken<T : Token>(
     override val token: T,
     var position: Int,
     val literal: String,
-    val value: Any?
+    val value: Any?,
 ) : SyntaxNode() {
     companion object {
 
@@ -47,8 +47,6 @@ class SyntaxToken<T : Token>(
         }
     }
 
-
-    override fun span(): TextSpan = TextSpan.fromLiteral(position, literal)
 
 
 }

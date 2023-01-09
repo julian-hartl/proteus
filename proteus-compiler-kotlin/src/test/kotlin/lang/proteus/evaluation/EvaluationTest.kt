@@ -19,8 +19,8 @@ class EvaluationTest {
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
         val expression = SyntaxTree.parse(input)
         val boundScope = BoundScope(null)
-        boundScope.tryDeclare(VariableSymbol("a", ProteusType.Int))
-        boundScope.tryDeclare(VariableSymbol("b", ProteusType.Int))
+        boundScope.tryDeclare(VariableSymbol("a", ProteusType.Int, isFinal = false))
+        boundScope.tryDeclare(VariableSymbol("b", ProteusType.Int, isFinal = false))
         val binder = Binder(boundScope)
         val boundStatement = binder.bindStatement(expression.root.statement)
         val variables: MutableMap<String, Any> = mutableMapOf(

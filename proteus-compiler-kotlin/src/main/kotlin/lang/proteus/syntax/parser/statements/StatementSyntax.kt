@@ -7,3 +7,4 @@ internal sealed class StatementSyntax : SyntaxNode() {
     override val token: Token
         get() = Token.Statement
 }
+

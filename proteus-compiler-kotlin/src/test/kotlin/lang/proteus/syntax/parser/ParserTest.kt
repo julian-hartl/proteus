@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
-class ParserTest {
+internal class ParserTest {
 
     @Test
     fun `should allow empty string`() {

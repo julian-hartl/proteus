@@ -7,7 +7,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class LexerTest {
+internal class LexerTest {
 
     @Test
     fun thereShouldNotBeAnyUntestedTokens() {
@@ -25,7 +25,8 @@ class LexerTest {
             listOf(
                 Token.Bad,
                 Token.EndOfFile,
-                Token.Expression
+                Token.Expression,
+                Token.Statement
             )
         )
 
@@ -33,6 +34,16 @@ class LexerTest {
 
         assertEquals(0, untestedTokens.size, "There are untested tokens: $untestedTokens")
 
+    }
+
+    @Test
+    fun `should lex identifier`() {
+        val input = "abc"
+        val expected = listOf(
+            Token.Identifier.toSyntaxToken(0, "abc")
+        )
+        val actual = SyntaxTree.parseTokens(input)
+        assertEquals(expected, actual)
     }
 
     @ParameterizedTest(name = "Input `{1}` should lex to `{0}`")
@@ -142,8 +153,14 @@ class LexerTest {
 
                 Arguments.of(Token.Type, "Int"),
 
-                Arguments.of(Operator.QuotationMark, "\""),
-                Arguments.of(Operator.SingleQuote, "'"),
+                Arguments.of(Token.QuotationMark, "\""),
+                Arguments.of(Token.SingleQuote, "'"),
+
+                Arguments.of(Token.OpenBrace, "{"),
+                Arguments.of(Token.CloseBrace, "}"),
+
+                Arguments.of(Keyword.Val, "val"),
+                Arguments.of(Keyword.Var, "var"),
 
 
                 )

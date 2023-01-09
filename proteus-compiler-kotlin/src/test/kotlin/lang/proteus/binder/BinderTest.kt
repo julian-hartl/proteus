@@ -25,7 +25,7 @@ class BinderTest {
             TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
         )
         val scope = BoundScope(null)
-        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, ProteusType.Int))
+        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, ProteusType.Int, isFinal = false))
         binder = Binder(scope)
         binder.bindStatement(expression)
     }
@@ -269,6 +269,103 @@ class BinderTest {
     @Test
     fun shouldAllowTypeComparison() {
         useExpression("typeof $TEST_VARIABLE_NAME == Int")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToNonExistentVariable() {
+        useExpression("nonExistentVariable = 1")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInScope() {
+        useExpression(
+            """
+            var a = 1
+            a = 2
+        """.trimIndent()
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToImmutableVariableInScope() {
+        useExpression(
+            """
+            val a = 1
+            a = 2
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInParentScope() {
+        useExpression(
+            """
+            var a = 1
+            {
+                a = 2
+            }
+        """.trimIndent()
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToImmutableVariableInParentScope() {
+        useExpression(
+            """
+            val a = 1
+            {
+                a = 2
+            }
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInGrandparentScope() {
+        useExpression(
+            """
+            var a = 1
+            {
+                {
+                    a = 2
+                }
+            }
+        """.trimIndent()
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToImmutableVariableInGrandparentScope() {
+        useExpression(
+            """
+            val a = 1
+            {
+                {
+                    a = 2
+                }
+            }
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInChildScope() {
+        useExpression(
+            """
+            var a = 1
+            {
+                a = 2
+            }
+        """.trimIndent()
+        )
         assertTrue(!binder.hasErrors())
     }
 }

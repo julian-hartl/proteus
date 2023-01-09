@@ -13,7 +13,7 @@ import lang.proteus.printing.PrinterColor
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 
-class ProteusCompiler() {
+internal class ProteusCompiler() {
 
     private var previous: Compilation? = null
 

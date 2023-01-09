@@ -11,10 +11,11 @@ private const val exampleSourcePath = "../examples/hello-world.psl"
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
+    val useConsoleInput = args.contains("-c")
     val compiler = ProteusCompiler()
     val consolePrinter = ConsolePrinter()
     consolePrinter.setColor(PrinterColor.GREEN)
-    val textInputReader = SourceFileReader(exampleSourcePath)
+    val textInputReader = if (useConsoleInput) ConsoleInputReader() else SourceFileReader(exampleSourcePath)
     var text = textInputReader.read()
     while (text != null) {
         try {

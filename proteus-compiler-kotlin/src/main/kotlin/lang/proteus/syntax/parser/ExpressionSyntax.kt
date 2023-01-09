@@ -2,7 +2,7 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.syntax.lexer.Token
 
-sealed class ExpressionSyntax() : SyntaxNode() {
+internal sealed class ExpressionSyntax() : SyntaxNode() {
     override val token: Token
         get() = Token.Expression
 

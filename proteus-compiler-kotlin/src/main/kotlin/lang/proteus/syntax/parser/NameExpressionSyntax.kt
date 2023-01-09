@@ -4,4 +4,4 @@ import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
 
 
-class NameExpressionSyntax(val identifierToken: SyntaxToken<Token.Identifier>) : ExpressionSyntax()
+internal class NameExpressionSyntax(val identifierToken: SyntaxToken<Token.Identifier>) : ExpressionSyntax()

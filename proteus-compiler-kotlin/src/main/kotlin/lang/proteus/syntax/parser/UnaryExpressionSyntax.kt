@@ -4,4 +4,4 @@ import lang.proteus.syntax.lexer.Operator
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
 
-class UnaryExpressionSyntax(val operatorSyntaxToken: SyntaxToken<Operator>, val operand: ExpressionSyntax) : ExpressionSyntax()
+internal class UnaryExpressionSyntax(val operatorSyntaxToken: SyntaxToken<Operator>, val operand: ExpressionSyntax) : ExpressionSyntax()

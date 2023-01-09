@@ -1,27 +1,27 @@
 package lang.proteus.syntax.lexer
 
-sealed class BinaryOperator(literal: String, precedence: Int) : Operator(
+internal sealed class BinaryOperator(literal: String, precedence: Int) : Operator(
     isBinaryOperator = true,
     isUnaryOperator = false,
     literal = literal,
     precedence = precedence
 )
 
-sealed class UnaryOperator(literal: String, precedence: Int) : Operator(
+internal sealed class UnaryOperator(literal: String, precedence: Int) : Operator(
     isBinaryOperator = false,
     isUnaryOperator = true,
     literal = literal,
     precedence = precedence
 )
 
-sealed class UnaryAndBinaryOperator(literal: String, precedence: Int) : Operator(
+internal sealed class UnaryAndBinaryOperator(literal: String, precedence: Int) : Operator(
     isBinaryOperator = true,
     isUnaryOperator = true,
     literal = literal,
     precedence = precedence
 )
 
-sealed class AssignmentOperator(literal: String, precedence: Int) : Operator(
+internal sealed class AssignmentOperator(literal: String, precedence: Int) : Operator(
     isBinaryOperator = false,
     isUnaryOperator = false,
     isAssignmentOperator = true,
@@ -29,12 +29,12 @@ sealed class AssignmentOperator(literal: String, precedence: Int) : Operator(
     precedence = precedence
 )
 
-sealed class Operator(
+internal sealed class Operator(
     override val literal: String,
     val precedence: Int,
     val isUnaryOperator: Boolean = false,
     val isBinaryOperator: Boolean = false,
-    val isAssignmentOperator: Boolean = false
+    val isAssignmentOperator: Boolean = false,
 ) : Token() {
 
     fun toSyntaxToken(position: Int): SyntaxToken<Operator> {
@@ -83,10 +83,6 @@ sealed class Operator(
     object Equals : AssignmentOperator("=", 1)
 
     object TypeOf : UnaryOperator("typeof", 4)
-
-    object QuotationMark: BinaryOperator("\"", 0)
-
-    object SingleQuote: BinaryOperator("'", 0)
 
 }
 

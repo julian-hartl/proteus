@@ -7,7 +7,7 @@ import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.Token
 import lang.proteus.text.SourceText
 
-class SyntaxTree private constructor(
+internal class SyntaxTree private constructor(
 ) : Diagnosable {
     internal lateinit var root: CompilationUnitSyntax;
 

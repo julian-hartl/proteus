@@ -16,7 +16,14 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
         when (statement) {
             is BoundBlockStatement -> evaluateBlockStatement(statement)
             is BoundExpressionStatement -> evaluateExpressionStatement(statement)
+            is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
         }
+    }
+
+    private fun evaluateVariableDeclaration(statement: BoundVariableDeclaration) {
+        val value = evaluateExpression(statement.initializer)
+        variables[statement.variable.name] = value
+        lastValue = value
     }
 
     private fun evaluateBlockStatement(statement: BoundBlockStatement) {
