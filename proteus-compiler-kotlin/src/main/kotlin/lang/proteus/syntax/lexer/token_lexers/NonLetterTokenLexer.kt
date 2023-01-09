@@ -16,7 +16,7 @@ internal object NonLetterTokenLexer : TokenLexer() {
         while (end > 0) {
             val token = Tokens.fromLiteral(currentLiteral)
             if (token != null) {
-                val syntaxToken = token.toSyntaxToken(start, literal, null)
+                val syntaxToken = token.toSyntaxToken(start, currentLiteral, null)
                 return TokenLexerResult(syntaxToken, end)
             }
             currentLiteral = currentLiteral.substring(0, --end)

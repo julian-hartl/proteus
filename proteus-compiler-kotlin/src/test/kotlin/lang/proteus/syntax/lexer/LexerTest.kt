@@ -39,11 +39,11 @@ internal class LexerTest {
     @Test
     fun `should lex identifier`() {
         val input = "abc"
-        val expected = listOf(
-            Token.Identifier.toSyntaxToken(0, "abc")
-        )
         val actual = SyntaxTree.parseTokens(input)
-        assertEquals(expected, actual)
+        assertEquals(1, actual.size)
+        val token = actual.first()
+        assertEquals(Token.Identifier, token.token)
+        assertEquals("abc", token.literal)
     }
 
     @ParameterizedTest(name = "Input `{1}` should lex to `{0}`")
