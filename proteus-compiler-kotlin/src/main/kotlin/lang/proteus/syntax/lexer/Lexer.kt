@@ -18,7 +18,7 @@ internal object Lexers {
 internal class Lexer private constructor(
     private val sourceText: SourceText,
     private var position: Int,
-    val diagnosticsBag: DiagnosticsBag
+    val diagnosticsBag: DiagnosticsBag,
 ) {
 
 
@@ -39,11 +39,10 @@ internal class Lexer private constructor(
                 literal.append(current)
                 next()
             }
-            val token = matchingLexer.submit(start, position, literal.toString())
-            if (token != null) {
-                val span = token.span()
-                val spanLength = span.end - span.start
-                val difference = length - spanLength
+            val tokenLexerResult = matchingLexer.submit(start, position, literal.toString())
+            if (tokenLexerResult != null) {
+                val token = tokenLexerResult.syntaxToken
+                val difference = length - tokenLexerResult.consumed
                 position -= difference
                 return token
             }
@@ -52,8 +51,6 @@ internal class Lexer private constructor(
         diagnosticsBag.reportBadCharacter(current, position)
         next()
         return SyntaxToken.badToken(position, current.toString())
-
-
     }
 
 

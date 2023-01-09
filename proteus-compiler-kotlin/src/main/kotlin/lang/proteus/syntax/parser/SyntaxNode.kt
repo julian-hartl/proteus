@@ -16,7 +16,7 @@ internal abstract class SyntaxNode {
         return if (first != null && last != null) {
             TextSpan.fromBounds(first.span().start, last.span().end)
         } else {
-            TextSpan(0, 0)
+            TextSpan(0, token.literal?.length ?: 0)
         }
     }
 

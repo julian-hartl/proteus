@@ -21,10 +21,6 @@ internal class SyntaxToken<T : Token>(
             return Token.Type.toSyntaxToken(position, literal, value = type)
         }
 
-        fun keywordToken(position: Int, keyword: Keyword): SyntaxToken<*> {
-            return keyword.toSyntaxToken(position)
-        }
-
         fun identifierToken(position: Int, literal: String): SyntaxToken<Token.Identifier> {
             return Token.Identifier.toSyntaxToken(position, literal) as SyntaxToken<Token.Identifier>
         }
