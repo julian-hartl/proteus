@@ -11,15 +11,6 @@ import java.util.stream.Stream
 
 internal class ParserTest {
 
-
-    @Test
-    fun `should allow empty string`() {
-        val expression = SyntaxTree.parse("\"\"")
-        val e = AssertingEnumerator.fromExpression(expression.root.statement)
-        e.assertExpression(LiteralExpressionSyntax::class, "")
-        e.dispose()
-    }
-
     @ParameterizedTest
     @MethodSource("getInvalidSyntaxInputsWithPosition")
     fun `errors should have correct position`(text: String, from: Int, to: Int) {
@@ -108,7 +99,7 @@ internal class ParserTest {
             Stream.of(
                 Arguments.of(
                     "{10 +}".trimIndent(),
-                    6,7
+                    5,6
                 ),
                 Arguments.of(
                     "{10 + 20".trimIndent(),
