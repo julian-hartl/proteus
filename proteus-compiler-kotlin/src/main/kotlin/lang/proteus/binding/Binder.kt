@@ -2,7 +2,7 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
-import lang.proteus.syntax.lexer.Keyword
+import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.BlockStatementSyntax
 import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
@@ -65,7 +65,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundExpression = bindExpression(syntax.initializer)
         val isFinal = syntax.keyword is Keyword.Val
         val symbol = VariableSymbol(syntax.identifier.literal, boundExpression.type, isFinal)
-        val isVariableAlreadyDeclared = scope.tryLookup(symbol.name) != null
+        val isVariableAlreadyDeclared = scope.tryDeclare(symbol) == null
         if (isVariableAlreadyDeclared) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
         }
@@ -78,9 +78,11 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindBlockStatement(syntax: BlockStatementSyntax): BoundStatement {
+        scope = BoundScope(scope)
         val statements = syntax.statements.map {
             bindStatement(it)
         }
+        scope = scope.parent!!
         return BoundBlockStatement(
             statements
         )
