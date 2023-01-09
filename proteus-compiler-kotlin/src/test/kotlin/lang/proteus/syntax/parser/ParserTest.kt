@@ -16,7 +16,7 @@ internal class ParserTest {
     fun `should allow empty string`() {
         val expression = SyntaxTree.parse("\"\"")
         val e = AssertingEnumerator.fromExpression(expression.root.statement)
-        e.assertExpression(LiteralExpressionSyntax::class, "");
+        e.assertExpression(LiteralExpressionSyntax::class, "")
         e.dispose()
     }
 
