@@ -1,5 +1,9 @@
 package lang.proteus.syntax.lexer
 
+import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.lexer.token.Tokens
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments

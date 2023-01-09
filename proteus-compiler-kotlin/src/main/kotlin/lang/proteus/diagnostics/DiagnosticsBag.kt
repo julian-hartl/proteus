@@ -1,7 +1,7 @@
 package lang.proteus.diagnostics
 
 import lang.proteus.binding.ProteusType
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Token
 
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()

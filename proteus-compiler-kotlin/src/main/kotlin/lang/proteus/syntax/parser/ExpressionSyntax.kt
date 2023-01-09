@@ -1,6 +1,6 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Token
 
 internal sealed class ExpressionSyntax() : SyntaxNode() {
     override val token: Token

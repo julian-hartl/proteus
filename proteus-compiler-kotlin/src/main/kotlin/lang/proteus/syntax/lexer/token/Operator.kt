@@ -1,35 +1,8 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
 
-internal sealed class BinaryOperator(literal: String, precedence: Int) : Operator(
-    isBinaryOperator = true,
-    isUnaryOperator = false,
-    literal = literal,
-    precedence = precedence
-)
+import lang.proteus.syntax.lexer.SyntaxToken
 
-internal sealed class UnaryOperator(literal: String, precedence: Int) : Operator(
-    isBinaryOperator = false,
-    isUnaryOperator = true,
-    literal = literal,
-    precedence = precedence
-)
-
-internal sealed class UnaryAndBinaryOperator(literal: String, precedence: Int) : Operator(
-    isBinaryOperator = true,
-    isUnaryOperator = true,
-    literal = literal,
-    precedence = precedence
-)
-
-internal sealed class AssignmentOperator(literal: String, precedence: Int) : Operator(
-    isBinaryOperator = false,
-    isUnaryOperator = false,
-    isAssignmentOperator = true,
-    literal = literal,
-    precedence = precedence
-)
-
-internal sealed class Operator(
+sealed class Operator(
     override val literal: String,
     val precedence: Int,
     val isUnaryOperator: Boolean = false,

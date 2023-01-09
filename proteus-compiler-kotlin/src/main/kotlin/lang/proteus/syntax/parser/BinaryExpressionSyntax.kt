@@ -1,6 +1,6 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.syntax.lexer.Operator
+import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.SyntaxToken
 
 internal class BinaryExpressionSyntax(

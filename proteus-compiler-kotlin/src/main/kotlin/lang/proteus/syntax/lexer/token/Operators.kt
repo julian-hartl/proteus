@@ -1,4 +1,4 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
 
 internal object Operators {
     val allOperators: List<Operator>

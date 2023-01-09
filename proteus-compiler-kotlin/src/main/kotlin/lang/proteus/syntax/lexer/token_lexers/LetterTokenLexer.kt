@@ -1,10 +1,10 @@
 package lang.proteus.syntax.lexer.token_lexers
 
 import lang.proteus.binding.ProteusType
-import lang.proteus.syntax.lexer.Keyword
-import lang.proteus.syntax.lexer.Operators
+import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.SyntaxToken
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Token
 
 internal object LetterTokenLexer : TokenLexer() {
     override fun match(current: Char): Boolean {

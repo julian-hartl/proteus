@@ -1,6 +1,8 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
 
-internal sealed class Token(open val literal: String? = null) {
+import lang.proteus.syntax.lexer.SyntaxToken
+
+sealed class Token(open val literal: String? = null) {
     object EndOfFile : Token()
     object Identifier : Token()
     object Whitespace : Token()

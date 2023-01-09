@@ -2,9 +2,12 @@ package lang.proteus.syntax.lexer
 
 import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.TextSpan
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Operators
+import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.SyntaxNode
 
-internal class SyntaxToken<T : Token>(
+class SyntaxToken<T : Token>(
     override val token: T,
     var position: Int,
     val literal: String,

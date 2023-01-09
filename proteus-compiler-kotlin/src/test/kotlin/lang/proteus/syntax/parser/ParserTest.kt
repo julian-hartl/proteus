@@ -1,8 +1,8 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.syntax.lexer.Operator
-import lang.proteus.syntax.lexer.Operators
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Operators
+import lang.proteus.syntax.lexer.token.Token
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments

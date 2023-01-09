@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.text.SourceText
 
 internal class SyntaxTree private constructor(

@@ -6,6 +6,10 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.*
+import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Operators
+import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.statements.BlockStatementSyntax
 import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import lang.proteus.syntax.parser.statements.StatementSyntax

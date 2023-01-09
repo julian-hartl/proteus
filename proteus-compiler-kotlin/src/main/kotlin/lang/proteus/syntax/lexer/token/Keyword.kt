@@ -1,4 +1,6 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
+
+import lang.proteus.syntax.lexer.SyntaxToken
 
 internal sealed class Keyword(override val literal: String) : Token() {
 

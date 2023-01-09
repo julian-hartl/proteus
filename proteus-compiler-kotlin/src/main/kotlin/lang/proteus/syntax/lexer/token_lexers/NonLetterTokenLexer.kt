@@ -1,7 +1,7 @@
 package lang.proteus.syntax.lexer.token_lexers
 
 import lang.proteus.syntax.lexer.Grammar
-import lang.proteus.syntax.lexer.Tokens
+import lang.proteus.syntax.lexer.token.Tokens
 
 internal object NonLetterTokenLexer : TokenLexer() {
 

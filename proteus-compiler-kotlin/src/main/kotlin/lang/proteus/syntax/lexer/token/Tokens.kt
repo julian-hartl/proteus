@@ -1,4 +1,4 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
 
 import kotlin.reflect.KClass
 
