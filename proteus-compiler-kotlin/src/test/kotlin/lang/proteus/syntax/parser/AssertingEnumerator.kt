@@ -67,4 +67,5 @@ internal class AssertingEnumerator<T> private constructor(
             if (!iterator.hasNext()) "" else "Expected no more tokens, but found ${iterator.next()}"
         )
     }
+
 }

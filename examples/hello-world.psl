@@ -1,4 +1,9 @@
 {
-var a = 10
-a = 20
+    var x = 10
+    {
+        var y = x * 2
+        var z = x * y
+    }
+    var z = 100
+    var x = false
 }

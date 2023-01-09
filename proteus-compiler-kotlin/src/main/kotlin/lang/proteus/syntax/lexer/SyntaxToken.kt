@@ -9,12 +9,20 @@ internal class SyntaxToken<T : Token>(
     var position: Int,
     val literal: String,
     val value: Any?,
+    private val usePositionBasedSpan: Boolean = false,
 ) : SyntaxNode() {
+    override fun span(): TextSpan {
+        if (usePositionBasedSpan) {
+            return TextSpan(position, literal.length)
+        }
+        return super.span()
+    }
+
     companion object {
 
 
         fun endOfFile(position: Int): SyntaxToken<Token.EndOfFile> {
-            return SyntaxToken(Token.EndOfFile, position, "", null)
+            return SyntaxToken(Token.EndOfFile, position, "", null, usePositionBasedSpan = true)
         }
 
         fun typeToken(position: Int, literal: String, type: ProteusType): SyntaxToken<Token> {
@@ -42,7 +50,6 @@ internal class SyntaxToken<T : Token>(
             return Token.Bad.toSyntaxToken(position, literal) as SyntaxToken<Token.Bad>
         }
     }
-
 
 
 }

@@ -11,14 +11,21 @@ import java.util.stream.Stream
 
 internal class ParserTest {
 
+
     @Test
     fun `should allow empty string`() {
         val expression = SyntaxTree.parse("\"\"")
         val e = AssertingEnumerator.fromExpression(expression.root.statement)
         e.assertExpression(LiteralExpressionSyntax::class, "");
         e.dispose()
+    }
 
-
+    @ParameterizedTest
+    @MethodSource("getInvalidSyntaxInputsWithPosition")
+    fun `errors should have correct position`(text: String, from: Int, to: Int) {
+        val expression = SyntaxTree.parse(text)
+        val errorAsserter = ErrorAsserter(expression.diagnostics)
+        errorAsserter.assertErrorFromTo(from, to)
     }
 
     @ParameterizedTest(name = "Precedence: a {0} b {1} c")
@@ -95,6 +102,20 @@ internal class ParserTest {
     }
 
     companion object {
+
+        @JvmStatic
+        val invalidSyntaxInputsWithPosition: Stream<Arguments> =
+            Stream.of(
+                Arguments.of(
+                    "{10 +}".trimIndent(),
+                    6,7
+                ),
+                Arguments.of(
+                    "{10 + 20".trimIndent(),
+                    8,8
+                ),
+            )
+
         @JvmStatic
         fun `parser BinaryExpression honors precedences`(): Stream<Arguments> {
             val pairs = mutableListOf<Arguments>()
