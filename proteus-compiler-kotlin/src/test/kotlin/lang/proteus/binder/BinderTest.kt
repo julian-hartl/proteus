@@ -1,11 +1,13 @@
 package lang.proteus.binder
 
 import lang.proteus.binding.Binder
-import lang.proteus.binding.VariableContainer
-import org.junit.jupiter.api.Test
-import lang.proteus.syntax.parser.ExpressionSyntax
+import lang.proteus.binding.BoundScope
+import lang.proteus.binding.ProteusType
+import lang.proteus.binding.VariableSymbol
 import lang.proteus.syntax.parser.Parser
+import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText
+import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
 class BinderTest {
@@ -17,19 +19,21 @@ class BinderTest {
         private const val TEST_VARIABLE_VALUE = 1
     }
 
-    private fun useExpression(input: kotlin.String) {
+    private fun useExpression(input: String) {
         val expression = parseExpression(input)
-        val variables: MutableMap<kotlin.String, Any> = mutableMapOf(
+        val variables: MutableMap<String, Any> = mutableMapOf(
             TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
         )
-        binder = Binder(VariableContainer.fromUntypedMap(variables))
-        binder.bind(expression)
+        val scope = BoundScope(null)
+        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, ProteusType.Int, isFinal = false))
+        binder = Binder(scope)
+        binder.bindStatement(expression)
     }
 
-    private fun parseExpression(input: kotlin.String): ExpressionSyntax {
+    private fun parseExpression(input: String): StatementSyntax {
         val parser = Parser(SourceText.from(input))
-        val syntaxTree = parser.parse()
-        return syntaxTree.root
+        val compilationUnitSyntax = parser.parseCompilationUnit()
+        return compilationUnitSyntax.statement
     }
 
     @Test
@@ -265,6 +269,128 @@ class BinderTest {
     @Test
     fun shouldAllowTypeComparison() {
         useExpression("typeof $TEST_VARIABLE_NAME == Int")
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToNonExistentVariable() {
+        useExpression("nonExistentVariable = 1")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInScope() {
+        useExpression(
+            """
+            var a = 1
+            a = 2
+        """.trimIndent()
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToImmutableVariableInScope() {
+        useExpression(
+            """
+                {
+            val a = 1
+            a = 2
+            }
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInParentScope() {
+        useExpression(
+            """
+                {
+            var a = 1
+            {
+                a = 2
+            }
+            }
+        """.trimIndent()
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToImmutableVariableInParentScope() {
+        useExpression(
+            """
+            {
+    val a = 1
+    {
+        a = 2
+    }
+}
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInGrandparentScope() {
+        useExpression(
+            """
+                {
+            var a = 1
+            {
+                {
+                    a = 2
+                }
+            }
+            }
+        """.trimIndent()
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowAssignmentToImmutableVariableInGrandparentScope() {
+        useExpression(
+            """
+                {
+            val a = 1
+            {
+                {
+                    a = 2
+                }
+            }
+            }
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+
+    @Test
+    fun `should not allow duplicate declaration`() {
+        useExpression("""
+            {
+                val a = 1
+                {
+                    var x = 2
+                    val x = 2
+                }
+            }
+        """.trimIndent())
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldAllowAssignmentToVariableInChildScope() {
+        useExpression(
+            """
+            var a = 1
+            {
+                a = 2
+            }
+        """.trimIndent()
+        )
         assertTrue(!binder.hasErrors())
     }
 }

@@ -10,11 +10,20 @@ import kotlin.test.assertEquals
 class SourceTextTest {
     @ParameterizedTest
     @MethodSource
-    fun `should return correct line position`(text: kotlin.String, position: Int, expectedLine: Int, amountOfLines: Int) {
+    fun `should return correct line position`(
+        text: String,
+        position: Int,
+        expectedLine: Int,
+        amountOfLines: Int,
+    ) {
         val sourceText = SourceText.from(text)
         val actualLine = sourceText.getLineIndex(position)
         assertEquals(expectedLine, actualLine, "Expected line $expectedLine, but got $actualLine")
-        assertEquals(amountOfLines, sourceText.lines.size, "Expected $amountOfLines lines, but got ${sourceText.lines.size}")
+        assertEquals(
+            amountOfLines,
+            sourceText.lines.size,
+            "Expected $amountOfLines lines, but got ${sourceText.lines.size}"
+        )
     }
 
     companion object {
@@ -22,11 +31,14 @@ class SourceTextTest {
         fun `should return correct line position`(): Stream<Arguments> {
             return Stream.of(
                 Arguments.of("single line", 3, 0, 1),
+                Arguments.of("+", 0, 0, 1),
+                Arguments.of("+\r\n", 0, 0, 2),
                 Arguments.of("single line", 0, 0, 1),
                 Arguments.of("single line", 10, 0, 1),
                 Arguments.of("first\nsecond", 6, 1, 2),
                 Arguments.of("first\r\nsecond", 7, 1, 2),
                 Arguments.of("first\rsecond", 6, 1, 2),
+                Arguments.of(".\r\n\r\n", 0, 0, 3),
                 Arguments.of(
                     """
                     first line

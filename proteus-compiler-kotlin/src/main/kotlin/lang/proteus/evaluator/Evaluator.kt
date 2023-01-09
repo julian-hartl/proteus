@@ -3,10 +3,38 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import kotlin.math.pow
 
-class Evaluator(private val boundExpression: BoundExpression, private val variableContainer: VariableContainer) {
+internal class Evaluator(private val boundStatement: BoundStatement, private val variables: MutableMap<String, Any>) {
+
+    private var lastValue: Any? = null
 
     fun evaluate(): Any {
-        return evaluateExpression(boundExpression)
+        evaluateStatement(boundStatement)
+        return lastValue ?: ProteusType.Object
+    }
+
+    private fun evaluateStatement(statement: BoundStatement) {
+        when (statement) {
+            is BoundBlockStatement -> evaluateBlockStatement(statement)
+            is BoundExpressionStatement -> evaluateExpressionStatement(statement)
+            is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
+        }
+    }
+
+    private fun evaluateVariableDeclaration(statement: BoundVariableDeclaration) {
+        val value = evaluateExpression(statement.initializer)
+        variables[statement.variable.name] = value
+        lastValue = value
+    }
+
+    private fun evaluateBlockStatement(statement: BoundBlockStatement) {
+        for (s in statement.statements) {
+            evaluateStatement(s)
+        }
+    }
+
+    private fun evaluateExpressionStatement(statement: BoundExpressionStatement) {
+        val value = evaluateExpression(statement.expression)
+        lastValue = value
     }
 
     private fun evaluateExpression(expression: BoundExpression): Any {
@@ -31,12 +59,12 @@ class Evaluator(private val boundExpression: BoundExpression, private val variab
     }
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
-        return variableContainer.getVariableValue(expression.symbol) ?: throw Exception("Variable ${expression.symbol.name} is not defined")
+        return variables[expression.symbol.name]!!
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
         val value = evaluateExpression(expression.expression)
-        variableContainer.assignVariable(expression.symbol, value)
+        variables[expression.symbol.name] = value
         return value
     }
 

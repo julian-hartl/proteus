@@ -1,6 +1,6 @@
 package lang.proteus.binding
 
-import lang.proteus.syntax.lexer.Operator
+import lang.proteus.syntax.lexer.token.Operator
 
 
 internal sealed class BoundBinaryOperator(

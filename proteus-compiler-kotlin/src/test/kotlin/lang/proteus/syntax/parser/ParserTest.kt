@@ -1,14 +1,23 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.syntax.lexer.Operator
-import lang.proteus.syntax.lexer.Operators
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Operators
+import lang.proteus.syntax.lexer.token.Token
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
-class ParserTest {
+internal class ParserTest {
+
+    @ParameterizedTest
+    @MethodSource("getInvalidSyntaxInputsWithPosition")
+    fun `errors should have correct position`(text: String, from: Int, to: Int) {
+        val expression = SyntaxTree.parse(text)
+        val errorAsserter = ErrorAsserter(expression.diagnostics)
+        errorAsserter.assertErrorFromTo(from, to)
+    }
 
     @ParameterizedTest(name = "Precedence: a {0} b {1} c")
     @MethodSource
@@ -19,7 +28,7 @@ class ParserTest {
         val expression = SyntaxTree.parse(text)
         if (expression.hasErrors()) return;
 
-        val e = AssertingEnumerator.fromExpression(expression.root)
+        val e = AssertingEnumerator.fromExpression(expression.root.statement)
         if (precedence1 >= precedence2) {
             e.assertExpression(BinaryExpressionSyntax::class)
             e.assertExpression(BinaryExpressionSyntax::class)
@@ -84,6 +93,20 @@ class ParserTest {
     }
 
     companion object {
+
+        @JvmStatic
+        val invalidSyntaxInputsWithPosition: Stream<Arguments> =
+            Stream.of(
+                Arguments.of(
+                    "{10 +}".trimIndent(),
+                    5,6
+                ),
+                Arguments.of(
+                    "{10 + 20".trimIndent(),
+                    8,8
+                ),
+            )
+
         @JvmStatic
         fun `parser BinaryExpression honors precedences`(): Stream<Arguments> {
             val pairs = mutableListOf<Arguments>()

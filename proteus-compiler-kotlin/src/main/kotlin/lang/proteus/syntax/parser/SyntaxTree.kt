@@ -4,27 +4,33 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
-import lang.proteus.syntax.lexer.Token
+import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.text.SourceText
 
-class SyntaxTree(
-    val root: ExpressionSyntax,
-    private val endOfFileToken: SyntaxToken<*>,
-    override val diagnostics: Diagnostics,
+internal class SyntaxTree private constructor(
 ) : Diagnosable {
+    internal lateinit var root: CompilationUnitSyntax;
+
+    override lateinit var diagnostics: Diagnostics;
+
+    constructor(text: SourceText) : this() {
+        val parser = Parser(text)
+        root = parser.parseCompilationUnit()
+        diagnostics = parser.diagnostics
+    }
+
 
     companion object {
-        fun parse(text: kotlin.String): SyntaxTree {
+        fun parse(text: String): SyntaxTree {
             val sourceText = SourceText.from(text)
             return parse(sourceText)
         }
 
         fun parse(sourceText: SourceText): SyntaxTree {
-            val parser = Parser(sourceText)
-            return parser.parse()
+            return SyntaxTree(sourceText)
         }
 
-        fun parseTokens(text: kotlin.String): List<SyntaxToken<*>> {
+        fun parseTokens(text: String): List<SyntaxToken<*>> {
             val sourceText = SourceText.from(text)
             return parseTokens(sourceText)
         }
@@ -48,7 +54,7 @@ class SyntaxTree(
         h_prettyPrint(root, "")
     }
 
-    private fun h_prettyPrint(node: SyntaxNode, indent: kotlin.String) {
+    private fun h_prettyPrint(node: SyntaxNode, indent: String) {
         var currentIndent = indent
         print(indent)
         if (node is ExpressionSyntax) {

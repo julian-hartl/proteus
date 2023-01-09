@@ -2,6 +2,7 @@ package lang.proteus.printing
 
 
 enum class PrinterColor(val ansiCode: Byte) {
+    BLACK(30),
     RED(31),
     GREEN(32),
     YELLOW(33),

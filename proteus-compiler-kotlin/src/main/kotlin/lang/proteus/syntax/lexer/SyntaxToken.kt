@@ -2,27 +2,34 @@ package lang.proteus.syntax.lexer
 
 import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.TextSpan
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Operators
+import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.SyntaxNode
 
 class SyntaxToken<T : Token>(
     override val token: T,
     var position: Int,
     val literal: String,
-    val value: Any?
+    val value: Any?,
+    private val usePositionBasedSpan: Boolean = false,
 ) : SyntaxNode() {
+    override fun span(): TextSpan {
+        if (usePositionBasedSpan) {
+            return TextSpan(position, literal.length)
+        }
+        return super.span()
+    }
+
     companion object {
 
 
         fun endOfFile(position: Int): SyntaxToken<Token.EndOfFile> {
-            return SyntaxToken(Token.EndOfFile, position, "", null)
+            return SyntaxToken(Token.EndOfFile, position, "", null, usePositionBasedSpan = true)
         }
 
         fun typeToken(position: Int, literal: String, type: ProteusType): SyntaxToken<Token> {
             return Token.Type.toSyntaxToken(position, literal, value = type)
-        }
-
-        fun keywordToken(position: Int, keyword: Keyword): SyntaxToken<*> {
-            return keyword.toSyntaxToken(position)
         }
 
         fun identifierToken(position: Int, literal: String): SyntaxToken<Token.Identifier> {
@@ -46,9 +53,6 @@ class SyntaxToken<T : Token>(
             return Token.Bad.toSyntaxToken(position, literal) as SyntaxToken<Token.Bad>
         }
     }
-
-
-    override fun span(): TextSpan = TextSpan.fromLiteral(position, literal)
 
 
 }

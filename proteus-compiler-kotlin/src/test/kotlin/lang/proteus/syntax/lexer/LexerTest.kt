@@ -1,5 +1,9 @@
 package lang.proteus.syntax.lexer
 
+import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.lexer.token.Tokens
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -7,7 +11,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class LexerTest {
+internal class LexerTest {
 
     @Test
     fun thereShouldNotBeAnyUntestedTokens() {
@@ -25,7 +29,8 @@ class LexerTest {
             listOf(
                 Token.Bad,
                 Token.EndOfFile,
-                Token.Expression
+                Token.Expression,
+                Token.Statement
             )
         )
 
@@ -33,6 +38,16 @@ class LexerTest {
 
         assertEquals(0, untestedTokens.size, "There are untested tokens: $untestedTokens")
 
+    }
+
+    @Test
+    fun `should lex identifier`() {
+        val input = "abc"
+        val actual = SyntaxTree.parseTokens(input)
+        assertEquals(1, actual.size)
+        val token = actual.first()
+        assertEquals(Token.Identifier, token.token)
+        assertEquals("abc", token.literal)
     }
 
     @ParameterizedTest(name = "Input `{1}` should lex to `{0}`")
@@ -68,7 +83,7 @@ class LexerTest {
         separator: Token,
         separatorText: String,
         kind2: Token,
-        text2: String
+        text2: String,
     ) {
         val tokens = SyntaxTree.parseTokens(text1 + separatorText + text2)
 
@@ -141,6 +156,15 @@ class LexerTest {
                 Arguments.of(Token.Number, "200"),
 
                 Arguments.of(Token.Type, "Int"),
+
+                Arguments.of(Token.QuotationMark, "\""),
+                Arguments.of(Token.SingleQuote, "'"),
+
+                Arguments.of(Token.OpenBrace, "{"),
+                Arguments.of(Token.CloseBrace, "}"),
+
+                Arguments.of(Keyword.Val, "val"),
+                Arguments.of(Keyword.Var, "var"),
 
 
                 )

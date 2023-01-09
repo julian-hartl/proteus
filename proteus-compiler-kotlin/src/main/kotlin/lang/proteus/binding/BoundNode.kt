@@ -1,4 +1,4 @@
 package lang.proteus.binding
 
-abstract class BoundNode {
+internal sealed class BoundNode {
 }

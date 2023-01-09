@@ -1,37 +1,81 @@
 package lang.proteus.evaluation
 
-import lang.proteus.api.Compilation
-import lang.proteus.binding.ProteusType
+import lang.proteus.api.ProteusCompiler
+import lang.proteus.binding.*
+import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
 class EvaluationTest {
+
+
     @ParameterizedTest
     @MethodSource("getValidSyntaxInputs")
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
         val expression = SyntaxTree.parse(input)
-        val compilation = Compilation(expression)
-        val variables: Map<String, Any> = mapOf(
+        val boundScope = BoundScope(null)
+        boundScope.tryDeclare(VariableSymbol("a", ProteusType.Int, isFinal = false))
+        boundScope.tryDeclare(VariableSymbol("b", ProteusType.Int, isFinal = false))
+        val binder = Binder(boundScope)
+        val boundStatement = binder.bindStatement(expression.root.statement)
+        val variables: MutableMap<String, Any> = mutableMapOf(
             "a" to 42,
             "b" to -4,
         )
-        val evaluationResult = compilation.evaluate(variables)
+        val evaluator = Evaluator(boundStatement, variables)
+
+        val evaluationResult = evaluator.evaluate()
         assertFalse(
-            evaluationResult.diagnostics.hasErrors(),
-            "Compilation should not have errors, but it has: ${evaluationResult.diagnostics}"
+            binder.diagnostics.hasErrors(),
+            "Compilation should not have errors, but it has: ${binder.diagnostics}"
         )
         assertEquals(
             value,
-            evaluationResult.value,
-            "Evaluation result should be $value, but was ${evaluationResult.value}"
+            evaluationResult,
+            "Evaluation result should be $value, but was $evaluationResult"
+        )
+    }
+
+    @ParameterizedTest
+    @MethodSource("getBlockStatements")
+    fun `should value from last statement in block`(input: String, expectedValue: Any) {
+        val compiler = ProteusCompiler()
+        val result = compiler.compile(input)
+        assertEquals(
+            expectedValue,
+            result.evaluationResult?.value,
+            "Evaluation result should be $expectedValue, but was ${result.evaluationResult?.value}"
         )
     }
 
     companion object {
+
+        @JvmStatic
+        val blockStatements: Stream<Arguments> = Stream.of(
+            Arguments.of(
+                """
+                {
+                    1
+                    2
+                    3
+                }
+            """.trimIndent(), 3
+            ),
+            Arguments.of(
+                """
+                {
+                    1
+                    5 * 5
+                }
+            """.trimIndent(), 25
+            ),
+        )
+
         @JvmStatic
         fun getValidSyntaxInputs(): List<Arguments> {
             return listOf(
@@ -112,6 +156,9 @@ class EvaluationTest {
 
                 Arguments.of("typeof 2", ProteusType.Int),
                 Arguments.of("typeof true", ProteusType.Boolean),
+                Arguments.of("typeof \"test\"", ProteusType.String),
+                Arguments.of("typeof 't'", ProteusType.Char),
+                Arguments.of("typeof 0b100", ProteusType.BinaryString),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
 
@@ -120,7 +167,7 @@ class EvaluationTest {
                 Arguments.of("1 is Int and 1 is Boolean", false),
                 Arguments.of("1 is Int or 1 is Boolean", true),
 
-                Arguments.of("(a = 10) * 10", 100),
+                Arguments.of("{ var a = 0 (a = 10) * 10", 100),
                 Arguments.of("a", 42),
                 Arguments.of("b", -4),
                 Arguments.of("a + b", 38),

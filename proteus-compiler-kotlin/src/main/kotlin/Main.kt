@@ -1,31 +1,26 @@
 import lang.proteus.api.ProteusCompiler
+import lang.proteus.api.input.ConsoleInputReader
+import lang.proteus.api.input.SourceFileReader
+import lang.proteus.printing.ConsolePrinter
+import lang.proteus.printing.PrinterColor
+
+
+private val defaultInputReader = ConsoleInputReader()
+
+private const val exampleSourcePath = "../examples/hello-world.psl"
 
 fun main(args: Array<String>) {
     val verbose = args.contains("-v")
-    val variables: Map<String, Any> = mapOf(
-        "x" to 1
-    )
-    val compiler = ProteusCompiler(variables)
-    val textBuilder = StringBuilder()
-    while (true) {
-        val line =
-            run {
-                print("> ")
-                readlnOrNull()
-            } ?: continue
-        if (textBuilder.isEmpty()) {
-
-            if (line == "quit") {
-                break
-            }
-            if (line.isBlank()) {
-                break
-            }
-        }
-        textBuilder.appendLine(line)
-        println(textBuilder.toString())
+    val useConsoleInput = args.contains("-c")
+    val compiler = ProteusCompiler()
+    val consolePrinter = ConsolePrinter()
+    consolePrinter.setColor(PrinterColor.GREEN)
+    val textInputReader = if (useConsoleInput) ConsoleInputReader() else SourceFileReader(exampleSourcePath)
+    var text = textInputReader.read()
+    while (text != null) {
         try {
-            compiler.compile(textBuilder.toString(), verbose = verbose)
+            compiler.compile(text, verbose = verbose)
+            text = textInputReader.read()
         } catch (e: Exception) {
             e.printStackTrace()
             println()

@@ -1,10 +1,19 @@
 package lang.proteus.syntax.parser
 
 import lang.proteus.binding.ProteusType
+import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.*
+import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
+import lang.proteus.syntax.lexer.token.Operators
+import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.parser.statements.BlockStatementSyntax
+import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
+import lang.proteus.syntax.parser.statements.StatementSyntax
+import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
 import lang.proteus.text.SourceText
 
 class Parser private constructor(
@@ -39,12 +48,45 @@ class Parser private constructor(
         diagnosticsBag.concat(lexer.diagnosticsBag)
     }
 
-    fun parse(): SyntaxTree {
-        val expression = parseExpression()
+    internal fun parseCompilationUnit(): CompilationUnitSyntax {
+        val expression = parseStatement()
         val endOfFileToken = matchToken(Token.EndOfFile)
-
-        return SyntaxTree(expression, endOfFileToken, diagnosticsBag.diagnostics)
+        return CompilationUnitSyntax(expression, endOfFileToken)
     }
+
+    private fun parseStatement(): StatementSyntax {
+        if (current.token is Token.OpenBrace) {
+            return parseBlockStatement()
+        } else if (current.token == Keyword.Var || current.token == Keyword.Val) {
+            return parseVariableDeclarationStatement()
+        }
+        return parseExpressionStatement()
+    }
+
+    private fun parseVariableDeclarationStatement(): StatementSyntax {
+        val keyword = nextToken().token as Keyword
+        val identifier = matchToken(Token.Identifier)
+        val equals = matchToken(Operator.Equals)
+        val expression = parseExpression()
+        return VariableDeclarationSyntax(keyword, identifier, equals, expression)
+    }
+
+    private fun parseBlockStatement(): StatementSyntax {
+        val openBrace = matchToken(Token.OpenBrace)
+        val statements = mutableListOf<StatementSyntax>()
+        while (current.token !is Token.CloseBrace && current.token !is Token.EndOfFile) {
+            val statement = parseStatement()
+            statements.add(statement)
+        }
+        val closeBrace = matchToken(Token.CloseBrace)
+        return BlockStatementSyntax(openBrace, statements, closeBrace)
+    }
+
+    private fun parseExpressionStatement(): StatementSyntax {
+        val expression = parseExpression()
+        return ExpressionStatementSyntax(expression)
+    }
+
 
     private fun parseExpression(): ExpressionSyntax {
         return parseAssigmentExpression()
@@ -97,6 +139,14 @@ class Parser private constructor(
                 return parseParenthesizedExpression()
             }
 
+            Token.SingleQuote -> {
+                return parseCharLiteralExpression()
+            }
+
+            Token.QuotationMark -> {
+                return parseStringLiteralExpression()
+            }
+
             Keyword.False, Keyword.True -> {
                 return parseBooleanLiteral()
             }
@@ -110,6 +160,10 @@ class Parser private constructor(
             }
 
             Token.Number -> {
+                return parseBitStringLiteral()
+            }
+
+            Token.Number -> {
                 return parseNumberExpression()
             }
 
@@ -119,6 +173,54 @@ class Parser private constructor(
             }
         }
 
+    }
+
+    private fun parseBitStringLiteral(): ExpressionSyntax {
+        if (current.literal == "0" && peek(1).literal == "b") {
+            val numberToken = matchToken(Token.Number)
+            val bToken = matchToken(Token.Identifier)
+            if (bToken.literal.length != 1) {
+                diagnosticsBag.reportInvalidNumberStringIdentifier(bToken.span(), bToken.literal)
+            } else {
+                val binaryToken = matchToken(Token.Number)
+                val binaryString = binaryToken.literal
+                if (!isValidBinaryString(binaryString)) {
+                    diagnosticsBag.reportInvalidBinaryString(binaryToken.span(), binaryString)
+                }
+                return LiteralExpressionSyntax(numberToken, KotlinBinaryString(binaryString))
+            }
+        }
+        return parseNumberExpression()
+    }
+
+    private fun isValidBinaryString(binaryString: String): Boolean {
+        for (char in binaryString) {
+            if (char != '0' && char != '1') {
+                return false
+            }
+        }
+        return true
+    }
+
+    private fun parseCharLiteralExpression(): ExpressionSyntax {
+        val token = matchToken(Token.SingleQuote)
+        val literalToken = nextToken()
+        val chars = literalToken.literal.toCharArray()
+        if (chars.size != 1) {
+            diagnosticsBag.reportInvalidCharLiteral(literalToken.literal, literalToken.span())
+        }
+        matchToken(Token.SingleQuote)
+        return LiteralExpressionSyntax(token, chars[0])
+    }
+
+    private fun parseStringLiteralExpression(): ExpressionSyntax {
+        val token = matchToken(Token.QuotationMark)
+        val expression = nextToken()
+        if (expression.token is Token.QuotationMark) {
+            return LiteralExpressionSyntax(token, "")
+        }
+        matchToken(Token.QuotationMark)
+        return LiteralExpressionSyntax(token, expression.literal)
     }
 
     private fun parseTypeExpression(): LiteralExpressionSyntax {
@@ -187,6 +289,7 @@ class Parser private constructor(
         }
         return tokens[index]
     }
+
 
     private val current: SyntaxToken<*>
         get() = peek(0)

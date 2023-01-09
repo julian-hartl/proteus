@@ -40,4 +40,8 @@ class MutableDiagnostics private constructor(private var mutableDiagnostics: Mut
         mutableDiagnostics = newDiagnostics
     }
 
+    override fun toString(): String {
+        return mutableDiagnostics.joinToString("\n")
+    }
+
 }

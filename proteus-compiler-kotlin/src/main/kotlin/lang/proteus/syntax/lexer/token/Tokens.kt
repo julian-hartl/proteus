@@ -1,8 +1,8 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
 
 import kotlin.reflect.KClass
 
-object Tokens {
+internal object Tokens {
     val allTokens: List<Token>
         get() = Token::class.sealedSubclasses
             .map {
@@ -15,5 +15,9 @@ object Tokens {
             .map {
                 getSealedSubclasses(it)
             }.flatten()
+    }
+
+    fun fromLiteral(currentLiteral: String): Token? {
+        return allTokens.firstOrNull { it.literal == currentLiteral }
     }
 }

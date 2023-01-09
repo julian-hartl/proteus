@@ -1,8 +1,7 @@
 package lang.proteus.syntax.lexer.token_lexers
 
 import lang.proteus.syntax.lexer.Grammar
-import lang.proteus.syntax.lexer.Operators
-import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.lexer.token.Tokens
 
 internal object NonLetterTokenLexer : TokenLexer() {
 
@@ -11,13 +10,14 @@ internal object NonLetterTokenLexer : TokenLexer() {
         return Grammar.allowedNonAlphanumericCharacters.contains(current)
     }
 
-    override fun submit(start: Int, position: Int, literal: String): SyntaxToken<*>? {
+    override fun submit(start: Int, position: Int, literal: String): TokenLexerResult? {
         var end = literal.length
         var currentLiteral = literal
         while (end > 0) {
-            val operator = Operators.fromLiteral(currentLiteral)
-            if (operator != null) {
-                return operator.toSyntaxToken(start)
+            val token = Tokens.fromLiteral(currentLiteral)
+            if (token != null) {
+                val syntaxToken = token.toSyntaxToken(start, currentLiteral, null)
+                return TokenLexerResult(syntaxToken, end)
             }
             currentLiteral = currentLiteral.substring(0, --end)
         }

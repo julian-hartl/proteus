@@ -5,7 +5,7 @@ import kotlin.test.assertTrue
 internal class ParserSyntaxChecker(private val input: String) {
     private fun checkSyntax(): Boolean {
         val parser = Parser(input)
-        parser.parse()
+        parser.parseCompilationUnit()
         return !parser.hasErrors()
     }
 

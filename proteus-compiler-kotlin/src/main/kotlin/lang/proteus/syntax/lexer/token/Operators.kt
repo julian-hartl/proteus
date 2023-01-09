@@ -1,6 +1,6 @@
-package lang.proteus.syntax.lexer
+package lang.proteus.syntax.lexer.token
 
-object Operators {
+internal object Operators {
     val allOperators: List<Operator>
         get() = Tokens.allTokens.filterIsInstance<Operator>()
 

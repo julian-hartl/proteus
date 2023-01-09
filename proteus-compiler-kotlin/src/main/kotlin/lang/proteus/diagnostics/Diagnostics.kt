@@ -7,4 +7,6 @@ interface Diagnostics {
     fun hasErrors(): Boolean
 
     fun concat(other: Diagnostics)
+
+
 }

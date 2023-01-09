@@ -4,6 +4,7 @@ import lang.proteus.api.performance.CompilationPerformance
 import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
+import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.evaluator.EvaluationResult
@@ -12,14 +13,13 @@ import lang.proteus.printing.PrinterColor
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 
-class ProteusCompiler(private var variables: Map<String, Any>) {
+internal class ProteusCompiler() {
+
+    private var previous: Compilation? = null
+
+    private val variables = mutableMapOf<String, Any>()
+
     fun compile(text: String, verbose: Boolean = false): CompilationResult {
-        if (verbose) {
-            val consolePrinter = ConsolePrinter()
-            consolePrinter.print("Compiling line: ")
-            consolePrinter.setColor(PrinterColor.BLUE)
-            consolePrinter.println(text)
-        }
         val sourceText = SourceText.from(text)
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
@@ -35,14 +35,14 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
         val lexerTime = computationTimeStopper.stop()
 
 
-        val compilation = Compilation(tree)
+        val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
         val compilationResult = compilation.evaluate(variables)
         if (compilationResult.diagnostics.hasErrors()) {
             printDiagnostics(compilationResult.diagnostics, sourceText)
         } else {
 
             printResult(compilationResult)
-            variables = compilationResult.variableContainer.untypedVariables
+            previous = compilation
         }
         val performance = CompilationPerformance(
             lexerTime,
@@ -58,10 +58,14 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
 
     private fun printResult(compilationResult: EvaluationResult<*>) {
         val consolePrinter = ConsolePrinter()
-        consolePrinter.setColor(PrinterColor.CYAN)
-        consolePrinter.println()
-        consolePrinter.println(compilationResult.value?.toString() ?: "null")
-        consolePrinter.println()
+        val value = compilationResult.value
+        if (value != null) {
+            val color = ProteusType.fromValueOrObject(value).getOutputColor()
+            consolePrinter.setColor(color)
+            consolePrinter.println()
+            consolePrinter.println(value.toString())
+            consolePrinter.println()
+        }
     }
 
     private fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {
@@ -100,5 +104,17 @@ class ProteusCompiler(private var variables: Map<String, Any>) {
             printer.println(suffix)
         }
         printer.println()
+    }
+}
+
+private fun ProteusType.getOutputColor(): PrinterColor {
+    return when (this) {
+        ProteusType.Int -> PrinterColor.BLUE
+        ProteusType.Boolean -> PrinterColor.MAGENTA
+        ProteusType.Object -> PrinterColor.CYAN
+        ProteusType.Type -> PrinterColor.RED
+        ProteusType.String -> PrinterColor.GREEN
+        ProteusType.Char -> PrinterColor.BLACK
+        ProteusType.BinaryString -> PrinterColor.BLUE
     }
 }
