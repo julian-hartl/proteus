@@ -1,4 +1,6 @@
 {
-    val a = 1
-    a = 2
+    val a = (1 > 0) and (0 < 1)
+    if a {
+        val x = 2
+    }
 }

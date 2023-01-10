@@ -145,6 +145,7 @@ internal class LexerTest {
                 Arguments.of(Operator.Asterisk, "*"),
                 Arguments.of(Operator.Slash, "/"),
                 Arguments.of(Operator.DoubleAsterisk, "**"),
+                Arguments.of(Operator.Percent, "%"),
 
                 Arguments.of(Operator.Is, "is"),
                 Arguments.of(Operator.TypeOf, "typeof"),

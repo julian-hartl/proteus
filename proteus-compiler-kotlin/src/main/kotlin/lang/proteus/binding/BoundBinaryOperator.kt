@@ -79,5 +79,10 @@ internal sealed class BoundBinaryOperator(
         ProteusType.Type,
         ProteusType.Boolean, requiresSameTypes = false)
 
+    object BoundModuloBinaryOperator : BoundBinaryOperator(
+        Operator.Percent,
+        ProteusType.Int,
+    )
+
 
 }

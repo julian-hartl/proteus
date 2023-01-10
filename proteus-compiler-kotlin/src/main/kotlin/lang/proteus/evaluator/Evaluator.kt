@@ -79,6 +79,7 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
             BoundBinaryOperator.BoundDivisionBinaryOperator -> left as Int / right as Int
             BoundBinaryOperator.BoundMultiplicationBinaryOperator -> left as Int * right as Int
             BoundBinaryOperator.BoundExponentiationBinaryOperator -> (left as Int).toDouble().pow(right as Int).toInt()
+            BoundBinaryOperator.BoundModuloBinaryOperator -> left as Int % right as Int
             BoundBinaryOperator.BoundBitwiseAndBinaryOperator -> left as Int and right as Int
             BoundBinaryOperator.BoundBitwiseXorBinaryOperator -> left as Int xor right as Int
             BoundBinaryOperator.BoundBitwiseOrBinaryOperator -> left as Int or right as Int
