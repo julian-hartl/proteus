@@ -46,6 +46,10 @@ class EvaluationTest {
     @ParameterizedTest
     @MethodSource("getBlockStatements")
     fun `should value from last statement in block`(input: String, expectedValue: Any) {
+        assertValue(input, expectedValue)
+    }
+
+    private fun assertValue(input: String, expectedValue: Any) {
         val compiler = ProteusCompiler()
         val result = compiler.compile(input)
         assertEquals(
