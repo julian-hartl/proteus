@@ -34,7 +34,7 @@ internal class DiagnosticsBag {
     }
 
     private fun report(message: String, span: TextSpan) {
-        mutableDiagnostics.add(Diagnostic("ERROR: $message", span))
+        mutableDiagnostics.add(Diagnostic(message, span))
     }
 
     fun concat(other: DiagnosticsBag) {

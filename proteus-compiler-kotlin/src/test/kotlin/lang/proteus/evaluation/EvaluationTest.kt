@@ -1,5 +1,6 @@
 package lang.proteus.evaluation
 
+import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
 import lang.proteus.evaluator.Evaluator
@@ -8,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
@@ -172,6 +174,36 @@ class EvaluationTest {
                 Arguments.of("b", -4),
                 Arguments.of("a + b", 38),
             )
+        }
+    }
+
+    private fun assertDiagnostics(text: String, diagnosticText: String) {
+        val annotatedText = AnnotatedText.parse(text)
+        val syntaxTree = SyntaxTree.parse(annotatedText.text)
+        val compilation = Compilation(syntaxTree)
+        val result = compilation.evaluate(mutableMapOf())
+
+        val expectedDiagnostics = AnnotatedText.unindentLines(diagnosticText)
+
+        if (annotatedText.spans.size != expectedDiagnostics.size) {
+            throw IllegalArgumentException("Number of diagnostics does not match number of spans.")
+        }
+
+        assertEquals(
+            expectedDiagnostics.size,
+            result.diagnostics.diagnostics.size,
+            "Did not get the expected number of diagnostics."
+        )
+
+        for (i in expectedDiagnostics.indices) {
+            val expectedMessage = expectedDiagnostics[i]
+            val actualMessage = result.diagnostics.diagnostics[i].message
+            assertEquals(expectedMessage, actualMessage, "Diagnostic $i does not match.")
+
+            val expectedSpan = annotatedText.spans[i]
+            val actualSpan = result.diagnostics.diagnostics[i].span
+
+            assertEquals(expectedSpan, actualSpan, "Span $i does not match.")
         }
     }
 }
