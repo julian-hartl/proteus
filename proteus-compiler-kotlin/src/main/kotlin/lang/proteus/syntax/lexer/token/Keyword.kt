@@ -32,5 +32,6 @@ internal sealed class Keyword(override val literal: String) : Token() {
     internal object If : Keyword("if")
 
     internal object Else : Keyword("else")
+    internal object While : Keyword("while")
 }
 

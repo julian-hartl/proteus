@@ -56,7 +56,14 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             is ExpressionStatementSyntax -> bindExpressionStatement(syntax)
             is VariableDeclarationSyntax -> bindVariableDeclaration(syntax)
             is IfStatementSyntax -> bindIfStatement(syntax)
+            is WhileStatementSyntax -> bindWhileStatement(syntax)
         }
+    }
+
+    private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
+        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val body = bindStatement(syntax.body)
+        return BoundWhileStatement(condition, body)
     }
 
     private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
@@ -69,7 +76,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: ProteusType): BoundExpression {
         val expression = bindExpression(syntax)
         if (expression.type != expectedType) {
-            diagnosticsBag.reportCannotConvert(syntax.span(), expression.type, expectedType)
+            diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, expression.type)
         }
         return expression
     }

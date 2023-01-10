@@ -18,6 +18,13 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
             is BoundExpressionStatement -> evaluateExpressionStatement(statement)
             is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
             is BoundIfStatement -> evaluateIfStatement(statement)
+            is BoundWhileStatement -> evaluateWhileStatement(statement)
+        }
+    }
+
+    private fun evaluateWhileStatement(statement: BoundWhileStatement) {
+        while (evaluateExpression(statement.condition) as Boolean) {
+            evaluateStatement(statement.body)
         }
     }
 

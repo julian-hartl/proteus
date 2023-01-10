@@ -53,14 +53,32 @@ class Parser private constructor(
     }
 
     private fun parseStatement(): StatementSyntax {
-        if (current.token is Token.OpenBrace) {
-            return parseBlockStatement()
-        } else if (current.token == Keyword.Var || current.token == Keyword.Val) {
-            return parseVariableDeclarationStatement()
-        } else if (current.token is Keyword.If) {
-            return parseIfStatement()
+        when (current.token) {
+            is Token.OpenBrace -> {
+                return parseBlockStatement()
+            }
+
+            Keyword.Var, Keyword.Val -> {
+                return parseVariableDeclarationStatement()
+            }
+
+            is Keyword.If -> {
+                return parseIfStatement()
+            }
+
+            is Keyword.While -> {
+                return parseWhileStatement()
+            }
+
+            else -> return parseExpressionStatement()
         }
-        return parseExpressionStatement()
+    }
+
+    private fun parseWhileStatement(): StatementSyntax {
+        val whileKeyword = matchToken(Keyword.While)
+        val condition = parseExpression()
+        val body = parseStatement()
+        return WhileStatementSyntax(whileKeyword, condition, body)
     }
 
     private fun parseIfStatement(): StatementSyntax {

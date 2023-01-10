@@ -30,7 +30,8 @@ internal class LexerTest {
                 Token.Bad,
                 Token.EndOfFile,
                 Token.Expression,
-                Token.Statement
+                Token.Statement,
+                Token.ElseClause
             )
         )
 
@@ -38,6 +39,30 @@ internal class LexerTest {
 
         assertEquals(0, untestedTokens.size, "There are untested tokens: $untestedTokens")
 
+    }
+
+    @Test
+    fun `should lex bad token`() {
+        val input = "~"
+        val actual = SyntaxTree.parseTokens(input)
+        assertEquals(1, actual.size)
+        val token = actual.first()
+        assertEquals(Token.Bad, token.token)
+        assertEquals("\u0000", token.literal)
+    }
+
+    @Test
+    fun `should not be stuck in infinite loop`() {
+        val input = """
+            {
+                var a = 0
+                whilee a > 0 {
+                    a = a - 1
+                }
+                a
+            }
+        """.trimIndent()
+        SyntaxTree.parseTokens(input)
     }
 
     @Test
@@ -167,6 +192,10 @@ internal class LexerTest {
                 Arguments.of(Keyword.Val, "val"),
                 Arguments.of(Keyword.Var, "var"),
 
+                Arguments.of(Keyword.If, "if"),
+                Arguments.of(Keyword.Else, "else"),
+
+                Arguments.of(Keyword.While, "while"),
 
                 )
         }

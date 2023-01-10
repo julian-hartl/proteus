@@ -178,6 +178,43 @@ class EvaluationTest {
                 Arguments.of("a", 42),
                 Arguments.of("b", -4),
                 Arguments.of("a + b", 38),
+
+                Arguments.of(
+                    """
+                    {
+                       var x = 10
+                       if x == 10
+                            x = 20
+                       x
+                    }
+                """.trimIndent(), 20
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var x = 10
+                        if x == 20 {
+                            x = 5
+                        }
+                        else {
+                            x = 7
+                        }
+                        x
+                    }
+                """.trimIndent(), 7
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var x = 10
+                        while x > 0
+                            x = x - 1
+                        x
+                    }
+                """.trimIndent(), 0
+                )
             )
         }
     }
@@ -274,7 +311,20 @@ class EvaluationTest {
                 }
             }
         """
-        val diagnostics = "Operator '+' is not defined for type 'Boolean'"
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator While reports not Boolean condition`() {
+        val text = """
+            {
+                while [10] {
+                    var x = 10
+                }
+            }
+        """
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
         assertDiagnostics(text, diagnostics)
     }
 
