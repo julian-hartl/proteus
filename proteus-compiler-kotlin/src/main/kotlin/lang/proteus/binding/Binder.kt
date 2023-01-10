@@ -118,14 +118,14 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val variableType = boundExpression.type
         val declaredVariable = scope.tryLookup(variableName)
         if (declaredVariable == null) {
-            diagnosticsBag.reportUndeclaredVariable(syntax.identifierToken.span(), variableName)
+            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
             return boundExpression
         }
         if (declaredVariable.isFinal) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
         } else {
             if (!variableType.isAssignableTo(declaredVariable.type)) {
-                diagnosticsBag.reportCannotConvert(syntax.equalsToken.span(), declaredVariable.type, variableType)
+                diagnosticsBag.reportCannotConvert(syntax.expression.span(), declaredVariable.type, variableType)
             }
         }
         return BoundAssignmentExpression(declaredVariable, boundExpression)
@@ -135,7 +135,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val name = syntax.identifierToken.literal
         val variable = scope.tryLookup(name)
         if (variable == null) {
-            diagnosticsBag.reportUndeclaredVariable(syntax.identifierToken.span(), name)
+            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)
             return BoundLiteralExpression(0)
         }
         return BoundVariableExpression(variable)

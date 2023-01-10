@@ -194,6 +194,50 @@ class EvaluationTest {
         assertDiagnostics(text, diagnostics)
     }
 
+    @Test
+    fun `evaluator NameExpression reports undefined`() {
+        val text = """
+            [x] * 10
+        """
+
+        val diagnostics = "Unresolved reference: x"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Assignment reports unresolved reference`() {
+        val text = """
+            [x] = 10
+        """
+
+        val diagnostics = "Unresolved reference: x"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Assignment reports cannot be reassigned`() {
+        val text = """
+            {
+                val x = 10
+                [x] = 20
+            }
+        """
+        val diagnostics = "Val cannot be reassigned"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Assignment reports cannot convert`() {
+        val text = """
+            {
+                var x = 10
+                x = [false]
+            }
+        """
+        val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
+        assertDiagnostics(text, diagnostics)
+    }
+
     private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)

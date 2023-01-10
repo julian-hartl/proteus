@@ -29,8 +29,8 @@ internal class DiagnosticsBag {
         report("Operator '${literal}' cannot be applied to '${type}'", span)
     }
 
-    fun reportUndeclaredVariable(span: TextSpan, name: String) {
-        report("Variable '$name' not declared", span)
+    fun reportUnresolvedReference(span: TextSpan, name: String) {
+        report("Unresolved reference: $name", span)
     }
 
     private fun report(message: String, span: TextSpan) {
@@ -42,7 +42,7 @@ internal class DiagnosticsBag {
     }
 
     fun reportCannotConvert(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
-        report("Cannot convert '${newType}' to '${currentType}'", span)
+        report("Cannot convert type '${newType}' to '${currentType}'", span)
     }
 
     fun reportVariableAlreadyDeclared(span: TextSpan, variableName: String) {
@@ -50,7 +50,7 @@ internal class DiagnosticsBag {
     }
 
     fun reportFinalVariableCannotBeReassigned(span: TextSpan, variableName: String) {
-        report("Final variable '$variableName' cannot be reassigned", span)
+        report("Val cannot be reassigned", span)
     }
 
     fun reportInvalidCharLiteral(literal: String, span: TextSpan) {
