@@ -17,6 +17,16 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
             is BoundBlockStatement -> evaluateBlockStatement(statement)
             is BoundExpressionStatement -> evaluateExpressionStatement(statement)
             is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
+            is BoundIfStatement -> evaluateIfStatement(statement)
+        }
+    }
+
+    private fun evaluateIfStatement(statement: BoundIfStatement) {
+        val condition = evaluateExpression(statement.condition)
+        if (condition as Boolean) {
+            evaluateStatement(statement.thenStatement)
+        } else {
+            statement.elseStatement?.let { evaluateStatement(it) }
         }
     }
 

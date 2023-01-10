@@ -1,6 +1,7 @@
 {
-    val a = (1 > 0) and (0 < 1)
-    if a {
-        val x = 2
+    if(7 % 2 == 10) {
+        val a = 10
+    } else {
+        val a = 5
     }
 }

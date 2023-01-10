@@ -265,6 +265,19 @@ class EvaluationTest {
         assertDiagnostics(text, diagnostics)
     }
 
+    @Test
+    fun `evaluator If reports not Boolean condition`() {
+        val text = """
+            {
+                if [10] {
+                    var x = 10
+                }
+            }
+        """
+        val diagnostics = "Operator '+' is not defined for type 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
     private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)

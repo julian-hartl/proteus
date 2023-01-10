@@ -4,10 +4,7 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.parser.*
-import lang.proteus.syntax.parser.statements.BlockStatementSyntax
-import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
-import lang.proteus.syntax.parser.statements.StatementSyntax
-import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
+import lang.proteus.syntax.parser.statements.*
 import java.util.*
 
 internal class Binder(private var scope: BoundScope) : Diagnosable {
@@ -58,7 +55,23 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             is BlockStatementSyntax -> bindBlockStatement(syntax)
             is ExpressionStatementSyntax -> bindExpressionStatement(syntax)
             is VariableDeclarationSyntax -> bindVariableDeclaration(syntax)
+            is IfStatementSyntax -> bindIfStatement(syntax)
         }
+    }
+
+    private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
+        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val thenStatement = bindStatement(syntax.thenStatement)
+        val elseStatement = syntax.elseClause?.let { bindStatement(it.elseStatementSyntax) }
+        return BoundIfStatement(condition, thenStatement, elseStatement)
+    }
+
+    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: ProteusType): BoundExpression {
+        val expression = bindExpression(syntax)
+        if (expression.type != expectedType) {
+            diagnosticsBag.reportCannotConvert(syntax.span(), expression.type, expectedType)
+        }
+        return expression
     }
 
     private fun bindVariableDeclaration(syntax: VariableDeclarationSyntax): BoundStatement {

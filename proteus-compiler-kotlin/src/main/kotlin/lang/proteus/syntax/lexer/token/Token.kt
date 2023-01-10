@@ -20,6 +20,7 @@ sealed class Token(open val literal: String? = null) {
     object QuotationMark : Token("\"")
 
     object SingleQuote : Token("'")
+    object ElseClause : Token()
 
 
     fun toSyntaxToken(position: Int, literal: String, value: Any? = null): SyntaxToken<Token> {

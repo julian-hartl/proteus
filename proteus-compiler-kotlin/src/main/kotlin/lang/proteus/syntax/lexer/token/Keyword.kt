@@ -28,5 +28,9 @@ internal sealed class Keyword(override val literal: String) : Token() {
     internal object Val : Keyword("val")
 
     internal object Var : Keyword("var")
+
+    internal object If : Keyword("if")
+
+    internal object Else : Keyword("else")
 }
 

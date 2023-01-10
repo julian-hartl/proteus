@@ -5,15 +5,13 @@ import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
-import lang.proteus.syntax.lexer.*
+import lang.proteus.syntax.lexer.Lexer
+import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.token.Token
-import lang.proteus.syntax.parser.statements.BlockStatementSyntax
-import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
-import lang.proteus.syntax.parser.statements.StatementSyntax
-import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
+import lang.proteus.syntax.parser.statements.*
 import lang.proteus.text.SourceText
 
 class Parser private constructor(
@@ -59,8 +57,26 @@ class Parser private constructor(
             return parseBlockStatement()
         } else if (current.token == Keyword.Var || current.token == Keyword.Val) {
             return parseVariableDeclarationStatement()
+        } else if (current.token is Keyword.If) {
+            return parseIfStatement()
         }
         return parseExpressionStatement()
+    }
+
+    private fun parseIfStatement(): StatementSyntax {
+        val ifKeyword = matchToken(Keyword.If)
+        val condition = parseExpression()
+        val thenStatement = parseStatement()
+        val elseClause = parseElseClause()
+        return IfStatementSyntax(ifKeyword, condition, thenStatement, elseClause)
+    }
+
+    private fun parseElseClause() = if (current.token == Keyword.Else) {
+        val elseKeyword = matchToken(Keyword.Else)
+        val elseStatement = parseStatement()
+        ElseClauseSyntax(elseKeyword, elseStatement)
+    } else {
+        null
     }
 
     private fun parseVariableDeclarationStatement(): StatementSyntax {
