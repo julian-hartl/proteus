@@ -124,8 +124,13 @@ class Parser private constructor(
         val openBrace = matchToken(Token.OpenBrace)
         val statements = mutableListOf<StatementSyntax>()
         while (current.token !is Token.CloseBrace && current.token !is Token.EndOfFile) {
+            val startToken = current
             val statement = parseStatement()
             statements.add(statement)
+            // If we didn't consume any tokens, we're in an infinite loop.
+            if (startToken == current) {
+                nextToken()
+            }
         }
         val closeBrace = matchToken(Token.CloseBrace)
         return BlockStatementSyntax(openBrace, statements, closeBrace)

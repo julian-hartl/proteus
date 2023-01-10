@@ -16,6 +16,18 @@ import kotlin.test.assertFalse
 class EvaluationTest {
 
 
+    @Test
+    fun `evaluator BlockStatement NoInfiniteLoop`() {
+        val text = """
+            {[(]
+        """.trimIndent()
+
+        val diagnostics = """
+            Unexpected token '(', expected '}'
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics)
+    }
+
     @ParameterizedTest
     @MethodSource("getValidSyntaxInputs")
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
@@ -226,6 +238,17 @@ class EvaluationTest {
                         b
                     }
                 """.trimIndent(), 55
+                ),
+
+                Arguments.of(
+                    """
+                        {
+                            var b = 0
+                            if b == 0
+                                b = 10
+                            b
+                        }
+                    """.trimIndent(), 10
                 )
             )
         }
@@ -363,6 +386,7 @@ class EvaluationTest {
         val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
         assertDiagnostics(text, diagnostics)
     }
+
     private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
