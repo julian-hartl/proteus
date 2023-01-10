@@ -19,6 +19,17 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
             is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
             is BoundIfStatement -> evaluateIfStatement(statement)
             is BoundWhileStatement -> evaluateWhileStatement(statement)
+            is BoundForStatement -> evaluateForStatement(statement)
+        }
+    }
+
+    private fun evaluateForStatement(statement: BoundForStatement) {
+        val lowerBound = evaluateExpression(statement.lowerBound) as Int
+        val upperBound = evaluateExpression(statement.upperBound) as Int
+
+        for (i in lowerBound..upperBound) {
+            variables[statement.variable.name] = i
+            evaluateStatement(statement.body)
         }
     }
 

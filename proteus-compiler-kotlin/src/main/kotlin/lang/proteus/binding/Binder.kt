@@ -57,7 +57,27 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             is VariableDeclarationSyntax -> bindVariableDeclaration(syntax)
             is IfStatementSyntax -> bindIfStatement(syntax)
             is WhileStatementSyntax -> bindWhileStatement(syntax)
+            is ForStatementSyntax -> bindForStatement(syntax)
         }
+    }
+
+    private fun bindForStatement(syntax: ForStatementSyntax): BoundStatement {
+        val lowerBound = bindExpressionWithType(syntax.lowerBound, ProteusType.Int)
+        val upperBound = bindExpressionWithType(syntax.upperBound, ProteusType.Int)
+
+        scope = BoundScope(scope)
+
+        val name = syntax.identifier.literal
+        val variable = VariableSymbol(name, ProteusType.Int, isFinal = true)
+        val declaredVariable = scope.tryLookup(name)
+        if (declaredVariable != null) {
+            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), name)
+        }
+
+        scope.tryDeclare(variable)
+        val body = bindStatement(syntax.body)
+        scope = scope.parent!!
+        return BoundForStatement(variable, lowerBound, upperBound, body)
     }
 
     private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {

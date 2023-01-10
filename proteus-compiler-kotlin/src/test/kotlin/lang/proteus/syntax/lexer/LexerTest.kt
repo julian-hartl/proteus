@@ -196,8 +196,12 @@ internal class LexerTest {
                 Arguments.of(Keyword.Else, "else"),
 
                 Arguments.of(Keyword.While, "while"),
+                Arguments.of(Keyword.For, "for"),
 
-                )
+                Arguments.of(Keyword.To, "to"),
+                Arguments.of(Keyword.In, "in")
+
+            )
         }
 
         private fun getSeparators(): List<Arguments> {

@@ -214,6 +214,18 @@ class EvaluationTest {
                         x
                     }
                 """.trimIndent(), 0
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var b = 0
+                        for x in 1 to 10 {
+                            b = b + x
+                        }
+                        b
+                    }
+                """.trimIndent(), 55
                 )
             )
         }
@@ -328,6 +340,29 @@ class EvaluationTest {
         assertDiagnostics(text, diagnostics)
     }
 
+    @Test
+    fun `evaluator range operator reports not Integer in lower bound`() {
+        val text = """
+            {
+                for i in [false] to 20 {
+                }
+            }
+        """
+        val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator range operator reports not Integer in upper bound`() {
+        val text = """
+            {
+                for i in 10 to [true] {
+                }
+            }
+        """
+        val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
+        assertDiagnostics(text, diagnostics)
+    }
     private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)

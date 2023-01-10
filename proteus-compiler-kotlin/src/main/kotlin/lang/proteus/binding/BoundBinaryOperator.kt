@@ -5,7 +5,7 @@ import lang.proteus.syntax.lexer.token.Operator
 
 internal sealed class BoundBinaryOperator(
     val operator: Operator, val leftType: ProteusType, val rightType: ProteusType, val resultType: ProteusType,
-    val requiresSameTypes: Boolean = true
+    val requiresSameTypes: Boolean = true,
 ) {
 
 
@@ -23,10 +23,11 @@ internal sealed class BoundBinaryOperator(
 
         fun bind(operator: Operator, leftType: ProteusType, rightType: ProteusType): BoundBinaryOperator? {
             return operators.firstOrNull {
-                val isSuited = it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
-                    rightType
-                )
-                if(isSuited && it.requiresSameTypes) {
+                val isSuited =
+                    it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
+                        rightType
+                    )
+                if (isSuited && it.requiresSameTypes) {
                     return@firstOrNull leftType == rightType
                 }
                 isSuited
@@ -77,12 +78,12 @@ internal sealed class BoundBinaryOperator(
         Operator.Is,
         ProteusType.Object,
         ProteusType.Type,
-        ProteusType.Boolean, requiresSameTypes = false)
+        ProteusType.Boolean, requiresSameTypes = false
+    )
 
     object BoundModuloBinaryOperator : BoundBinaryOperator(
         Operator.Percent,
         ProteusType.Int,
     )
-
 
 }

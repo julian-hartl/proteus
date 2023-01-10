@@ -70,8 +70,23 @@ class Parser private constructor(
                 return parseWhileStatement()
             }
 
+            is Keyword.For -> {
+                return parseForStatement()
+            }
+
             else -> return parseExpressionStatement()
         }
+    }
+
+    private fun parseForStatement(): StatementSyntax {
+        val forToken = matchToken(Keyword.For)
+        val identifier = matchToken(Token.Identifier)
+        val inKeyword = matchToken(Keyword.In)
+        val lowerBound = parseExpression()
+        val toKeyword = matchToken(Keyword.To)
+        val upperBound = parseExpression()
+        val body = parseStatement()
+        return ForStatementSyntax(forToken, identifier, inKeyword, lowerBound, toKeyword, upperBound, body)
     }
 
     private fun parseWhileStatement(): StatementSyntax {
