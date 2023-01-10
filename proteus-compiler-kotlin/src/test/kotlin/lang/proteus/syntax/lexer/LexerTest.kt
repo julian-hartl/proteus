@@ -144,7 +144,7 @@ internal class LexerTest {
                 Arguments.of(Operator.Minus, "-"),
                 Arguments.of(Operator.Asterisk, "*"),
                 Arguments.of(Operator.Slash, "/"),
-                Arguments.of(Operator.DoubleCircumflex, "^^"),
+                Arguments.of(Operator.DoubleAsterisk, "**"),
 
                 Arguments.of(Operator.Is, "is"),
                 Arguments.of(Operator.TypeOf, "typeof"),
@@ -187,6 +187,9 @@ internal class LexerTest {
             if (t1Token is Token.Identifier && t2Token is Keyword) return true
             if (t1Token is Token.Number && t2Token is Token.Number) return true
             if (t1Token is Token.Type || t2Token is Token.Type) return true
+            if (t1Token is Operator.Asterisk) {
+                return t2Token is Operator.Asterisk || t2Token is Operator.DoubleAsterisk
+            }
             val isFirstIdentifierOrKeyword = t1Token is Token.Identifier || t1Token is Keyword
             val isSecondIdentifierOrKeyword = t2Token is Token.Identifier || t2Token is Keyword
 
@@ -212,7 +215,7 @@ internal class LexerTest {
             if (t1Token is Operator.GreaterThan && t2Token is Operator.GreaterThanEquals) return true
             if (t1Token is Operator.LessThan && t2Token is Operator.LessThanEquals) return true
             if (t1Token is Operator.Circumflex && t2Token is Operator.Circumflex) return true
-            if (t1Token is Operator.Circumflex && t2Token is Operator.DoubleCircumflex) return true
+            if (t1Token is Operator.Circumflex && t2Token is Operator.DoubleAsterisk) return true
 
             return false
         }

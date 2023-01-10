@@ -146,13 +146,13 @@ class BinderTest {
 
     @Test
     fun shouldHaveErrorWhenUsingPowOperatorOnNonNumbers() {
-        useExpression("true ^^ false")
+        useExpression("true ** false")
         assertTrue(binder.hasErrors())
     }
 
     @Test
     fun shouldNotHaveErrorWhenUsingPowOperatorOnNumbers() {
-        useExpression("1 ^^ 2")
+        useExpression("1 ** 2")
         assertTrue(!binder.hasErrors())
     }
 

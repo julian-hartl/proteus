@@ -42,7 +42,7 @@ internal sealed class BoundBinaryOperator(
 
     object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, ProteusType.Int)
 
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleCircumflex, ProteusType.Int)
+    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleAsterisk, ProteusType.Int)
 
     object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, ProteusType.Int)
     object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, ProteusType.Int)

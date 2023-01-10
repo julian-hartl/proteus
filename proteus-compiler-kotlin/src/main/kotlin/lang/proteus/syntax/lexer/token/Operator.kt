@@ -25,7 +25,7 @@ sealed class Operator(
     object Asterisk : BinaryOperator("*", 2)
 
     object Slash : BinaryOperator("/", 2)
-    object DoubleCircumflex : BinaryOperator("^^", 3)
+    object DoubleAsterisk : BinaryOperator("**", 3)
     object DoubleGreaterThan : BinaryOperator(">>", 3)
     object DoubleLessThan : BinaryOperator("<<", 3)
 

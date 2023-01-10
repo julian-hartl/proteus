@@ -93,7 +93,7 @@ class EvaluationTest {
                 Arguments.of("2 - 2", 0),
                 Arguments.of("2 * 2", 4),
                 Arguments.of("2 / 2", 1),
-                Arguments.of("2 ^^ 2", 4),
+                Arguments.of("2 ** 2", 4),
                 Arguments.of("2 + 2 * 2", 6),
                 Arguments.of("2 * (2 + 2)", 8),
                 Arguments.of("2 * (2 + 2) / 2", 4),
