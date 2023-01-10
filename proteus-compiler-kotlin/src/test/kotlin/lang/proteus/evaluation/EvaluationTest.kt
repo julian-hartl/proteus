@@ -177,6 +177,23 @@ class EvaluationTest {
         }
     }
 
+    @Test
+    fun `evaluator variable declaration reports redeclaration`() {
+        val text = """
+            {
+                var x = 10
+                var y = 100
+                {
+                    var x = 10
+                }
+                var [x] = 5
+            }
+        """
+
+        val diagnostics = "Variable 'x' already declared"
+        assertDiagnostics(text, diagnostics)
+    }
+
     private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
