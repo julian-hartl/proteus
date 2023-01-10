@@ -238,6 +238,28 @@ class EvaluationTest {
         assertDiagnostics(text, diagnostics)
     }
 
+    @Test
+    fun `evaluator Binary reports undefined operator`() {
+        val text = """
+            {
+                var x = 5 [+] false
+            }
+        """
+        val diagnostics = "Operator '+' is not defined for types 'Int' and 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Unary reports undefined operator`() {
+        val text = """
+            {
+                var x = [+]false
+            }
+        """
+        val diagnostics = "Operator '+' is not defined for type 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
     private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)

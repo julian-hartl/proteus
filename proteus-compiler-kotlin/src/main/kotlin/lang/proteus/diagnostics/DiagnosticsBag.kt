@@ -20,13 +20,13 @@ internal class DiagnosticsBag {
 
     fun reportBinaryOperatorMismatch(literal: String, span: TextSpan, leftType: ProteusType, rightType: ProteusType) {
         report(
-            "Operator '${literal}' cannot be applied to '${leftType}' and '${rightType}'",
+            "Operator '${literal}' is not defined for types '${leftType}' and '${rightType}'",
             span
         )
     }
 
     fun reportUnaryOperatorMismatch(literal: String, span: TextSpan, type: ProteusType) {
-        report("Operator '${literal}' cannot be applied to '${type}'", span)
+        report("Operator '${literal}' is not defined for type '${type}'", span)
     }
 
     fun reportUnresolvedReference(span: TextSpan, name: String) {
