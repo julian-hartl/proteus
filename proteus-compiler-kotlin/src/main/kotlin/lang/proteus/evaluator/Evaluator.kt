@@ -2,6 +2,7 @@ package lang.proteus.evaluator
 
 import lang.proteus.binding.*
 import lang.proteus.binding.types.KotlinRange
+import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
 
 internal class Evaluator(private val boundStatement: BoundStatement, private val variables: MutableMap<String, Any>) {
@@ -91,7 +92,12 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
-        val value = evaluateExpression(expression.expression)
+        val expressionValue = evaluateExpression(expression.expression)
+        val value = when (expression.assignmentOperator) {
+            Operator.Equals -> expressionValue
+            Operator.MinusEquals -> (variables[expression.symbol.name] as Int) - (expressionValue as Int)
+            Operator.PlusEquals -> (variables[expression.symbol.name] as Int) + (expressionValue as Int)
+        }
         variables[expression.symbol.name] = value
         return value
     }

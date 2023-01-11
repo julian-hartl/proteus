@@ -6,7 +6,7 @@ internal sealed class BoundUnaryOperator(
     val operator: Operator,
     val operandType: ProteusType,
     val resultType: ProteusType
-) {
+): BoundOperator() {
 
     constructor(operator: Operator, type: ProteusType) : this(
         operator,

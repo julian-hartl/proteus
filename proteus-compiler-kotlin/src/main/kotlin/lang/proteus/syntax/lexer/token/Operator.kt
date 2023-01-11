@@ -56,6 +56,11 @@ sealed class Operator(
 
     object Equals : AssignmentOperator("=", 1)
 
+    object PlusEquals : AssignmentOperator("+=", 1)
+
+    object MinusEquals : AssignmentOperator("-=", 1)
+
+
     object TypeOf : UnaryOperator("typeof", 4)
 
     object Until : BinaryOperator("until", 4)

@@ -192,6 +192,46 @@ class EvaluationTest {
 
                 Arguments.of(
                     """
+                    {
+                        var a = 0;
+                        a += 10;
+                        a;
+                    }
+                """.trimIndent(), 10
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var a = 0;
+                        a -= 10;
+                        a;
+                    }
+                """.trimIndent(), -10
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var a = 0;
+                        a++;
+                        a;
+                    }
+                """.trimIndent(), 1
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var a = 0;
+                        a--;
+                        a;
+                    }
+                """.trimIndent(), -1
+                ),
+
+                Arguments.of(
+                    """
                         {
                             var x = 1 + 2;
                             typeof x;
@@ -437,6 +477,59 @@ class EvaluationTest {
             Unexpected token <EndOfFile>, expected <Expression>
             Unexpected token <EndOfFile>, expected <Identifier>
         """.trimIndent()
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator final variable should not be reassigned with += operator`() {
+        val text = """
+            {
+                val a = 2;
+                a [+=] 1;
+            }
+        """.trimIndent()
+        val diagnostics = "Val cannot be reassigned"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator final variable should not be reassigned with -= operator`() {
+        val text = """
+            {
+                val a = 2;
+                a [-=] 1;
+            }
+        """.trimIndent()
+        val diagnostics = "Val cannot be reassigned"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+
+    @Test
+    fun `evaluator += operator should not be applicable to Boolean`() {
+        val text = """
+            {
+                var a = true;
+                a [+=] 1;
+            }
+        """.trimIndent()
+        val diagnostics = "Operator '+=' is not defined for types 'Boolean' and 'Int'"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator -= operator should not be applicable to Boolean`() {
+        val text = """
+            {
+                var a = true;
+                a [-=] 1;
+            }
+        """.trimIndent()
+        val diagnostics = "Operator '-=' is not defined for types 'Boolean' and 'Int'"
+
         assertDiagnostics(text, diagnostics)
     }
 

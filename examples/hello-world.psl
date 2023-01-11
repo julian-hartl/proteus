@@ -1,4 +1,7 @@
 {
-    for i in false to 20 {
+    var sum = 0;
+    for i in 0 until 10 {
+        sum += i;
     }
+    sum;
 }

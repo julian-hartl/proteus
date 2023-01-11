@@ -3,6 +3,7 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.*
 import java.util.*
@@ -152,6 +153,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
+        val assignmentOperator = syntax.assignmentOperator.token
         val boundExpression = bindExpression(syntax.expression)
         val variableName = syntax.identifierToken.literal
         val variableType = boundExpression.type
@@ -160,6 +162,22 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
             return boundExpression
         }
+        val typesAreApplicable = when (assignmentOperator) {
+            is Operator.PlusEquals -> {
+
+                BoundBinaryOperator.BoundAdditionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+            }
+
+            is Operator.MinusEquals -> {
+
+                BoundBinaryOperator.BoundSubtractionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+            }
+
+            else -> true
+        }
+        if (!typesAreApplicable) {
+            diagnosticsBag.reportCannotConvert(syntax.identifierToken.span(), declaredVariable.type, variableType)
+        }
         if (declaredVariable.isFinal) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
         } else {
@@ -167,7 +185,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
                 diagnosticsBag.reportCannotConvert(syntax.expression.span(), declaredVariable.type, variableType)
             }
         }
-        return BoundAssignmentExpression(declaredVariable, boundExpression)
+        return BoundAssignmentExpression(declaredVariable, boundExpression, assignmentOperator)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {

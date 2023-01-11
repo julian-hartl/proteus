@@ -7,10 +7,9 @@ import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.lexer.token.*
 import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
-import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.statements.*
 import lang.proteus.text.SourceText
 
@@ -153,11 +152,11 @@ class Parser private constructor(
     }
 
     private fun parseAssigmentExpression(): ExpressionSyntax {
-        if (peek(0).token is Token.Identifier && peek(1).token is Operator.Equals) {
+        if (peek(0).token is Token.Identifier && peek(1).token is AssignmentOperator) {
             val identifierToken = matchToken(Token.Identifier)
-            val equalsToken = matchToken(Operator.Equals)
+            val assignmentOperator = matchOneToken(Operators.assignmentOperators, expect = Operator.Equals)
             val expression = parseAssigmentExpression()
-            return AssignmentExpressionSyntax(identifierToken, equalsToken, expression)
+            return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
 
         return parseBinaryExpression()
@@ -323,13 +322,13 @@ class Parser private constructor(
         return NameExpressionSyntax(token)
     }
 
-    private fun <T : Token> matchOneToken(tokens: List<T>): SyntaxToken<T> {
+    private fun <T : Token> matchOneToken(tokens: List<T>, expect: T? = null): SyntaxToken<T> {
         for (token in tokens) {
             if (current.token == token) {
                 return matchToken(token)
             }
         }
-        return matchToken(tokens[0])
+        return matchToken(expect ?: tokens[0])
     }
 
     private fun <T : Token> matchToken(token: T): SyntaxToken<T> {

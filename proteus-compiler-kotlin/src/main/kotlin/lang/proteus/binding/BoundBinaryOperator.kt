@@ -2,11 +2,19 @@ package lang.proteus.binding
 
 import lang.proteus.syntax.lexer.token.Operator
 
+internal sealed class BoundOperator {
+    fun canBeApplied(vararg types: ProteusType): Boolean {
+        return when (this) {
+            is BoundBinaryOperator -> this.leftType.isAssignableTo(types[0]) && this.rightType.isAssignableTo(types[1])
+            is BoundUnaryOperator -> this.operandType.isAssignableTo(types[0])
+        }
+    }
+}
 
 internal sealed class BoundBinaryOperator(
     val operator: Operator, val leftType: ProteusType, val rightType: ProteusType, val resultType: ProteusType,
     val requiresSameTypes: Boolean = true,
-) {
+) : BoundOperator() {
 
 
     constructor(operator: Operator, type: ProteusType) : this(operator, type, type, type)
