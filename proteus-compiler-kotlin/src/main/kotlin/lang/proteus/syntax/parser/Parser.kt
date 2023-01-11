@@ -124,6 +124,14 @@ class Parser private constructor(
         while (current.token !is Token.CloseBrace && current.token !is Token.EndOfFile) {
             val startToken = current
             val statement = parseStatement()
+            if (statement !is BlockStatementSyntax) {
+                if (peek(-1).token is Token.CloseBrace) {
+                    if (current.token is Token.SemiColon)
+                        nextToken()
+                } else {
+                    matchToken(Token.SemiColon)
+                }
+            }
             statements.add(statement)
             // If we didn't consume any tokens, we're in an infinite loop.
             if (startToken == current) {
@@ -151,6 +159,7 @@ class Parser private constructor(
             val expression = parseAssigmentExpression()
             return AssignmentExpressionSyntax(identifierToken, equalsToken, expression)
         }
+
         return parseBinaryExpression()
     }
 
@@ -168,6 +177,10 @@ class Parser private constructor(
 
         while (true) {
             val precedence = currentOperator?.precedence ?: 0
+
+            if (current.token is Token.SemiColon) {
+                break
+            }
 
             if (precedence == 0 || precedence <= parentPrecedence) {
                 break
@@ -308,6 +321,15 @@ class Parser private constructor(
         val token = matchToken(Token.Identifier)
 
         return NameExpressionSyntax(token)
+    }
+
+    private fun <T : Token> matchOneToken(tokens: List<T>): SyntaxToken<T> {
+        for (token in tokens) {
+            if (current.token == token) {
+                return matchToken(token)
+            }
+        }
+        return matchToken(tokens[0])
     }
 
     private fun <T : Token> matchToken(token: T): SyntaxToken<T> {

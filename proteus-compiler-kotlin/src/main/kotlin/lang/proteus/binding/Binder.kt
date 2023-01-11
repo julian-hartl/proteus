@@ -172,6 +172,10 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
+        if (name.isEmpty()) {
+            // Token was inserted by parser. We already reported that error so we can just return an error expression.
+            return BoundLiteralExpression(0)
+        }
         val variable = scope.tryLookup(name)
         if (variable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)

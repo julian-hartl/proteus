@@ -22,6 +22,7 @@ sealed class Token(open val literal: String? = null) {
     object SingleQuote : Token("'")
     object ElseClause : Token()
 
+    object SemiColon : Token(";")
 
     fun toSyntaxToken(position: Int, literal: String, value: Any? = null): SyntaxToken<Token> {
         return SyntaxToken(this, position, literal, value, usePositionBasedSpan = true)

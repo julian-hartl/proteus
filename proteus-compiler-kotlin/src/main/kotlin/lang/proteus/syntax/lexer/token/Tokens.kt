@@ -20,4 +20,5 @@ internal object Tokens {
     fun fromLiteral(currentLiteral: String): Token? {
         return allTokens.firstOrNull { it.literal == currentLiteral }
     }
+
 }

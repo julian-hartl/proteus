@@ -199,7 +199,9 @@ internal class LexerTest {
                 Arguments.of(Keyword.For, "for"),
 
                 Arguments.of(Operator.Until, "until"),
-                Arguments.of(Keyword.In, "in")
+                Arguments.of(Keyword.In, "in"),
+
+                Arguments.of(Token.SemiColon, ";"),
 
             )
         }

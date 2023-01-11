@@ -86,9 +86,10 @@ internal sealed class BoundBinaryOperator(
         ProteusType.Int,
     )
 
-    object BoundUntilBinaryOperator: BoundBinaryOperator(
+    object BoundUntilBinaryOperator : BoundBinaryOperator(
         Operator.Until,
-        ProteusType.Int
+        ProteusType.Int,
+        ProteusType.Range
     )
 
 }

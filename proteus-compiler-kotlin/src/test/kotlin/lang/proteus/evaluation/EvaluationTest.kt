@@ -185,18 +185,29 @@ class EvaluationTest {
                 Arguments.of("1 is Int and 1 is Boolean", false),
                 Arguments.of("1 is Int or 1 is Boolean", true),
 
-                Arguments.of("{ var a = 0 (a = 10) * 10", 100),
+                Arguments.of("{ var a = 0 (a = 10) * 10; }", 100),
                 Arguments.of("a", 42),
                 Arguments.of("b", -4),
                 Arguments.of("a + b", 38),
 
                 Arguments.of(
                     """
+                        {
+                            var x = 1 + 2;
+                            typeof x;
+                        }
+
+                    """.trimIndent(),
+                    ProteusType.Int
+                ),
+
+                Arguments.of(
+                    """
                     {
-                       var x = 10
+                       var x = 10;
                        if x == 10
-                            x = 20
-                       x
+                            x = 20;
+                       x;
                     }
                 """.trimIndent(), 20
                 ),
@@ -204,14 +215,14 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     {
-                        var x = 10
+                        var x = 10;
                         if x == 20 {
-                            x = 5
+                            x = 5;
                         }
                         else {
-                            x = 7
+                            x = 7;
                         }
-                        x
+                        x;
                     }
                 """.trimIndent(), 7
                 ),
@@ -219,10 +230,10 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     {
-                        var x = 10
+                        var x = 10;
                         while x > 0
-                            x = x - 1
-                        x
+                            x = x - 1;
+                        x;
                     }
                 """.trimIndent(), 0
                 ),
@@ -230,11 +241,11 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     {
-                        var b = 0
+                        var b = 0;
                         for x in 1 until 10 {
-                            b = b + x
+                            b = b + x;
                         }
-                        b
+                        b;
                     }
                 """.trimIndent(), 55
                 ),
@@ -242,10 +253,10 @@ class EvaluationTest {
                 Arguments.of(
                     """
                         {
-                            var b = 0
+                            var b = 0;
                             if b == 0
-                                b = 10
-                            b
+                                b = 10;
+                            b;
                         }
                     """.trimIndent(), 10
                 ),
@@ -253,13 +264,27 @@ class EvaluationTest {
                 Arguments.of(
                     """
                         {
-                            var b = 10
-                            for x in (1 until 10)
-                                b = b + x
-                            b
+                            var b = 10;
+                            for x in (1 until 10) {
+                                b = b + x;
+                            }
+                            b;
                         }
                     """.trimIndent(), 55
-                )
+                ),
+
+                Arguments.of(
+                    """
+                       {
+                            var b = 0;
+                            if (b == 0) {
+                                b = 10;
+                            };
+                            b;
+                        }
+                    """.trimIndent(),
+                    10
+                ),
             )
         }
     }
@@ -268,12 +293,12 @@ class EvaluationTest {
     fun `evaluator variable declaration reports redeclaration`() {
         val text = """
             {
-                var x = 10
-                var y = 100
+                var x = 10;
+                var y = 100;
                 {
-                    var x = 10
+                    var x = 10;
                 }
-                var [x] = 5
+                var [x] = 5;
             }
         """
 
@@ -305,8 +330,8 @@ class EvaluationTest {
     fun `evaluator Assignment reports cannot be reassigned`() {
         val text = """
             {
-                val x = 10
-                [x] = 20
+                val x = 10;
+                [x] = 20;
             }
         """
         val diagnostics = "Val cannot be reassigned"
@@ -317,8 +342,8 @@ class EvaluationTest {
     fun `evaluator Assignment reports cannot convert`() {
         val text = """
             {
-                var x = 10
-                x = [false]
+                var x = 10;
+                x = [false];
             }
         """
         val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
@@ -329,7 +354,7 @@ class EvaluationTest {
     fun `evaluator Binary reports undefined operator`() {
         val text = """
             {
-                var x = 5 [+] false
+                var x = 5 [+] false;
             }
         """
         val diagnostics = "Operator '+' is not defined for types 'Int' and 'Boolean'"
@@ -340,7 +365,7 @@ class EvaluationTest {
     fun `evaluator Unary reports undefined operator`() {
         val text = """
             {
-                var x = [+]false
+                var x = [+]false;
             }
         """
         val diagnostics = "Operator '+' is not defined for type 'Boolean'"
@@ -352,7 +377,7 @@ class EvaluationTest {
         val text = """
             {
                 if [10] {
-                    var x = 10
+                    var x = 10;
                 }
             }
         """
@@ -365,7 +390,7 @@ class EvaluationTest {
         val text = """
             {
                 while [10] {
-                    var x = 10
+                    var x = 10;
                 }
             }
         """
@@ -377,11 +402,14 @@ class EvaluationTest {
     fun `evaluator range operator reports not Integer in lower bound`() {
         val text = """
             {
-                for i in [false] to 20 {
+                for i in [false] [until] 20 {
                 }
             }
         """
-        val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
+        val diagnostics = """
+            Cannot convert type 'Boolean' to 'Range'
+            Operator 'until' is not defined for types 'Boolean' and 'Int'
+        """.trimIndent()
         assertDiagnostics(text, diagnostics)
     }
 
@@ -389,11 +417,26 @@ class EvaluationTest {
     fun `evaluator range operator reports not Integer in upper bound`() {
         val text = """
             {
-                for i in 10 to [true] {
+                for i in 10 [until] [true] {
                 }
             }
         """
-        val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
+        val diagnostics = """
+            Cannot convert type 'Boolean' to 'Int'
+            Operator 'until' is not defined for types 'Int' and 'Boolean'
+        """.trimMargin()
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator NameExpression reports no error for inserted token`() {
+        val text = """
+            [][]
+        """
+        val diagnostics = """
+            Unexpected token <EndOfFile>, expected <Expression>
+            Unexpected token <EndOfFile>, expected <Identifier>
+        """.trimIndent()
         assertDiagnostics(text, diagnostics)
     }
 
@@ -412,7 +455,7 @@ class EvaluationTest {
         assertEquals(
             expectedDiagnostics.size,
             required ?: result.diagnostics.diagnostics.size,
-            "Did not get the expected number of diagnostics."
+            "Did not get the expected number of diagnostics, actual: ${result.diagnostics.diagnostics}."
         )
 
         var assertedDiagnostics = 0
@@ -433,7 +476,7 @@ class EvaluationTest {
         }
         assertEquals(
             expectedDiagnostics.size, assertedDiagnostics, """
-            Did not get the expected diagnostics.
+            Did not get the expected amount diagnostics.
             Expected: $expectedDiagnostics
             Actual: ${result.diagnostics.diagnostics}
         """.trimIndent()
