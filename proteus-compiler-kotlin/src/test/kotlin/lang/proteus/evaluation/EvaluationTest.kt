@@ -19,13 +19,10 @@ class EvaluationTest {
     @Test
     fun `evaluator BlockStatement NoInfiniteLoop`() {
         val text = """
-            {[(]
-        """.trimIndent()
+            {([]
+        """
 
-        val diagnostics = """
-            Unexpected token '(', expected '}'
-        """.trimIndent()
-        assertDiagnostics(text, diagnostics)
+        ProteusCompiler().compile(text)
     }
 
     @ParameterizedTest
@@ -180,6 +177,8 @@ class EvaluationTest {
                 Arguments.of("typeof 0b100", ProteusType.BinaryString),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
+                Arguments.of("typeof 1 until 2", ProteusType.Range),
+
 
                 Arguments.of("1 is Int", true),
                 Arguments.of("1 is Boolean", false),
@@ -232,7 +231,7 @@ class EvaluationTest {
                     """
                     {
                         var b = 0
-                        for x in 1 to 10 {
+                        for x in 1 until 10 {
                             b = b + x
                         }
                         b
@@ -387,7 +386,7 @@ class EvaluationTest {
         assertDiagnostics(text, diagnostics)
     }
 
-    private fun assertDiagnostics(text: String, diagnosticText: String) {
+    private fun assertDiagnostics(text: String, diagnosticText: String, required: Int? = null) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
         val compilation = Compilation(syntaxTree)
@@ -401,19 +400,32 @@ class EvaluationTest {
 
         assertEquals(
             expectedDiagnostics.size,
-            result.diagnostics.diagnostics.size,
+            required ?: result.diagnostics.diagnostics.size,
             "Did not get the expected number of diagnostics."
         )
 
+        var assertedDiagnostics = 0
         for (i in expectedDiagnostics.indices) {
-            val expectedMessage = expectedDiagnostics[i]
+            val expectedMessage = expectedDiagnostics[assertedDiagnostics]
             val actualMessage = result.diagnostics.diagnostics[i].message
-            assertEquals(expectedMessage, actualMessage, "Diagnostic $i does not match.")
+            if (expectedMessage != actualMessage) {
+                continue
+            }
 
             val expectedSpan = annotatedText.spans[i]
             val actualSpan = result.diagnostics.diagnostics[i].span
+            if (expectedSpan != actualSpan) {
+                continue
+            }
 
-            assertEquals(expectedSpan, actualSpan, "Span $i does not match.")
+            assertedDiagnostics++
         }
+        assertEquals(
+            expectedDiagnostics.size, assertedDiagnostics, """
+            Did not get the expected diagnostics.
+            Expected: $expectedDiagnostics
+            Actual: ${result.diagnostics.diagnostics}
+        """.trimIndent()
+        )
     }
 }

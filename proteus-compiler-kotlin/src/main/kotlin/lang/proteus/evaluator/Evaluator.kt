@@ -1,6 +1,7 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
+import lang.proteus.binding.types.KotlinRange
 import kotlin.math.pow
 
 internal class Evaluator(private val boundStatement: BoundStatement, private val variables: MutableMap<String, Any>) {
@@ -24,10 +25,9 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
     }
 
     private fun evaluateForStatement(statement: BoundForStatement) {
-        val lowerBound = evaluateExpression(statement.lowerBound) as Int
-        val upperBound = evaluateExpression(statement.upperBound) as Int
+        val range = evaluateExpression(statement.boundIteratorExpression) as KotlinRange
 
-        for (i in lowerBound..upperBound) {
+        for (i in range) {
             variables[statement.variable.name] = i
             evaluateStatement(statement.body)
         }
@@ -127,6 +127,12 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
                     left
                 )
             )
+
+            BoundBinaryOperator.BoundUntilBinaryOperator -> {
+                val lowerBound = left as Int
+                val upperBound = right as Int
+                KotlinRange(lowerBound, upperBound)
+            }
         }
 
     }

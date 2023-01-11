@@ -198,7 +198,7 @@ internal class LexerTest {
                 Arguments.of(Keyword.While, "while"),
                 Arguments.of(Keyword.For, "for"),
 
-                Arguments.of(Keyword.To, "to"),
+                Arguments.of(Operator.Until, "until"),
                 Arguments.of(Keyword.In, "in")
 
             )
@@ -255,7 +255,7 @@ internal class LexerTest {
         }
 
         private fun isWordOperator(token: Token): Boolean {
-            return token is Operator.And || token is Operator.Or || token is Operator.Xor || token is Operator.Not || token is Operator.Is || token is Operator.TypeOf
+            return token is Operator.And || token is Operator.Or || token is Operator.Xor || token is Operator.Not || token is Operator.Is || token is Operator.TypeOf || token is Operator.Until
         }
 
         @JvmStatic

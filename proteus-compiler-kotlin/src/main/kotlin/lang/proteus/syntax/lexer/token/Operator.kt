@@ -58,6 +58,8 @@ sealed class Operator(
 
     object TypeOf : UnaryOperator("typeof", 4)
 
+    object Until : BinaryOperator("until", 4)
+
 }
 
 

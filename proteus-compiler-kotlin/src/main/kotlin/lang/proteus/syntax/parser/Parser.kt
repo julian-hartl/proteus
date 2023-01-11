@@ -82,11 +82,9 @@ class Parser private constructor(
         val forToken = matchToken(Keyword.For)
         val identifier = matchToken(Token.Identifier)
         val inKeyword = matchToken(Keyword.In)
-        val lowerBound = parseExpression()
-        val toKeyword = matchToken(Keyword.To)
-        val upperBound = parseExpression()
+        val iteratorExpression = parseExpression()
         val body = parseStatement()
-        return ForStatementSyntax(forToken, identifier, inKeyword, lowerBound, toKeyword, upperBound, body)
+        return ForStatementSyntax(forToken, identifier, inKeyword, iteratorExpression, body)
     }
 
     private fun parseWhileStatement(): StatementSyntax {
@@ -211,10 +209,6 @@ class Parser private constructor(
 
             Token.Identifier -> {
                 return parseNameExpression()
-            }
-
-            Token.Number -> {
-                return parseBitStringLiteral()
             }
 
             Token.Number -> {
