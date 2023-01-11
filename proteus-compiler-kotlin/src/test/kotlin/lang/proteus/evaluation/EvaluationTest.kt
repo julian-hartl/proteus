@@ -248,6 +248,17 @@ class EvaluationTest {
                             b
                         }
                     """.trimIndent(), 10
+                ),
+
+                Arguments.of(
+                    """
+                        {
+                            var b = 10
+                            for x in (1 until 10)
+                                b = b + x
+                            b
+                        }
+                    """.trimIndent(), 55
                 )
             )
         }
