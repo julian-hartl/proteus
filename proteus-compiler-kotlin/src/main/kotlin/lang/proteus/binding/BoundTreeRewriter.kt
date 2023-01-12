@@ -13,7 +13,7 @@ internal abstract class BoundTreeRewriter {
         }
     }
 
-    protected fun rewriteWhileStatement(node: BoundWhileStatement): BoundStatement {
+    protected open fun rewriteWhileStatement(node: BoundWhileStatement): BoundStatement {
         val condition = rewriteExpression(node.condition)
         val body = rewriteStatement(node.body)
         if (condition == node.condition && body == node.body) {
@@ -22,7 +22,7 @@ internal abstract class BoundTreeRewriter {
         return BoundWhileStatement(condition, body)
     }
 
-    protected fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
+    protected open fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
         val initializer = rewriteExpression(node.initializer)
         if (initializer == node.initializer) {
             return node
@@ -30,7 +30,7 @@ internal abstract class BoundTreeRewriter {
         return BoundVariableDeclaration(node.variable, initializer)
     }
 
-    protected fun rewriteIfStatement(node: BoundIfStatement): BoundStatement {
+    protected open fun rewriteIfStatement(node: BoundIfStatement): BoundStatement {
         val condition = rewriteExpression(node.condition)
         val thenStatement = rewriteStatement(node.thenStatement)
         val elseStatement = node.elseStatement?.let { rewriteStatement(it) }
@@ -40,7 +40,7 @@ internal abstract class BoundTreeRewriter {
         return BoundIfStatement(condition, thenStatement, elseStatement)
     }
 
-    protected fun rewriteForStatement(node: BoundForStatement): BoundStatement {
+    protected open fun rewriteForStatement(node: BoundForStatement): BoundStatement {
         val iterator = rewriteExpression(node.boundIteratorExpression)
         val body = rewriteStatement(node.body)
         if (iterator == node.boundIteratorExpression && body == node.body) {
@@ -49,7 +49,7 @@ internal abstract class BoundTreeRewriter {
         return BoundForStatement(node.variable, iterator, body)
     }
 
-    protected fun rewriteExpressionStatement(statement: BoundExpressionStatement): BoundStatement {
+    protected open fun rewriteExpressionStatement(statement: BoundExpressionStatement): BoundStatement {
         val expression = rewriteExpression(statement.expression)
         if (expression == statement.expression) {
             return statement
@@ -57,7 +57,7 @@ internal abstract class BoundTreeRewriter {
         return BoundExpressionStatement(expression)
     }
 
-    protected fun rewriteBlockStatement(node: BoundBlockStatement): BoundStatement {
+    protected open fun rewriteBlockStatement(node: BoundBlockStatement): BoundStatement {
         val statements = mutableListOf<BoundStatement>()
         var changed = false
         for (s in node.statements) {
@@ -83,7 +83,7 @@ internal abstract class BoundTreeRewriter {
         }
     }
 
-    protected fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {
+    protected open fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {
         val left = rewriteExpression(node.left)
         val right = rewriteExpression(node.right)
         if (left == node.left && right == node.right) {
@@ -92,7 +92,7 @@ internal abstract class BoundTreeRewriter {
         return BoundBinaryExpression(left, right, node.operator)
     }
 
-    protected fun rewriteUnaryExpression(node: BoundUnaryExpression): BoundExpression {
+    protected open fun rewriteUnaryExpression(node: BoundUnaryExpression): BoundExpression {
         val expression = rewriteExpression(node.operand)
         if (expression == node.operand) {
             return node
@@ -100,16 +100,16 @@ internal abstract class BoundTreeRewriter {
         return BoundUnaryExpression(expression, node.operator)
     }
 
-    protected fun rewriteVariableExpression(expression: BoundVariableExpression): BoundExpression {
+    protected open fun rewriteVariableExpression(expression: BoundVariableExpression): BoundExpression {
         return expression
     }
 
-    protected fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
+    protected open fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
         return expression
     }
 
 
-    protected fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
+    protected open fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
         val expression = rewriteExpression(node.expression)
         if (expression == node.expression)
             return node
