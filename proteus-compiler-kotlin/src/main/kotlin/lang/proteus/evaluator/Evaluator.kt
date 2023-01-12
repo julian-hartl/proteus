@@ -95,10 +95,10 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
         val expressionValue = evaluateExpression(expression.expression)
         val value = when (expression.assignmentOperator) {
             Operator.Equals -> expressionValue
-            Operator.MinusEquals -> (variables[expression.symbol.name] as Int) - (expressionValue as Int)
-            Operator.PlusEquals -> (variables[expression.symbol.name] as Int) + (expressionValue as Int)
+            Operator.MinusEquals -> (variables[expression.variableSymbol.name] as Int) - (expressionValue as Int)
+            Operator.PlusEquals -> (variables[expression.variableSymbol.name] as Int) + (expressionValue as Int)
         }
-        variables[expression.symbol.name] = value
+        variables[expression.variableSymbol.name] = value
         return value
     }
 

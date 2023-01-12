@@ -4,8 +4,10 @@ import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundGlobalScope
+import lang.proteus.binding.BoundStatement
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
+import lang.proteus.lowering.Lowerer
 import lang.proteus.syntax.parser.SyntaxTree
 
 internal class Compilation internal constructor(val previous: Compilation?, val syntaxTree: SyntaxTree) {
@@ -41,13 +43,17 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         val diagnostics = globalScope.diagnostics
         val parseTime = computationTimeStopper.stop()
         if (diagnostics.hasErrors()) {
-
             return EvaluationResult(diagnostics, null, parseTime, ComputationTime(0))
         }
         computationTimeStopper.start()
-        val evaluator = Evaluator(globalScope.statement, variables)
+        val statement = getStatement()
+        val evaluator = Evaluator(statement, variables)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime)
+    }
+
+    private fun getStatement(): BoundStatement {
+        return Lowerer.lower(globalScope.statement)
     }
 }
