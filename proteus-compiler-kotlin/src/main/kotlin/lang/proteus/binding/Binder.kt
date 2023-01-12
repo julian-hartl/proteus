@@ -63,7 +63,16 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindForStatement(syntax: ForStatementSyntax): BoundStatement {
-        val boundIteratorExpression = bindExpressionWithType(syntax.iteratorExpression, ProteusType.Range)
+        val boundLower = bindExpression(syntax.lowerBound)
+        val boundUpper = bindExpression(syntax.upperBound)
+
+        if (boundLower.type != ProteusType.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), ProteusType.Int, boundLower.type)
+        }
+
+        if (boundUpper.type != ProteusType.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), ProteusType.Int, boundUpper.type)
+        }
 
         scope = BoundScope(scope)
 
@@ -77,7 +86,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         scope.tryDeclare(variable)
         val body = bindStatement(syntax.body)
         scope = scope.parent!!
-        return BoundForStatement(variable, boundIteratorExpression, body)
+        return BoundForStatement(variable, boundLower, syntax.rangeOperator.token, boundUpper, body)
     }
 
     private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {

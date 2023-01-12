@@ -1,4 +1,6 @@
 {
-                var a = true;
-                a -= 1;
-            }
+    var result = 0;
+    for i in 0 until 100
+        result += i;
+    result;
+}

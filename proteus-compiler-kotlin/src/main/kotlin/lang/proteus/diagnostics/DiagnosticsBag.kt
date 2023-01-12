@@ -41,8 +41,8 @@ internal class DiagnosticsBag {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
-    fun reportCannotConvert(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
-        report("Cannot convert type '${newType}' to '${currentType}'", span)
+    fun reportCannotConvert(span: TextSpan, expectedType: ProteusType, actualType: ProteusType) {
+        report("Cannot convert type '${actualType}' to '${expectedType}'", span)
     }
 
     fun reportVariableAlreadyDeclared(span: TextSpan, variableName: String) {

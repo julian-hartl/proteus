@@ -49,10 +49,8 @@ internal class ProteusCompiler() {
             compilationResult.parseTime,
             compilationResult.evaluationTime
         )
-        if (verbose) {
-            val performancePrinter = PerformancePrinter()
-            performancePrinter.print(performance)
-        }
+        val performancePrinter = PerformancePrinter()
+        performancePrinter.print(performance)
         return CompilationResult(tree, compilationResult, performance)
     }
 
