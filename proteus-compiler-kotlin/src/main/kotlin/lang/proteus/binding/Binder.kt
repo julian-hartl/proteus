@@ -175,13 +175,10 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
             else -> true
         }
-        if (!typesAreApplicable) {
-            diagnosticsBag.reportCannotConvert(syntax.identifierToken.span(), declaredVariable.type, variableType)
-        }
         if (declaredVariable.isFinal) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
         } else {
-            if (!variableType.isAssignableTo(declaredVariable.type)) {
+            if (!typesAreApplicable || !variableType.isAssignableTo(declaredVariable.type)) {
                 diagnosticsBag.reportCannotConvert(syntax.expression.span(), declaredVariable.type, variableType)
             }
         }

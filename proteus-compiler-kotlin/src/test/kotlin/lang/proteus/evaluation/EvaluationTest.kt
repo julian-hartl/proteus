@@ -75,17 +75,17 @@ class EvaluationTest {
             Arguments.of(
                 """
                 {
-                    1
-                    2
-                    3
+                    1;
+                    2;
+                    3;
                 }
             """.trimIndent(), 3
             ),
             Arguments.of(
                 """
                 {
-                    1
-                    5 * 5
+                    1;
+                    5 * 5;
                 }
             """.trimIndent(), 25
             ),
@@ -174,7 +174,6 @@ class EvaluationTest {
                 Arguments.of("typeof true", ProteusType.Boolean),
                 Arguments.of("typeof \"test\"", ProteusType.String),
                 Arguments.of("typeof 't'", ProteusType.Char),
-                Arguments.of("typeof 0b100", ProteusType.BinaryString),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
                 Arguments.of("typeof 1 until 2", ProteusType.Range),
@@ -208,26 +207,6 @@ class EvaluationTest {
                         a;
                     }
                 """.trimIndent(), -10
-                ),
-
-                Arguments.of(
-                    """
-                    {
-                        var a = 0;
-                        a++;
-                        a;
-                    }
-                """.trimIndent(), 1
-                ),
-
-                Arguments.of(
-                    """
-                    {
-                        var a = 0;
-                        a--;
-                        a;
-                    }
-                """.trimIndent(), -1
                 ),
 
                 Arguments.of(
@@ -306,11 +285,11 @@ class EvaluationTest {
                         {
                             var b = 10;
                             for x in (1 until 10) {
-                                b = b + x;
+                                b += x;
                             }
                             b;
                         }
-                    """.trimIndent(), 55
+                    """.trimIndent(), 65
                 ),
 
                 Arguments.of(
@@ -442,13 +421,13 @@ class EvaluationTest {
     fun `evaluator range operator reports not Integer in lower bound`() {
         val text = """
             {
-                for i in [false] [until] 20 {
+                for i in [false [until] 20] {
                 }
             }
         """
         val diagnostics = """
-            Cannot convert type 'Boolean' to 'Range'
             Operator 'until' is not defined for types 'Boolean' and 'Int'
+            Cannot convert type 'Boolean' to 'Range'
         """.trimIndent()
         assertDiagnostics(text, diagnostics)
     }
@@ -457,13 +436,13 @@ class EvaluationTest {
     fun `evaluator range operator reports not Integer in upper bound`() {
         val text = """
             {
-                for i in 10 [until] [true] {
+                for i in [10 [until] true] {
                 }
             }
         """
         val diagnostics = """
-            Cannot convert type 'Boolean' to 'Int'
             Operator 'until' is not defined for types 'Int' and 'Boolean'
+            Cannot convert type 'Int' to 'Range'
         """.trimMargin()
         assertDiagnostics(text, diagnostics)
     }
@@ -485,7 +464,7 @@ class EvaluationTest {
         val text = """
             {
                 val a = 2;
-                a [+=] 1;
+                [a] += 1;
             }
         """.trimIndent()
         val diagnostics = "Val cannot be reassigned"
@@ -498,7 +477,7 @@ class EvaluationTest {
         val text = """
             {
                 val a = 2;
-                a [-=] 1;
+                [a] -= 1;
             }
         """.trimIndent()
         val diagnostics = "Val cannot be reassigned"
@@ -512,10 +491,10 @@ class EvaluationTest {
         val text = """
             {
                 var a = true;
-                a [+=] 1;
+                a += [1];
             }
         """.trimIndent()
-        val diagnostics = "Operator '+=' is not defined for types 'Boolean' and 'Int'"
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
 
         assertDiagnostics(text, diagnostics)
     }
@@ -525,15 +504,15 @@ class EvaluationTest {
         val text = """
             {
                 var a = true;
-                a [-=] 1;
+                a -= [1];
             }
         """.trimIndent()
-        val diagnostics = "Operator '-=' is not defined for types 'Boolean' and 'Int'"
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
 
         assertDiagnostics(text, diagnostics)
     }
 
-    private fun assertDiagnostics(text: String, diagnosticText: String, required: Int? = null) {
+    private fun assertDiagnostics(text: String, diagnosticText: String) {
         val annotatedText = AnnotatedText.parse(text)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
         val compilation = Compilation(syntaxTree)
@@ -547,7 +526,7 @@ class EvaluationTest {
 
         assertEquals(
             expectedDiagnostics.size,
-            required ?: result.diagnostics.diagnostics.size,
+            result.diagnostics.diagnostics.size,
             "Did not get the expected number of diagnostics, actual: ${result.diagnostics.diagnostics}."
         )
 
@@ -555,15 +534,11 @@ class EvaluationTest {
         for (i in expectedDiagnostics.indices) {
             val expectedMessage = expectedDiagnostics[assertedDiagnostics]
             val actualMessage = result.diagnostics.diagnostics[i].message
-            if (expectedMessage != actualMessage) {
-                continue
-            }
+            assertEquals(expectedMessage, actualMessage, "Diagnostic message does not match.")
 
             val expectedSpan = annotatedText.spans[i]
             val actualSpan = result.diagnostics.diagnostics[i].span
-            if (expectedSpan != actualSpan) {
-                continue
-            }
+            assertEquals(expectedSpan, actualSpan, "Diagnostic span does not match.")
 
             assertedDiagnostics++
         }

@@ -5,8 +5,8 @@ import lang.proteus.syntax.lexer.token.Operator
 internal sealed class BoundOperator {
     fun canBeApplied(vararg types: ProteusType): Boolean {
         return when (this) {
-            is BoundBinaryOperator -> this.leftType.isAssignableTo(types[0]) && this.rightType.isAssignableTo(types[1])
-            is BoundUnaryOperator -> this.operandType.isAssignableTo(types[0])
+            is BoundBinaryOperator -> BoundBinaryOperator.bind(operator, types[0], types[1]) == this
+            is BoundUnaryOperator -> BoundUnaryOperator.bind(operator, types[0]) == this
         }
     }
 }
@@ -27,10 +27,12 @@ internal sealed class BoundBinaryOperator(
     )
 
     companion object {
-        private val operators = BoundBinaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
+        private val operators = lazy {
+            BoundBinaryOperator::class.sealedSubclasses.filter { it.objectInstance != null }.map { it.objectInstance!! }
+        }
 
         fun bind(operator: Operator, leftType: ProteusType, rightType: ProteusType): BoundBinaryOperator? {
-            return operators.firstOrNull {
+            return operators.value.firstOrNull {
                 val isSuited =
                     it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
                         rightType

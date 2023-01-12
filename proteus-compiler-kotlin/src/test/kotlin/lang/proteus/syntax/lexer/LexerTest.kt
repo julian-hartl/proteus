@@ -157,6 +157,8 @@ internal class LexerTest {
                 Arguments.of(Operator.Circumflex, "^"),
 
                 Arguments.of(Operator.Equals, "="),
+                Arguments.of(Operator.PlusEquals, "+="),
+                Arguments.of(Operator.MinusEquals, "-="),
 
                 Arguments.of(Operator.DoubleEquals, "=="),
                 Arguments.of(Operator.NotEquals, "!="),
@@ -252,6 +254,10 @@ internal class LexerTest {
             if (t1Token is Operator.LessThan && t2Token is Operator.LessThanEquals) return true
             if (t1Token is Operator.Circumflex && t2Token is Operator.Circumflex) return true
             if (t1Token is Operator.Circumflex && t2Token is Operator.DoubleAsterisk) return true
+            if(t1Token is Operator.Plus && t2Token is Operator.Equals) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.Equals) return true
+            if(t1Token is Operator.Plus && t2Token is Operator.DoubleEquals) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.DoubleEquals) return true
 
             return false
         }
