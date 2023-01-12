@@ -39,7 +39,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
 
             is BoundConditionalGotoStatement -> {
                 val conditionValue = evaluateExpression(statement.condition) as Boolean
-                if (conditionValue && statement.jumpIfTrue || !conditionValue && !statement.jumpIfTrue) {
+                if (conditionValue == statement.jumpIfTrue) {
                     return labels[statement.label]!!
                 }
                 currentIndex + 1
