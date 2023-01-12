@@ -182,13 +182,15 @@ class EvaluationTest {
                 Arguments.of("{ var a = 0; a = (a = 10) * 10; }", 100),
                 Arguments.of("{ val a = 42; a;}", 42),
                 Arguments.of("{ val b = -4; b;}", -4),
-                Arguments.of("""
+                Arguments.of(
+                    """
                     {
                         val a = 42;
                         val b = a + 1;
                         b;
                     }
-                """.trimIndent(), 43),
+                """.trimIndent(), 43
+                ),
 
                 Arguments.of(
                     """
@@ -305,6 +307,16 @@ class EvaluationTest {
                     """.trimIndent(),
                     10
                 ),
+
+                Arguments.of(
+                    """
+                        {
+                            var a = 10;
+                            for i in 1 until (a = a - 1) {}
+                            a;
+                        }
+                    """.trimIndent(), 9
+                )
             )
         }
     }
