@@ -8,7 +8,8 @@ internal object WhiteSpaceTokenLexer : TokenLexer() {
     }
 
     override fun submit(start: Int, position: Int, literal: String): TokenLexerResult {
-        val whiteSpaceToken = SyntaxToken.whiteSpaceToken(start, literal)
+        val whiteSpaceToken =
+            SyntaxToken.whiteSpaceToken(start, literal)
         return TokenLexerResult(whiteSpaceToken, literal.length)
     }
 

@@ -15,7 +15,7 @@ sealed class Operator(
     }
 
     fun unaryPrecedence(): Int {
-        return if (isUnaryOperator) 100 else 0
+        return if (isUnaryOperator) this.precedence else 0
     }
 
     object Plus : UnaryAndBinaryOperator("+", 1)
@@ -25,7 +25,8 @@ sealed class Operator(
     object Asterisk : BinaryOperator("*", 2)
 
     object Slash : BinaryOperator("/", 2)
-    object DoubleCircumflex : BinaryOperator("^^", 3)
+    object Percent : BinaryOperator("%", 2)
+    object DoubleAsterisk : BinaryOperator("**", 3)
     object DoubleGreaterThan : BinaryOperator(">>", 3)
     object DoubleLessThan : BinaryOperator("<<", 3)
 
@@ -55,7 +56,14 @@ sealed class Operator(
 
     object Equals : AssignmentOperator("=", 1)
 
+    object PlusEquals : AssignmentOperator("+=", 1)
+
+    object MinusEquals : AssignmentOperator("-=", 1)
+
+
     object TypeOf : UnaryOperator("typeof", 4)
+
+    object Until : BinaryOperator("until", 5)
 
 }
 

@@ -1,6 +1,7 @@
 package lang.proteus.binding
 
 import lang.proteus.binding.types.KotlinBinaryString
+import lang.proteus.binding.types.KotlinRange
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
@@ -19,7 +20,9 @@ sealed class ProteusType(val kType: KType, val literal: kotlin.String) {
     object Boolean : ProteusType(kotlin.Boolean::class.createType(), "Boolean")
     object Char : ProteusType(kotlin.Char::class.createType(), "Char")
 
-    object BinaryString: ProteusType(KotlinBinaryString::class.createType(), "BinaryString")
+    object BinaryString : ProteusType(KotlinBinaryString::class.createType(), "BinaryString")
+
+    object Range : ProteusType(KotlinRange::class.createType(), "Range")
 
     object Object : ProteusType(Any::class.createType(), "Object")
 
@@ -41,7 +44,7 @@ sealed class ProteusType(val kType: KType, val literal: kotlin.String) {
         }
 
         fun fromValue(value: Any): ProteusType? {
-            if(value is ProteusType){
+            if (value is ProteusType) {
                 return ProteusType.Type
             }
             return fromKotlinType(value::class.createType())

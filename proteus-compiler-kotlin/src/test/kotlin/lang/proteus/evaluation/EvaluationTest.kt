@@ -1,5 +1,6 @@
 package lang.proteus.evaluation
 
+import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
 import lang.proteus.evaluator.Evaluator
@@ -8,11 +9,21 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
 class EvaluationTest {
 
+
+    @Test
+    fun `evaluator BlockStatement NoInfiniteLoop`() {
+        val text = """
+            {([]
+        """
+
+        ProteusCompiler().compile(text)
+    }
 
     @ParameterizedTest
     @MethodSource("getValidSyntaxInputs")
@@ -44,6 +55,10 @@ class EvaluationTest {
     @ParameterizedTest
     @MethodSource("getBlockStatements")
     fun `should value from last statement in block`(input: String, expectedValue: Any) {
+        assertValue(input, expectedValue)
+    }
+
+    private fun assertValue(input: String, expectedValue: Any) {
         val compiler = ProteusCompiler()
         val result = compiler.compile(input)
         assertEquals(
@@ -60,17 +75,17 @@ class EvaluationTest {
             Arguments.of(
                 """
                 {
-                    1
-                    2
-                    3
+                    1;
+                    2;
+                    3;
                 }
             """.trimIndent(), 3
             ),
             Arguments.of(
                 """
                 {
-                    1
-                    5 * 5
+                    1;
+                    5 * 5;
                 }
             """.trimIndent(), 25
             ),
@@ -87,10 +102,11 @@ class EvaluationTest {
                 Arguments.of("2 - 2", 0),
                 Arguments.of("2 * 2", 4),
                 Arguments.of("2 / 2", 1),
-                Arguments.of("2 ^^ 2", 4),
+                Arguments.of("2 ** 2", 4),
                 Arguments.of("2 + 2 * 2", 6),
                 Arguments.of("2 * (2 + 2)", 8),
                 Arguments.of("2 * (2 + 2) / 2", 4),
+                Arguments.of("7 % 2", 1),
 
                 Arguments.of("2 & 2", 2),
                 Arguments.of("2 | 2", 2),
@@ -158,20 +174,380 @@ class EvaluationTest {
                 Arguments.of("typeof true", ProteusType.Boolean),
                 Arguments.of("typeof \"test\"", ProteusType.String),
                 Arguments.of("typeof 't'", ProteusType.Char),
-                Arguments.of("typeof 0b100", ProteusType.BinaryString),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
+                Arguments.of("typeof 1 until 2", ProteusType.Range),
+
 
                 Arguments.of("1 is Int", true),
                 Arguments.of("1 is Boolean", false),
                 Arguments.of("1 is Int and 1 is Boolean", false),
                 Arguments.of("1 is Int or 1 is Boolean", true),
 
-                Arguments.of("{ var a = 0 (a = 10) * 10", 100),
+                Arguments.of("{ var a = 0 (a = 10) * 10; }", 100),
                 Arguments.of("a", 42),
                 Arguments.of("b", -4),
                 Arguments.of("a + b", 38),
+
+                Arguments.of(
+                    """
+                    {
+                        var a = 0;
+                        a += 10;
+                        a;
+                    }
+                """.trimIndent(), 10
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var a = 0;
+                        a -= 10;
+                        a;
+                    }
+                """.trimIndent(), -10
+                ),
+
+                Arguments.of(
+                    """
+                        {
+                            var x = 1 + 2;
+                            typeof x;
+                        }
+
+                    """.trimIndent(),
+                    ProteusType.Int
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                       var x = 10;
+                       if x == 10
+                            x = 20;
+                       x;
+                    }
+                """.trimIndent(), 20
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var x = 10;
+                        if x == 20 {
+                            x = 5;
+                        }
+                        else {
+                            x = 7;
+                        }
+                        x;
+                    }
+                """.trimIndent(), 7
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var x = 10;
+                        while x > 0
+                            x = x - 1;
+                        x;
+                    }
+                """.trimIndent(), 0
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                        var b = 0;
+                        for x in 1 until 10 {
+                            b = b + x;
+                        }
+                        b;
+                    }
+                """.trimIndent(), 55
+                ),
+
+                Arguments.of(
+                    """
+                        {
+                            var b = 0;
+                            if b == 0
+                                b = 10;
+                            b;
+                        }
+                    """.trimIndent(), 10
+                ),
+
+                Arguments.of(
+                    """
+                        {
+                            var b = 10;
+                            for x in (1 until 10) {
+                                b += x;
+                            }
+                            b;
+                        }
+                    """.trimIndent(), 65
+                ),
+
+                Arguments.of(
+                    """
+                       {
+                            var b = 0;
+                            if (b == 0) {
+                                b = 10;
+                            };
+                            b;
+                        }
+                    """.trimIndent(),
+                    10
+                ),
             )
         }
+    }
+
+    @Test
+    fun `evaluator variable declaration reports redeclaration`() {
+        val text = """
+            {
+                var x = 10;
+                var y = 100;
+                {
+                    var x = 10;
+                }
+                var [x] = 5;
+            }
+        """
+
+        val diagnostics = "Variable 'x' already declared"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator NameExpression reports undefined`() {
+        val text = """
+            [x] * 10
+        """
+
+        val diagnostics = "Unresolved reference: x"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Assignment reports unresolved reference`() {
+        val text = """
+            [x] = 10
+        """
+
+        val diagnostics = "Unresolved reference: x"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Assignment reports cannot be reassigned`() {
+        val text = """
+            {
+                val x = 10;
+                [x] = 20;
+            }
+        """
+        val diagnostics = "Val cannot be reassigned"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Assignment reports cannot convert`() {
+        val text = """
+            {
+                var x = 10;
+                x = [false];
+            }
+        """
+        val diagnostics = "Cannot convert type 'Boolean' to 'Int'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Binary reports undefined operator`() {
+        val text = """
+            {
+                var x = 5 [+] false;
+            }
+        """
+        val diagnostics = "Operator '+' is not defined for types 'Int' and 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator Unary reports undefined operator`() {
+        val text = """
+            {
+                var x = [+]false;
+            }
+        """
+        val diagnostics = "Operator '+' is not defined for type 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator If reports not Boolean condition`() {
+        val text = """
+            {
+                if [10] {
+                    var x = 10;
+                }
+            }
+        """
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator While reports not Boolean condition`() {
+        val text = """
+            {
+                while [10] {
+                    var x = 10;
+                }
+            }
+        """
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator range operator reports not Integer in lower bound`() {
+        val text = """
+            {
+                for i in [false [until] 20] {
+                }
+            }
+        """
+        val diagnostics = """
+            Operator 'until' is not defined for types 'Boolean' and 'Int'
+            Cannot convert type 'Boolean' to 'Range'
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator range operator reports not Integer in upper bound`() {
+        val text = """
+            {
+                for i in [10 [until] true] {
+                }
+            }
+        """
+        val diagnostics = """
+            Operator 'until' is not defined for types 'Int' and 'Boolean'
+            Cannot convert type 'Int' to 'Range'
+        """.trimMargin()
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator NameExpression reports no error for inserted token`() {
+        val text = """
+            [][]
+        """
+        val diagnostics = """
+            Unexpected token <EndOfFile>, expected <Expression>
+            Unexpected token <EndOfFile>, expected <Identifier>
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator final variable should not be reassigned with += operator`() {
+        val text = """
+            {
+                val a = 2;
+                [a] += 1;
+            }
+        """.trimIndent()
+        val diagnostics = "Val cannot be reassigned"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator final variable should not be reassigned with -= operator`() {
+        val text = """
+            {
+                val a = 2;
+                [a] -= 1;
+            }
+        """.trimIndent()
+        val diagnostics = "Val cannot be reassigned"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+
+    @Test
+    fun `evaluator += operator should not be applicable to Boolean`() {
+        val text = """
+            {
+                var a = true;
+                a += [1];
+            }
+        """.trimIndent()
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+    @Test
+    fun `evaluator -= operator should not be applicable to Boolean`() {
+        val text = """
+            {
+                var a = true;
+                a -= [1];
+            }
+        """.trimIndent()
+        val diagnostics = "Cannot convert type 'Int' to 'Boolean'"
+
+        assertDiagnostics(text, diagnostics)
+    }
+
+    private fun assertDiagnostics(text: String, diagnosticText: String) {
+        val annotatedText = AnnotatedText.parse(text)
+        val syntaxTree = SyntaxTree.parse(annotatedText.text)
+        val compilation = Compilation(syntaxTree)
+        val result = compilation.evaluate(mutableMapOf())
+
+        val expectedDiagnostics = AnnotatedText.unindentLines(diagnosticText)
+
+        if (annotatedText.spans.size != expectedDiagnostics.size) {
+            throw IllegalArgumentException("Number of diagnostics does not match number of spans.")
+        }
+
+        assertEquals(
+            expectedDiagnostics.size,
+            result.diagnostics.diagnostics.size,
+            "Did not get the expected number of diagnostics, actual: ${result.diagnostics.diagnostics}."
+        )
+
+        var assertedDiagnostics = 0
+        for (i in expectedDiagnostics.indices) {
+            val expectedMessage = expectedDiagnostics[assertedDiagnostics]
+            val actualMessage = result.diagnostics.diagnostics[i].message
+            assertEquals(expectedMessage, actualMessage, "Diagnostic message does not match.")
+
+            val expectedSpan = annotatedText.spans[i]
+            val actualSpan = result.diagnostics.diagnostics[i].span
+            assertEquals(expectedSpan, actualSpan, "Diagnostic span does not match.")
+
+            assertedDiagnostics++
+        }
+        assertEquals(
+            expectedDiagnostics.size, assertedDiagnostics, """
+            Did not get the expected amount diagnostics.
+            Expected: $expectedDiagnostics
+            Actual: ${result.diagnostics.diagnostics}
+        """.trimIndent()
+        )
     }
 }

@@ -30,7 +30,8 @@ internal class LexerTest {
                 Token.Bad,
                 Token.EndOfFile,
                 Token.Expression,
-                Token.Statement
+                Token.Statement,
+                Token.ElseClause
             )
         )
 
@@ -38,6 +39,30 @@ internal class LexerTest {
 
         assertEquals(0, untestedTokens.size, "There are untested tokens: $untestedTokens")
 
+    }
+
+    @Test
+    fun `should lex bad token`() {
+        val input = "~"
+        val actual = SyntaxTree.parseTokens(input)
+        assertEquals(1, actual.size)
+        val token = actual.first()
+        assertEquals(Token.Bad, token.token)
+        assertEquals("\u0000", token.literal)
+    }
+
+    @Test
+    fun `should not be stuck in infinite loop`() {
+        val input = """
+            {
+                var a = 0
+                whilee a > 0 {
+                    a = a - 1
+                }
+                a
+            }
+        """.trimIndent()
+        SyntaxTree.parseTokens(input)
     }
 
     @Test
@@ -132,6 +157,8 @@ internal class LexerTest {
                 Arguments.of(Operator.Circumflex, "^"),
 
                 Arguments.of(Operator.Equals, "="),
+                Arguments.of(Operator.PlusEquals, "+="),
+                Arguments.of(Operator.MinusEquals, "-="),
 
                 Arguments.of(Operator.DoubleEquals, "=="),
                 Arguments.of(Operator.NotEquals, "!="),
@@ -144,7 +171,8 @@ internal class LexerTest {
                 Arguments.of(Operator.Minus, "-"),
                 Arguments.of(Operator.Asterisk, "*"),
                 Arguments.of(Operator.Slash, "/"),
-                Arguments.of(Operator.DoubleCircumflex, "^^"),
+                Arguments.of(Operator.DoubleAsterisk, "**"),
+                Arguments.of(Operator.Percent, "%"),
 
                 Arguments.of(Operator.Is, "is"),
                 Arguments.of(Operator.TypeOf, "typeof"),
@@ -166,8 +194,18 @@ internal class LexerTest {
                 Arguments.of(Keyword.Val, "val"),
                 Arguments.of(Keyword.Var, "var"),
 
+                Arguments.of(Keyword.If, "if"),
+                Arguments.of(Keyword.Else, "else"),
 
-                )
+                Arguments.of(Keyword.While, "while"),
+                Arguments.of(Keyword.For, "for"),
+
+                Arguments.of(Operator.Until, "until"),
+                Arguments.of(Keyword.In, "in"),
+
+                Arguments.of(Token.SemiColon, ";"),
+
+            )
         }
 
         private fun getSeparators(): List<Arguments> {
@@ -187,6 +225,9 @@ internal class LexerTest {
             if (t1Token is Token.Identifier && t2Token is Keyword) return true
             if (t1Token is Token.Number && t2Token is Token.Number) return true
             if (t1Token is Token.Type || t2Token is Token.Type) return true
+            if (t1Token is Operator.Asterisk) {
+                return t2Token is Operator.Asterisk || t2Token is Operator.DoubleAsterisk
+            }
             val isFirstIdentifierOrKeyword = t1Token is Token.Identifier || t1Token is Keyword
             val isSecondIdentifierOrKeyword = t2Token is Token.Identifier || t2Token is Keyword
 
@@ -212,13 +253,17 @@ internal class LexerTest {
             if (t1Token is Operator.GreaterThan && t2Token is Operator.GreaterThanEquals) return true
             if (t1Token is Operator.LessThan && t2Token is Operator.LessThanEquals) return true
             if (t1Token is Operator.Circumflex && t2Token is Operator.Circumflex) return true
-            if (t1Token is Operator.Circumflex && t2Token is Operator.DoubleCircumflex) return true
+            if (t1Token is Operator.Circumflex && t2Token is Operator.DoubleAsterisk) return true
+            if(t1Token is Operator.Plus && t2Token is Operator.Equals) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.Equals) return true
+            if(t1Token is Operator.Plus && t2Token is Operator.DoubleEquals) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.DoubleEquals) return true
 
             return false
         }
 
         private fun isWordOperator(token: Token): Boolean {
-            return token is Operator.And || token is Operator.Or || token is Operator.Xor || token is Operator.Not || token is Operator.Is || token is Operator.TypeOf
+            return token is Operator.And || token is Operator.Or || token is Operator.Xor || token is Operator.Not || token is Operator.Is || token is Operator.TypeOf || token is Operator.Until
         }
 
         @JvmStatic

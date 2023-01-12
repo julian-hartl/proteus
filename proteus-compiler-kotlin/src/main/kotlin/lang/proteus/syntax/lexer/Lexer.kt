@@ -11,7 +11,7 @@ internal object Lexers {
             NumberTokenLexer,
             LetterTokenLexer,
             NonLetterTokenLexer,
-            EndOfFileTokenLexer
+            EndOfFileTokenLexer,
         )
 }
 

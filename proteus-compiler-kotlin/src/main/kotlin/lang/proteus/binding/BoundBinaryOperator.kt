@@ -2,11 +2,19 @@ package lang.proteus.binding
 
 import lang.proteus.syntax.lexer.token.Operator
 
+internal sealed class BoundOperator {
+    fun canBeApplied(vararg types: ProteusType): Boolean {
+        return when (this) {
+            is BoundBinaryOperator -> BoundBinaryOperator.bind(operator, types[0], types[1]) == this
+            is BoundUnaryOperator -> BoundUnaryOperator.bind(operator, types[0]) == this
+        }
+    }
+}
 
 internal sealed class BoundBinaryOperator(
     val operator: Operator, val leftType: ProteusType, val rightType: ProteusType, val resultType: ProteusType,
-    val requiresSameTypes: Boolean = true
-) {
+    val requiresSameTypes: Boolean = true,
+) : BoundOperator() {
 
 
     constructor(operator: Operator, type: ProteusType) : this(operator, type, type, type)
@@ -19,14 +27,17 @@ internal sealed class BoundBinaryOperator(
     )
 
     companion object {
-        private val operators = BoundBinaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
+        private val operators = lazy {
+            BoundBinaryOperator::class.sealedSubclasses.filter { it.objectInstance != null }.map { it.objectInstance!! }
+        }
 
         fun bind(operator: Operator, leftType: ProteusType, rightType: ProteusType): BoundBinaryOperator? {
-            return operators.firstOrNull {
-                val isSuited = it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
-                    rightType
-                )
-                if(isSuited && it.requiresSameTypes) {
+            return operators.value.firstOrNull {
+                val isSuited =
+                    it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
+                        rightType
+                    )
+                if (isSuited && it.requiresSameTypes) {
                     return@firstOrNull leftType == rightType
                 }
                 isSuited
@@ -42,7 +53,7 @@ internal sealed class BoundBinaryOperator(
 
     object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, ProteusType.Int)
 
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleCircumflex, ProteusType.Int)
+    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleAsterisk, ProteusType.Int)
 
     object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, ProteusType.Int)
     object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, ProteusType.Int)
@@ -77,7 +88,18 @@ internal sealed class BoundBinaryOperator(
         Operator.Is,
         ProteusType.Object,
         ProteusType.Type,
-        ProteusType.Boolean, requiresSameTypes = false)
+        ProteusType.Boolean, requiresSameTypes = false
+    )
 
+    object BoundModuloBinaryOperator : BoundBinaryOperator(
+        Operator.Percent,
+        ProteusType.Int,
+    )
+
+    object BoundUntilBinaryOperator : BoundBinaryOperator(
+        Operator.Until,
+        ProteusType.Int,
+        ProteusType.Range
+    )
 
 }

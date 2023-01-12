@@ -4,8 +4,8 @@ internal object Operators {
     val allOperators: List<Operator>
         get() = Tokens.allTokens.filterIsInstance<Operator>()
 
-    val assignmentOperators: List<Operator>
-        get() = allOperators.filter { it.isAssignmentOperator }
+    val assignmentOperators: List<AssignmentOperator>
+        get() = allOperators.filter { it.isAssignmentOperator }.map { it as AssignmentOperator }
 
     val binaryOperators: List<Operator>
         get() = allOperators.filter { it.isBinaryOperator }

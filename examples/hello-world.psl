@@ -1,4 +1,4 @@
 {
-    val a = 1
-    a = 2
-}
+                var a = true;
+                a -= 1;
+            }

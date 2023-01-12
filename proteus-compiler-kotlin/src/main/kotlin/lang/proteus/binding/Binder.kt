@@ -3,11 +3,9 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*
-import lang.proteus.syntax.parser.statements.BlockStatementSyntax
-import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
-import lang.proteus.syntax.parser.statements.StatementSyntax
-import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
+import lang.proteus.syntax.parser.statements.*
 import java.util.*
 
 internal class Binder(private var scope: BoundScope) : Diagnosable {
@@ -58,7 +56,49 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             is BlockStatementSyntax -> bindBlockStatement(syntax)
             is ExpressionStatementSyntax -> bindExpressionStatement(syntax)
             is VariableDeclarationSyntax -> bindVariableDeclaration(syntax)
+            is IfStatementSyntax -> bindIfStatement(syntax)
+            is WhileStatementSyntax -> bindWhileStatement(syntax)
+            is ForStatementSyntax -> bindForStatement(syntax)
         }
+    }
+
+    private fun bindForStatement(syntax: ForStatementSyntax): BoundStatement {
+        val boundIteratorExpression = bindExpressionWithType(syntax.iteratorExpression, ProteusType.Range)
+
+        scope = BoundScope(scope)
+
+        val name = syntax.identifier.literal
+        val variable = VariableSymbol(name, ProteusType.Int, isFinal = true)
+        val declaredVariable = scope.tryLookup(name)
+        if (declaredVariable != null) {
+            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), name)
+        }
+
+        scope.tryDeclare(variable)
+        val body = bindStatement(syntax.body)
+        scope = scope.parent!!
+        return BoundForStatement(variable, boundIteratorExpression, body)
+    }
+
+    private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
+        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val body = bindStatement(syntax.body)
+        return BoundWhileStatement(condition, body)
+    }
+
+    private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
+        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val thenStatement = bindStatement(syntax.thenStatement)
+        val elseStatement = syntax.elseClause?.let { bindStatement(it.elseStatementSyntax) }
+        return BoundIfStatement(condition, thenStatement, elseStatement)
+    }
+
+    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: ProteusType): BoundExpression {
+        val expression = bindExpression(syntax)
+        if (expression.type != expectedType) {
+            diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, expression.type)
+        }
+        return expression
     }
 
     private fun bindVariableDeclaration(syntax: VariableDeclarationSyntax): BoundStatement {
@@ -113,29 +153,47 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
+        val assignmentOperator = syntax.assignmentOperator.token
         val boundExpression = bindExpression(syntax.expression)
         val variableName = syntax.identifierToken.literal
         val variableType = boundExpression.type
         val declaredVariable = scope.tryLookup(variableName)
         if (declaredVariable == null) {
-            diagnosticsBag.reportUndeclaredVariable(syntax.identifierToken.span(), variableName)
+            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
             return boundExpression
+        }
+        val typesAreApplicable = when (assignmentOperator) {
+            is Operator.PlusEquals -> {
+
+                BoundBinaryOperator.BoundAdditionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+            }
+
+            is Operator.MinusEquals -> {
+
+                BoundBinaryOperator.BoundSubtractionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+            }
+
+            else -> true
         }
         if (declaredVariable.isFinal) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
         } else {
-            if (!variableType.isAssignableTo(declaredVariable.type)) {
-                diagnosticsBag.reportCannotConvert(syntax.equalsToken.span(), declaredVariable.type, variableType)
+            if (!typesAreApplicable || !variableType.isAssignableTo(declaredVariable.type)) {
+                diagnosticsBag.reportCannotConvert(syntax.expression.span(), declaredVariable.type, variableType)
             }
         }
-        return BoundAssignmentExpression(declaredVariable, boundExpression)
+        return BoundAssignmentExpression(declaredVariable, boundExpression, assignmentOperator)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
+        if (name.isEmpty()) {
+            // Token was inserted by parser. We already reported that error so we can just return an error expression.
+            return BoundLiteralExpression(0)
+        }
         val variable = scope.tryLookup(name)
         if (variable == null) {
-            diagnosticsBag.reportUndeclaredVariable(syntax.identifierToken.span(), name)
+            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)
             return BoundLiteralExpression(0)
         }
         return BoundVariableExpression(variable)

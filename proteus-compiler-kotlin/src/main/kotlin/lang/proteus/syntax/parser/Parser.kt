@@ -5,15 +5,12 @@ import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
-import lang.proteus.syntax.lexer.*
+import lang.proteus.syntax.lexer.Lexer
+import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.lexer.token.*
 import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
-import lang.proteus.syntax.lexer.token.Token
-import lang.proteus.syntax.parser.statements.BlockStatementSyntax
-import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
-import lang.proteus.syntax.parser.statements.StatementSyntax
-import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
+import lang.proteus.syntax.parser.statements.*
 import lang.proteus.text.SourceText
 
 class Parser private constructor(
@@ -55,12 +52,61 @@ class Parser private constructor(
     }
 
     private fun parseStatement(): StatementSyntax {
-        if (current.token is Token.OpenBrace) {
-            return parseBlockStatement()
-        } else if (current.token == Keyword.Var || current.token == Keyword.Val) {
-            return parseVariableDeclarationStatement()
+        when (current.token) {
+            is Token.OpenBrace -> {
+                return parseBlockStatement()
+            }
+
+            Keyword.Var, Keyword.Val -> {
+                return parseVariableDeclarationStatement()
+            }
+
+            is Keyword.If -> {
+                return parseIfStatement()
+            }
+
+            is Keyword.While -> {
+                return parseWhileStatement()
+            }
+
+            is Keyword.For -> {
+                return parseForStatement()
+            }
+
+            else -> return parseExpressionStatement()
         }
-        return parseExpressionStatement()
+    }
+
+    private fun parseForStatement(): StatementSyntax {
+        val forToken = matchToken(Keyword.For)
+        val identifier = matchToken(Token.Identifier)
+        val inKeyword = matchToken(Keyword.In)
+        val iteratorExpression = parseExpression()
+        val body = parseStatement()
+        return ForStatementSyntax(forToken, identifier, inKeyword, iteratorExpression, body)
+    }
+
+    private fun parseWhileStatement(): StatementSyntax {
+        val whileKeyword = matchToken(Keyword.While)
+        val condition = parseExpression()
+        val body = parseStatement()
+        return WhileStatementSyntax(whileKeyword, condition, body)
+    }
+
+    private fun parseIfStatement(): StatementSyntax {
+        val ifKeyword = matchToken(Keyword.If)
+        val condition = parseExpression()
+        val thenStatement = parseStatement()
+        val elseClause = parseElseClause()
+        return IfStatementSyntax(ifKeyword, condition, thenStatement, elseClause)
+    }
+
+    private fun parseElseClause() = if (current.token == Keyword.Else) {
+        val elseKeyword = matchToken(Keyword.Else)
+        val elseStatement = parseStatement()
+        ElseClauseSyntax(elseKeyword, elseStatement)
+    } else {
+        null
     }
 
     private fun parseVariableDeclarationStatement(): StatementSyntax {
@@ -75,8 +121,21 @@ class Parser private constructor(
         val openBrace = matchToken(Token.OpenBrace)
         val statements = mutableListOf<StatementSyntax>()
         while (current.token !is Token.CloseBrace && current.token !is Token.EndOfFile) {
+            val startToken = current
             val statement = parseStatement()
+            if (statement !is BlockStatementSyntax) {
+                if (peek(-1).token is Token.CloseBrace) {
+                    if (current.token is Token.SemiColon)
+                        nextToken()
+                } else {
+                    matchToken(Token.SemiColon)
+                }
+            }
             statements.add(statement)
+            // If we didn't consume any tokens, we're in an infinite loop.
+            if (startToken == current) {
+                nextToken()
+            }
         }
         val closeBrace = matchToken(Token.CloseBrace)
         return BlockStatementSyntax(openBrace, statements, closeBrace)
@@ -93,12 +152,13 @@ class Parser private constructor(
     }
 
     private fun parseAssigmentExpression(): ExpressionSyntax {
-        if (peek(0).token is Token.Identifier && peek(1).token is Operator.Equals) {
+        if (peek(0).token is Token.Identifier && peek(1).token is AssignmentOperator) {
             val identifierToken = matchToken(Token.Identifier)
-            val equalsToken = matchToken(Operator.Equals)
+            val assignmentOperator = matchOneToken(Operators.assignmentOperators, expect = Operator.Equals)
             val expression = parseAssigmentExpression()
-            return AssignmentExpressionSyntax(identifierToken, equalsToken, expression)
+            return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
+
         return parseBinaryExpression()
     }
 
@@ -116,6 +176,10 @@ class Parser private constructor(
 
         while (true) {
             val precedence = currentOperator?.precedence ?: 0
+
+            if (current.token is Token.SemiColon) {
+                break
+            }
 
             if (precedence == 0 || precedence <= parentPrecedence) {
                 break
@@ -157,10 +221,6 @@ class Parser private constructor(
 
             Token.Identifier -> {
                 return parseNameExpression()
-            }
-
-            Token.Number -> {
-                return parseBitStringLiteral()
             }
 
             Token.Number -> {
@@ -260,6 +320,15 @@ class Parser private constructor(
         val token = matchToken(Token.Identifier)
 
         return NameExpressionSyntax(token)
+    }
+
+    private fun <T : Token> matchOneToken(tokens: List<T>, expect: T? = null): SyntaxToken<T> {
+        for (token in tokens) {
+            if (current.token == token) {
+                return matchToken(token)
+            }
+        }
+        return matchToken(expect ?: tokens[0])
     }
 
     private fun <T : Token> matchToken(token: T): SyntaxToken<T> {

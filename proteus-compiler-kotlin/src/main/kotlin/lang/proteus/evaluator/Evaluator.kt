@@ -1,6 +1,8 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
+import lang.proteus.binding.types.KotlinRange
+import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
 
 internal class Evaluator(private val boundStatement: BoundStatement, private val variables: MutableMap<String, Any>) {
@@ -17,6 +19,33 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
             is BoundBlockStatement -> evaluateBlockStatement(statement)
             is BoundExpressionStatement -> evaluateExpressionStatement(statement)
             is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
+            is BoundIfStatement -> evaluateIfStatement(statement)
+            is BoundWhileStatement -> evaluateWhileStatement(statement)
+            is BoundForStatement -> evaluateForStatement(statement)
+        }
+    }
+
+    private fun evaluateForStatement(statement: BoundForStatement) {
+        val range = evaluateExpression(statement.boundIteratorExpression) as KotlinRange
+
+        for (i in range) {
+            variables[statement.variable.name] = i
+            evaluateStatement(statement.body)
+        }
+    }
+
+    private fun evaluateWhileStatement(statement: BoundWhileStatement) {
+        while (evaluateExpression(statement.condition) as Boolean) {
+            evaluateStatement(statement.body)
+        }
+    }
+
+    private fun evaluateIfStatement(statement: BoundIfStatement) {
+        val condition = evaluateExpression(statement.condition)
+        if (condition as Boolean) {
+            evaluateStatement(statement.thenStatement)
+        } else {
+            statement.elseStatement?.let { evaluateStatement(it) }
         }
     }
 
@@ -63,7 +92,12 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
-        val value = evaluateExpression(expression.expression)
+        val expressionValue = evaluateExpression(expression.expression)
+        val value = when (expression.assignmentOperator) {
+            Operator.Equals -> expressionValue
+            Operator.MinusEquals -> (variables[expression.symbol.name] as Int) - (expressionValue as Int)
+            Operator.PlusEquals -> (variables[expression.symbol.name] as Int) + (expressionValue as Int)
+        }
         variables[expression.symbol.name] = value
         return value
     }
@@ -79,6 +113,7 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
             BoundBinaryOperator.BoundDivisionBinaryOperator -> left as Int / right as Int
             BoundBinaryOperator.BoundMultiplicationBinaryOperator -> left as Int * right as Int
             BoundBinaryOperator.BoundExponentiationBinaryOperator -> (left as Int).toDouble().pow(right as Int).toInt()
+            BoundBinaryOperator.BoundModuloBinaryOperator -> left as Int % right as Int
             BoundBinaryOperator.BoundBitwiseAndBinaryOperator -> left as Int and right as Int
             BoundBinaryOperator.BoundBitwiseXorBinaryOperator -> left as Int xor right as Int
             BoundBinaryOperator.BoundBitwiseOrBinaryOperator -> left as Int or right as Int
@@ -98,6 +133,12 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
                     left
                 )
             )
+
+            BoundBinaryOperator.BoundUntilBinaryOperator -> {
+                val lowerBound = left as Int
+                val upperBound = right as Int
+                KotlinRange(lowerBound, upperBound)
+            }
         }
 
     }

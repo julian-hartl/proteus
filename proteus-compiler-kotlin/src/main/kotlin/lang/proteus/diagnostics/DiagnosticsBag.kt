@@ -20,21 +20,21 @@ internal class DiagnosticsBag {
 
     fun reportBinaryOperatorMismatch(literal: String, span: TextSpan, leftType: ProteusType, rightType: ProteusType) {
         report(
-            "Operator '${literal}' cannot be applied to '${leftType}' and '${rightType}'",
+            "Operator '${literal}' is not defined for types '${leftType}' and '${rightType}'",
             span
         )
     }
 
     fun reportUnaryOperatorMismatch(literal: String, span: TextSpan, type: ProteusType) {
-        report("Operator '${literal}' cannot be applied to '${type}'", span)
+        report("Operator '${literal}' is not defined for type '${type}'", span)
     }
 
-    fun reportUndeclaredVariable(span: TextSpan, name: String) {
-        report("Variable '$name' not declared", span)
+    fun reportUnresolvedReference(span: TextSpan, name: String) {
+        report("Unresolved reference: $name", span)
     }
 
     private fun report(message: String, span: TextSpan) {
-        mutableDiagnostics.add(Diagnostic("ERROR: $message", span))
+        mutableDiagnostics.add(Diagnostic(message, span))
     }
 
     fun concat(other: DiagnosticsBag) {
@@ -42,7 +42,7 @@ internal class DiagnosticsBag {
     }
 
     fun reportCannotConvert(span: TextSpan, currentType: ProteusType, newType: ProteusType) {
-        report("Cannot convert '${newType}' to '${currentType}'", span)
+        report("Cannot convert type '${newType}' to '${currentType}'", span)
     }
 
     fun reportVariableAlreadyDeclared(span: TextSpan, variableName: String) {
@@ -50,7 +50,7 @@ internal class DiagnosticsBag {
     }
 
     fun reportFinalVariableCannotBeReassigned(span: TextSpan, variableName: String) {
-        report("Final variable '$variableName' cannot be reassigned", span)
+        report("Val cannot be reassigned", span)
     }
 
     fun reportInvalidCharLiteral(literal: String, span: TextSpan) {
