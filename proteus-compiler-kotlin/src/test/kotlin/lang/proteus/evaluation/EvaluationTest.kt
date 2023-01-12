@@ -424,13 +424,12 @@ class EvaluationTest {
     fun `evaluator range operator reports not Integer in lower bound`() {
         val text = """
             {
-                for i in [false [until] 20] {
+                for i in [false] until 20 {
                 }
             }
         """
         val diagnostics = """
-            Operator 'until' is not defined for types 'Boolean' and 'Int'
-            Cannot convert type 'Boolean' to 'Range'
+            Cannot convert type 'Boolean' to 'Int'
         """.trimIndent()
         assertDiagnostics(text, diagnostics)
     }

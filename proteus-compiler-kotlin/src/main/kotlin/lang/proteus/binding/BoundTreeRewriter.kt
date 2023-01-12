@@ -41,12 +41,13 @@ internal abstract class BoundTreeRewriter {
     }
 
     protected open fun rewriteForStatement(node: BoundForStatement): BoundStatement {
-        val iterator = rewriteExpression(node.boundIteratorExpression)
+        val lowerBound = rewriteExpression(node.lowerBound)
+        val upperBound = rewriteExpression(node.upperBound)
         val body = rewriteStatement(node.body)
-        if (iterator == node.boundIteratorExpression && body == node.body) {
+        if (lowerBound == node.lowerBound && upperBound == node.upperBound && body == node.body) {
             return node
         }
-        return BoundForStatement(node.variable, iterator, body)
+        return BoundForStatement(node.variable, lowerBound, node.rangeOperator, upperBound, body)
     }
 
     protected open fun rewriteExpressionStatement(statement: BoundExpressionStatement): BoundStatement {

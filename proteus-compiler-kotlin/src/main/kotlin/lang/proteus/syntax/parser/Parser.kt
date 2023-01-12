@@ -8,8 +8,6 @@ import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.*
-import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.parser.statements.*
 import lang.proteus.text.SourceText
 
@@ -81,9 +79,11 @@ class Parser private constructor(
         val forToken = matchToken(Keyword.For)
         val identifier = matchToken(Token.Identifier)
         val inKeyword = matchToken(Keyword.In)
-        val iteratorExpression = parseExpression()
+        val lowerBound = parseExpression()
+        val rangeOperator = matchToken(Keyword.Until)
+        val upperBound = parseExpression()
         val body = parseStatement()
-        return ForStatementSyntax(forToken, identifier, inKeyword, iteratorExpression, body)
+        return ForStatementSyntax(forToken, identifier, inKeyword, lowerBound, rangeOperator, upperBound, body)
     }
 
     private fun parseWhileStatement(): StatementSyntax {
