@@ -4,46 +4,63 @@ import lang.proteus.binding.*
 import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
 
-internal class Evaluator(private val boundStatement: BoundStatement, private val variables: MutableMap<String, Any>) {
+internal class Evaluator(private val root: BoundBlockStatement, private val variables: MutableMap<String, Any>) {
 
     private var lastValue: Any? = null
 
     fun evaluate(): Any {
-        evaluateStatement(boundStatement)
-        return lastValue ?: ProteusType.Object
+        val labelToIndex = mutableMapOf<LabelSymbol, Int>()
+        for ((index, statement) in root.statements.withIndex()) {
+            if (statement is BoundLabelStatement) {
+                labelToIndex[statement.label] = index + 1
+            }
+        }
+
+        var index = 0
+        while (index < root.statements.size) {
+            val statement = root.statements[index]
+            val newIndex = evaluateFlattened(statement, index, labelToIndex)
+            index = newIndex
+        }
+        return lastValue ?: "null"
     }
 
-    private fun evaluateStatement(statement: BoundStatement) {
-        when (statement) {
-            is BoundBlockStatement -> evaluateBlockStatement(statement)
-            is BoundExpressionStatement -> evaluateExpressionStatement(statement)
-            is BoundVariableDeclaration -> evaluateVariableDeclaration(statement)
-            is BoundIfStatement -> evaluateIfStatement(statement)
-            is BoundWhileStatement -> evaluateWhileStatement(statement)
-            is BoundForStatement -> evaluateForStatement(statement)
+    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<LabelSymbol, Int>): Int {
+        return when (statement) {
+            is BoundExpressionStatement -> {
+                evaluateExpressionStatement(statement)
+                currentIndex + 1
+            }
+
+            is BoundVariableDeclaration -> {
+                evaluateVariableDeclaration(statement)
+                currentIndex + 1
+            }
+
+            is BoundConditionalGotoStatement -> {
+                val conditionValue = evaluateExpression(statement.condition) as Boolean
+                if (!conditionValue && statement.jumpIfFalse || conditionValue && !statement.jumpIfFalse) {
+                    return labels[statement.label]!!
+                }
+                currentIndex + 1
+            }
+
+            is BoundGotoStatement -> {
+                labels[statement.label]!!
+            }
+
+            is BoundLabelStatement -> {
+                currentIndex + 1
+            }
+
+            else -> {
+                throwUnsupportedOperation(statement::class.simpleName!!)
+            }
         }
     }
 
-    private fun evaluateForStatement(statement: BoundForStatement) {
-        throwUnsupportedOperation("for")
-    }
 
-    private fun evaluateWhileStatement(statement: BoundWhileStatement) {
-        while (evaluateExpression(statement.condition) as Boolean) {
-            evaluateStatement(statement.body)
-        }
-    }
-
-    private fun evaluateIfStatement(statement: BoundIfStatement) {
-        val condition = evaluateExpression(statement.condition)
-        if (condition as Boolean) {
-            evaluateStatement(statement.thenStatement)
-        } else {
-            statement.elseStatement?.let { evaluateStatement(it) }
-        }
-    }
-
-    private fun throwUnsupportedOperation(operation: String) {
+    private fun throwUnsupportedOperation(operation: String): Nothing {
         throw UnsupportedOperationException("Operation $operation is not supported. Please implement it using one of the supported operations.")
     }
 
@@ -51,12 +68,6 @@ internal class Evaluator(private val boundStatement: BoundStatement, private val
         val value = evaluateExpression(statement.initializer)
         variables[statement.variable.name] = value
         lastValue = value
-    }
-
-    private fun evaluateBlockStatement(statement: BoundBlockStatement) {
-        for (s in statement.statements) {
-            evaluateStatement(s)
-        }
     }
 
     private fun evaluateExpressionStatement(statement: BoundExpressionStatement) {

@@ -5,6 +5,5 @@ internal class BoundIfStatement(
     val thenStatement: BoundStatement,
     val elseStatement: BoundStatement?,
 ) :
-    BoundStatement() {
+    BoundStatement()
 
-}

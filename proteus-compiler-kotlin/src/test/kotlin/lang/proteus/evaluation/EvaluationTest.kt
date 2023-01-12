@@ -3,7 +3,6 @@ package lang.proteus.evaluation
 import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
-import lang.proteus.evaluator.Evaluator
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -32,22 +31,16 @@ class EvaluationTest {
         val boundScope = BoundScope(null)
         boundScope.tryDeclare(VariableSymbol("a", ProteusType.Int, isFinal = false))
         boundScope.tryDeclare(VariableSymbol("b", ProteusType.Int, isFinal = false))
-        val binder = Binder(boundScope)
-        val boundStatement = binder.bindStatement(expression.root.statement)
-        val variables: MutableMap<String, Any> = mutableMapOf(
-            "a" to 42,
-            "b" to -4,
-        )
-        val evaluator = Evaluator(boundStatement, variables)
+        val compilation = Compilation(expression)
 
-        val evaluationResult = evaluator.evaluate()
+        val evaluationResult = compilation.evaluate(mutableMapOf())
         assertFalse(
-            binder.diagnostics.hasErrors(),
-            "Compilation should not have errors, but it has: ${binder.diagnostics}"
+            evaluationResult.diagnostics.hasErrors(),
+            "Compilation should not have errors, but it has: ${evaluationResult.diagnostics}"
         )
         assertEquals(
             value,
-            evaluationResult,
+            evaluationResult.value,
             "Evaluation result should be $value, but was $evaluationResult"
         )
     }
@@ -179,7 +172,6 @@ class EvaluationTest {
                 Arguments.of("typeof 't'", ProteusType.Char),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
-                Arguments.of("typeof 1 until 2", ProteusType.Range),
 
 
                 Arguments.of("1 is Int", true),
@@ -187,10 +179,16 @@ class EvaluationTest {
                 Arguments.of("1 is Int and 1 is Boolean", false),
                 Arguments.of("1 is Int or 1 is Boolean", true),
 
-                Arguments.of("{ var a = 0 (a = 10) * 10; }", 100),
-                Arguments.of("a", 42),
-                Arguments.of("b", -4),
-                Arguments.of("a + b", 38),
+                Arguments.of("{ var a = 0; a = (a = 10) * 10; }", 100),
+                Arguments.of("{ val a = 42; a;}", 42),
+                Arguments.of("{ val b = -4; b;}", -4),
+                Arguments.of("""
+                    {
+                        val a = 42;
+                        val b = a + 1;
+                        b;
+                    }
+                """.trimIndent(), 43),
 
                 Arguments.of(
                     """
@@ -287,7 +285,7 @@ class EvaluationTest {
                     """
                         {
                             var b = 10;
-                            for x in (1 until 10) {
+                            for x in 1 until 10 {
                                 b += x;
                             }
                             b;
@@ -438,13 +436,12 @@ class EvaluationTest {
     fun `evaluator range operator reports not Integer in upper bound`() {
         val text = """
             {
-                for i in [10 [until] true] {
+                for i in 10 until [true] {
                 }
             }
         """
         val diagnostics = """
-            Operator 'until' is not defined for types 'Int' and 'Boolean'
-            Cannot convert type 'Int' to 'Range'
+            Cannot convert type 'Boolean' to 'Int'
         """.trimMargin()
         assertDiagnostics(text, diagnostics)
     }
@@ -540,7 +537,7 @@ class EvaluationTest {
 
             val expectedSpan = annotatedText.spans[i]
             val actualSpan = result.diagnostics.diagnostics[i].span
-            assertEquals(expectedSpan, actualSpan, "Diagnostic span does not match.")
+            assertEquals(expectedSpan, actualSpan, "Diagnostic span does not match: ${result.diagnostics.diagnostics}")
 
             assertedDiagnostics++
         }

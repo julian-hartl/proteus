@@ -3,6 +3,7 @@ package lang.proteus.api
 import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
+import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.binding.BoundStatement
 import lang.proteus.evaluator.EvaluationResult
@@ -53,7 +54,7 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime)
     }
 
-    private fun getStatement(): BoundStatement {
+    private fun getStatement(): BoundBlockStatement {
         return Lowerer.lower(globalScope.statement)
     }
 }

@@ -66,6 +66,14 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundLower = bindExpression(syntax.lowerBound)
         val boundUpper = bindExpression(syntax.upperBound)
 
+        if (boundLower.type != ProteusType.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), ProteusType.Int, boundLower.type)
+        }
+
+        if (boundUpper.type != ProteusType.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), ProteusType.Int, boundUpper.type)
+        }
+
         scope = BoundScope(scope)
 
         val name = syntax.identifier.literal
