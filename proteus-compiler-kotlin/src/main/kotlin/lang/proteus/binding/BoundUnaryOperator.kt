@@ -18,7 +18,7 @@ internal sealed class BoundUnaryOperator(
         private val operators = BoundUnaryOperator::class.sealedSubclasses.map { it.objectInstance!! }
 
         fun bind(operator: Operator, operandType: TypeSymbol): BoundUnaryOperator? {
-            return operators.firstOrNull { it.operator == operator && it.operandType.isAssignableTo(operandType) }
+            return operators.firstOrNull { it.operator == operator && operandType.isAssignableTo(it.operandType) }
         }
     }
 

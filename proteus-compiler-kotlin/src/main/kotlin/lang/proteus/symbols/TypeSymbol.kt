@@ -33,12 +33,12 @@ sealed class TypeSymbol(override val name: kotlin.String) : Symbol() {
     }
 
     fun isAssignableTo(symbol: TypeSymbol): kotlin.Boolean {
-        return when (this) {
-            is Int -> symbol is Int
-            is Boolean -> symbol is Boolean
-            is String -> symbol is String
-            is Type -> symbol is Type
-            is Error -> symbol is Error
+        return when (symbol) {
+            is Int -> this is Int
+            is Boolean -> this is Boolean
+            is String -> this is String
+            is Type -> this is Type
+            is Error -> this is Error
             is Any -> true
         }
     }

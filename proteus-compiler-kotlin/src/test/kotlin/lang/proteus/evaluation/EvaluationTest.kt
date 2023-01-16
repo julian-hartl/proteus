@@ -3,6 +3,7 @@ package lang.proteus.evaluation
 import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
@@ -12,7 +13,6 @@ import java.util.stream.Stream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import lang.proteus.symbols.TypeSymbol
 
 class EvaluationTest {
 
@@ -183,13 +183,15 @@ class EvaluationTest {
                 Arguments.of("{ var a = 0; a = (a = 10) * 10; }", 100),
                 Arguments.of("{ val a = 42; a;}", 42),
                 Arguments.of("{ val b = -4; b;}", -4),
-                Arguments.of("""
+                Arguments.of(
+                    """
                     {
                         val a = 42;
                         val b = a + 1;
                         b;
                     }
-                """.trimIndent(), 43),
+                """.trimIndent(), 43
+                ),
 
                 Arguments.of(
                     """
@@ -321,7 +323,17 @@ class EvaluationTest {
                         }
                     """.trimIndent(),
                     10
-                )
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                    val a = "Hello" + " " + "World";
+                    a;
+                    }
+                """.trimIndent(),
+                    "Hello World"
+                ),
             )
         }
     }

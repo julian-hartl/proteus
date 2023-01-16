@@ -13,31 +13,127 @@ internal sealed class BoundOperator {
     }
 }
 
-internal sealed class BoundBinaryOperator(
+internal enum class BoundBinaryOperatorKind {
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Modulo,
+    Exponentiation,
+    LogicalAnd,
+    LogicalOr,
+    LogicalXor,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    BitwiseShiftLeft,
+    BitwiseShiftRight,
+    Equality,
+    Inequality,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+    TypeEquality
+}
+
+internal data class BoundBinaryOperator(
+    val kind: BoundBinaryOperatorKind,
     val operator: Operator, val leftType: TypeSymbol, val rightType: TypeSymbol, val resultType: TypeSymbol,
-    val requiresSameTypes: Boolean = true,
+    val requiresSameTypes: Boolean = false,
 ) : BoundOperator() {
 
 
-    constructor(operator: Operator, type: TypeSymbol) : this(operator, type, type, type)
-
-    constructor(operator: Operator, type: TypeSymbol, resultType: TypeSymbol) : this(
+    constructor(kind: BoundBinaryOperatorKind, operator: Operator, type: TypeSymbol) : this(
+        kind,
         operator,
         type,
         type,
-        resultType
+        type,
+        requiresSameTypes = true
+    )
+
+    constructor(kind: BoundBinaryOperatorKind, operator: Operator, type: TypeSymbol, resultType: TypeSymbol) : this(
+        kind,
+        operator,
+        type,
+        type,
+        resultType,
+        requiresSameTypes = true
     )
 
     companion object {
-        private val operators = lazy {
-            BoundBinaryOperator::class.sealedSubclasses.filter { it.objectInstance != null }.map { it.objectInstance!! }
+        private val operators: List<BoundBinaryOperator> = listOf(
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.TypeEquality,
+                Operator.Is,
+                TypeSymbol.Any,
+                TypeSymbol.Type,
+                TypeSymbol.Boolean,
+            ),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Addition, Operator.Plus, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Addition, Operator.Plus, TypeSymbol.String),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Subtraction, Operator.Minus, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Multiplication, Operator.Asterisk, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Division, Operator.Slash, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Modulo, Operator.Percent, TypeSymbol.Int),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.Equality,
+                Operator.DoubleEquals,
+                TypeSymbol.Any,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.Inequality,
+                Operator.NotEquals,
+                TypeSymbol.Any,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.LessThan,
+                Operator.LessThan,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.LessThanOrEqual,
+                Operator.LessThanEquals,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.GreaterThan,
+                Operator.GreaterThan,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.GreaterThanOrEqual,
+                Operator.GreaterThanEquals,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(BoundBinaryOperatorKind.LogicalAnd, Operator.And, TypeSymbol.Boolean),
+            BoundBinaryOperator(BoundBinaryOperatorKind.LogicalOr, Operator.Or, TypeSymbol.Boolean),
+            BoundBinaryOperator(BoundBinaryOperatorKind.LogicalXor, Operator.Xor, TypeSymbol.Boolean),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseShiftLeft, Operator.DoubleLessThan, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseShiftRight, Operator.DoubleGreaterThan, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Exponentiation, Operator.DoubleAsterisk, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseAnd, Operator.Ampersand, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseOr, Operator.Pipe, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseXor, Operator.Circumflex, TypeSymbol.Int),
+
+            )
+
+        fun findByOperator(operator: Operator): List<BoundBinaryOperator> {
+            return operators.filter { it.operator == operator }
         }
 
         fun bind(operator: Operator, leftType: TypeSymbol, rightType: TypeSymbol): BoundBinaryOperator? {
-            return operators.value.firstOrNull {
+            return operators.firstOrNull {
                 val isSuited =
-                    it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
-                        rightType
+                    it.operator == operator && leftType.isAssignableTo(it.leftType) && rightType.isAssignableTo(
+                        it.rightType
                     )
                 if (isSuited && it.requiresSameTypes) {
                     return@firstOrNull leftType == rightType
@@ -46,57 +142,6 @@ internal sealed class BoundBinaryOperator(
             }
         }
     }
-
-    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, TypeSymbol.Int)
-
-    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, TypeSymbol.Int)
-
-    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, TypeSymbol.Int)
-
-    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, TypeSymbol.Int)
-
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleAsterisk, TypeSymbol.Int)
-
-    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, TypeSymbol.Int)
-    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, TypeSymbol.Int)
-
-    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, TypeSymbol.Int)
-    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, TypeSymbol.Int)
-    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, TypeSymbol.Int)
-
-    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, TypeSymbol.Boolean)
-
-    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, TypeSymbol.Boolean)
-
-    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, TypeSymbol.Boolean)
-    object BoundEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.DoubleEquals, TypeSymbol.Any, TypeSymbol.Boolean)
-
-    object BoundNotEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.NotEquals, TypeSymbol.Any, TypeSymbol.Boolean)
-
-    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, TypeSymbol.Int, TypeSymbol.Boolean)
-
-    object BoundGreaterThanBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThan, TypeSymbol.Int, TypeSymbol.Boolean)
-
-    object BoundLessThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.LessThanEquals, TypeSymbol.Int, TypeSymbol.Boolean)
-
-    object BoundGreaterThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThanEquals, TypeSymbol.Int, TypeSymbol.Boolean)
-
-    object BoundIsBinaryOperator : BoundBinaryOperator(
-        Operator.Is,
-        TypeSymbol.Any,
-        TypeSymbol.Type,
-        TypeSymbol.Boolean, requiresSameTypes = false
-    )
-
-    object BoundModuloBinaryOperator : BoundBinaryOperator(
-        Operator.Percent,
-        TypeSymbol.Int,
-    )
 
 
 }

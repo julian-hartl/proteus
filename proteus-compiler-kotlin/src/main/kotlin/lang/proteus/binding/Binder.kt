@@ -177,12 +177,20 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val typesAreApplicable = when (assignmentOperator) {
             is Operator.PlusEquals -> {
 
-                BoundBinaryOperator.BoundAdditionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+                val plusOperators = BoundBinaryOperator.findByOperator(Operator.Plus)
+
+                plusOperators.any {
+                    it.canBeApplied(declaredVariable.type, variableType)
+                }
             }
 
             is Operator.MinusEquals -> {
 
-                BoundBinaryOperator.BoundSubtractionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+                val minusOperators = BoundBinaryOperator.findByOperator(Operator.Minus)
+
+                minusOperators.any {
+                    it.canBeApplied(declaredVariable.type, variableType)
+                }
             }
 
             else -> true
