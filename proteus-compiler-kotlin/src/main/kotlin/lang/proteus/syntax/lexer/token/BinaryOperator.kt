@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer.token
 
-sealed class BinaryOperator(literal: String, precedence: Int) : Operator(
+sealed class BinaryOperator(literal: kotlin.String, precedence: Int) : Operator(
     isBinaryOperator = true,
     isUnaryOperator = false,
     literal = literal,

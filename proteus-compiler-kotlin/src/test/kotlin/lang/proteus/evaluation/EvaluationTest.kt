@@ -305,6 +305,22 @@ class EvaluationTest {
                     """.trimIndent(),
                     10
                 ),
+
+                Arguments.of(
+                    """
+                        {
+                            val test = "{ val test = a; }";
+                            var a = 0;
+                            if test == "{ val test = a; }" {
+                                a = 10;
+                            } else {
+                                a = 2;
+                            }
+                            a;
+                        }
+                    """.trimIndent(),
+                    10
+                )
             )
         }
     }

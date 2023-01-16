@@ -2,7 +2,7 @@ package lang.proteus.syntax.lexer.token
 
 import lang.proteus.syntax.lexer.SyntaxToken
 
-internal sealed class Keyword(override val literal: String) : Token() {
+internal sealed class Keyword(override val literal: kotlin.String) : Token() {
 
     companion object {
 
@@ -10,7 +10,7 @@ internal sealed class Keyword(override val literal: String) : Token() {
             get() = Keyword::class.sealedSubclasses
                 .map { it.objectInstance!! }
 
-        fun fromLiteral(value: String): Keyword? {
+        fun fromLiteral(value: kotlin.String): Keyword? {
             return all.find { it.literal == value }
         }
 

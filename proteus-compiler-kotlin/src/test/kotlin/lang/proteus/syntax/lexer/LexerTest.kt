@@ -42,6 +42,15 @@ internal class LexerTest {
     }
 
     @Test
+    fun `lexer lexes unterminated string`() {
+        val input = "\"hello"
+        val actual = SyntaxTree.parse(input)
+        val diagnostics = actual.diagnostics.diagnostics
+        assertEquals(1, diagnostics.size)
+        assertEquals("Unterminated string literal", diagnostics[0].message)
+    }
+
+    @Test
     fun `should lex bad token`() {
         val input = "~"
         val actual = SyntaxTree.parseTokens(input)
@@ -83,7 +92,7 @@ internal class LexerTest {
         assertEquals(1, tokens.count())
         val token = tokens[0]
         assertEquals(kind, token.token)
-        assertEquals(text, token.literal)
+        assertLiteral(text, token)
     }
 
     @ParameterizedTest(name = "Pair of tokens `{0}` [{1}] and `{2}` [{3}] should be lexed correctly.")
@@ -94,10 +103,10 @@ internal class LexerTest {
         assertEquals(2, tokens.count())
         val token1 = tokens[0]
         assertEquals(kind1, token1.token)
-        assertEquals(text1, token1.literal)
+        assertLiteral(text1, token1)
         val token2 = tokens[1]
         assertEquals(kind2, token2.token)
-        assertEquals(text2, token2.literal)
+        assertLiteral(text2, token2)
     }
 
     @ParameterizedTest(name = "Pair of tokens `{0}` {1} and `{4}`{5} with separator {2} should be lexed correctly.")
@@ -115,13 +124,21 @@ internal class LexerTest {
         assertEquals(3, tokens.count())
         val token1 = tokens[0]
         assertEquals(kind1, token1.token)
-        assertEquals(text1, token1.literal)
+        assertLiteral(text1, token1)
         val token2 = tokens[1]
         assertEquals(separator, token2.token)
-        assertEquals(separatorText, token2.literal)
+        assertLiteral(separatorText, token2)
         val token3 = tokens[2]
         assertEquals(kind2, token3.token)
-        assertEquals(text2, token3.literal)
+        assertLiteral(text2, token3)
+    }
+
+    private fun assertLiteral(literal: String, token: SyntaxToken<*>) {
+        if (token.token is Token.String) {
+            assertEquals(literal.substring(1, literal.length - 1), token.literal)
+        } else {
+            assertEquals(literal, token.literal)
+        }
     }
 
     companion object {
@@ -183,9 +200,10 @@ internal class LexerTest {
                 Arguments.of(Token.Number, "1"),
                 Arguments.of(Token.Number, "200"),
 
+                Arguments.of(Token.String, "\"test\""),
+
                 Arguments.of(Token.Type, "Int"),
 
-                Arguments.of(Token.QuotationMark, "\""),
                 Arguments.of(Token.SingleQuote, "'"),
 
                 Arguments.of(Token.OpenBrace, "{"),
@@ -205,7 +223,7 @@ internal class LexerTest {
 
                 Arguments.of(Token.SemiColon, ";"),
 
-            )
+                )
         }
 
         private fun getSeparators(): List<Arguments> {
@@ -219,6 +237,7 @@ internal class LexerTest {
         }
 
         private fun requiresSeparator(t1Token: Token, t2Token: Token): Boolean {
+            if (t1Token is Token.String && t2Token is Token.String) return true
             if (t1Token is Token.Identifier && t2Token is Token.Identifier) return true
             if (t1Token is Keyword && t2Token is Keyword) return true
             if (t1Token is Keyword && t2Token is Token.Identifier) return true
@@ -254,10 +273,10 @@ internal class LexerTest {
             if (t1Token is Operator.LessThan && t2Token is Operator.LessThanEquals) return true
             if (t1Token is Operator.Circumflex && t2Token is Operator.Circumflex) return true
             if (t1Token is Operator.Circumflex && t2Token is Operator.DoubleAsterisk) return true
-            if(t1Token is Operator.Plus && t2Token is Operator.Equals) return true
-            if(t1Token is Operator.Minus && t2Token is Operator.Equals) return true
-            if(t1Token is Operator.Plus && t2Token is Operator.DoubleEquals) return true
-            if(t1Token is Operator.Minus && t2Token is Operator.DoubleEquals) return true
+            if (t1Token is Operator.Plus && t2Token is Operator.Equals) return true
+            if (t1Token is Operator.Minus && t2Token is Operator.Equals) return true
+            if (t1Token is Operator.Plus && t2Token is Operator.DoubleEquals) return true
+            if (t1Token is Operator.Minus && t2Token is Operator.DoubleEquals) return true
 
             return false
         }

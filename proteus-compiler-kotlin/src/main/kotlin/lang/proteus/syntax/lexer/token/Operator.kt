@@ -3,7 +3,7 @@ package lang.proteus.syntax.lexer.token
 import lang.proteus.syntax.lexer.SyntaxToken
 
 sealed class Operator(
-    override val literal: String,
+    override val literal: kotlin.String,
     val precedence: Int,
     val isUnaryOperator: Boolean = false,
     val isBinaryOperator: Boolean = false,

@@ -65,6 +65,14 @@ internal class DiagnosticsBag {
         report("Invalid number string identifier '$literal'", span)
     }
 
+    fun reportUnterminatedString(start: Int) {
+        report("Unterminated string literal", TextSpan(start, 1))
+    }
+
+    fun reportIllegalEscape(current: Char, position: Int) {
+        report("Illegal escape sequence '$current'", TextSpan.fromLiteral(position, current.toString()))
+    }
+
 
     val diagnostics: Diagnostics
         get() = mutableDiagnostics

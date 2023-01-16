@@ -21,6 +21,7 @@ class SyntaxToken<T : Token>(
         return super.span()
     }
 
+
     companion object {
 
 
@@ -53,6 +54,7 @@ class SyntaxToken<T : Token>(
             return Token.Bad.toSyntaxToken(position, literal) as SyntaxToken<Token.Bad>
         }
     }
+
 
 
 }

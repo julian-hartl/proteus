@@ -1,6 +1,4 @@
 {
-    var result = 0;
-    for i in 0 until 100
-        result += i;
-    result;
+    val x = "test";
+    typeof x;
 }
