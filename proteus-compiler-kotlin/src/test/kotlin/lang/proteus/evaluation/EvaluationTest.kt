@@ -3,6 +3,7 @@ package lang.proteus.evaluation
 import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments

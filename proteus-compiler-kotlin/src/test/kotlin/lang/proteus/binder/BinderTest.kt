@@ -3,7 +3,7 @@ package lang.proteus.binder
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
 import lang.proteus.binding.ProteusType
-import lang.proteus.binding.VariableSymbol
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText

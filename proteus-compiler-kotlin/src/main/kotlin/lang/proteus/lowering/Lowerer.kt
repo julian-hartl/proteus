@@ -143,9 +143,9 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         return rewriteStatement(result)
     }
 
-    private fun generateLabel(): LabelSymbol {
+    private fun generateLabel(): BoundLabel {
         val name = "label${labelCount++}"
-        return LabelSymbol(name)
+        return BoundLabel(name)
     }
 
     private fun flatten(statement: BoundStatement): BoundBlockStatement {

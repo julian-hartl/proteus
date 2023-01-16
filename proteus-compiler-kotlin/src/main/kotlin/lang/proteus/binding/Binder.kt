@@ -2,6 +2,7 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*

@@ -1,5 +1,6 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.AssignmentOperator
 
 internal class BoundAssignmentExpression(

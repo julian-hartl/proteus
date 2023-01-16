@@ -1,5 +1,7 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.VariableSymbol
+
 internal class BoundScope internal constructor(val parent: BoundScope?) {
     private val variables: MutableMap<String, VariableSymbol> = mutableMapOf()
 

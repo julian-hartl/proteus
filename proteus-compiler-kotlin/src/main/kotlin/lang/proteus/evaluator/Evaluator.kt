@@ -9,7 +9,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
     private var lastValue: Any? = null
 
     fun evaluate(): Any {
-        val labelToIndex = mutableMapOf<LabelSymbol, Int>()
+        val labelToIndex = mutableMapOf<BoundLabel, Int>()
         for ((index, statement) in root.statements.withIndex()) {
             if (statement is BoundLabelStatement) {
                 labelToIndex[statement.label] = index + 1
@@ -25,7 +25,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
         return lastValue ?: "null"
     }
 
-    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<LabelSymbol, Int>): Int {
+    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<BoundLabel, Int>): Int {
         return when (statement) {
             is BoundExpressionStatement -> {
                 evaluateExpressionStatement(statement)

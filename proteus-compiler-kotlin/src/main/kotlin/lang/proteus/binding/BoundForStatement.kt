@@ -1,7 +1,7 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.lexer.token.Operator
 
 internal data class BoundForStatement(
     val variable: VariableSymbol,
