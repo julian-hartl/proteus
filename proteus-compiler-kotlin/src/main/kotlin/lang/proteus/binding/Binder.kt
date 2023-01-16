@@ -8,7 +8,6 @@ import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.*
-import java.lang.Error
 import java.util.*
 
 internal class Binder(private var scope: BoundScope) : Diagnosable {
@@ -200,13 +199,12 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
         if (name.isEmpty()) {
-            // Token was inserted by parser. We already reported that error so we can just return an error expression.
-            return BoundLiteralExpression(0)
+            return BoundErrorExpression
         }
         val variable = scope.tryLookup(name)
         if (variable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)
-            return BoundLiteralExpression(0)
+            return BoundErrorExpression
         }
         return BoundVariableExpression(variable)
     }
@@ -216,7 +214,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
         val boundLeft = bindExpression(binaryExpression.left)
         val boundRight = bindExpression(binaryExpression.right)
-        if(boundLeft.type is TypeSymbol.Error || boundRight.type is TypeSymbol.Error){
+        if (boundLeft.type is TypeSymbol.Error || boundRight.type is TypeSymbol.Error) {
             return BoundErrorExpression
         }
         val binaryOperator =
@@ -237,6 +235,9 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
         val boundOperand = bindExpression(unaryExpression.operand)
+        if (boundOperand.type is TypeSymbol.Error) {
+            return BoundErrorExpression
+        }
         val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
             diagnosticsBag.reportUnaryOperatorMismatch(
@@ -244,7 +245,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
                 unaryExpression.operatorSyntaxToken.span(),
                 boundOperand.type
             )
-            return boundOperand
+            return BoundErrorExpression
         }
         return BoundUnaryExpression(boundOperand, boundOperator)
     }

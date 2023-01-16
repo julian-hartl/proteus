@@ -1,7 +1,8 @@
 package lang.proteus.diagnostics
 
-import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.symbols.TypeSymbol
+import lang.proteus.syntax.lexer.token.Token
+
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
 
@@ -74,5 +75,9 @@ internal class DiagnosticsBag {
 
 
     val diagnostics: Diagnostics
-        get() = mutableDiagnostics
+        get() = distinctDiagnostics()
+
+    private fun distinctDiagnostics(): Diagnostics {
+        return mutableDiagnostics.distinct()
+    }
 }
