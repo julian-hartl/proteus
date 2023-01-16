@@ -75,9 +75,9 @@ internal class DiagnosticsBag {
 
 
     val diagnostics: Diagnostics
-        get() = distinctDiagnostics()
+        get() = mutableDiagnostics
 
-    private fun distinctDiagnostics(): Diagnostics {
+    fun distinctDiagnostics(): Diagnostics {
         return mutableDiagnostics.distinct()
     }
 }

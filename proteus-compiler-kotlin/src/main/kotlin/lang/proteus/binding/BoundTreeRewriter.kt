@@ -100,8 +100,12 @@ internal abstract class BoundTreeRewriter {
             is BoundLiteralExpression<*> -> rewriteLiteralExpression(expression)
             is BoundUnaryExpression -> rewriteUnaryExpression(expression)
             is BoundVariableExpression -> rewriteVariableExpression(expression)
-            BoundErrorExpression -> expression
+            is BoundErrorExpression -> rewriteErrorExpression(expression)
         }
+    }
+
+    private fun rewriteErrorExpression(expression: BoundExpression): BoundExpression {
+        return expression
     }
 
     protected open fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {

@@ -106,8 +106,9 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
         val expression = bindExpression(syntax)
-        if (expression.type != expectedType) {
+        if (expression.type != expectedType && expectedType != TypeSymbol.Error && expression.type != TypeSymbol.Error) {
             diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, expression.type)
+            return BoundErrorExpression
         }
         return expression
     }
