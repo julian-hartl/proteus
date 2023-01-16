@@ -112,5 +112,8 @@ private fun TypeSymbol.getOutputColor(): PrinterColor {
         TypeSymbol.Type -> PrinterColor.RED
         TypeSymbol.String -> PrinterColor.GREEN
         TypeSymbol.Any -> PrinterColor.YELLOW
+        else -> {
+            PrinterColor.WHITE
+        }
     }
 }

@@ -92,6 +92,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             }
 
             is BoundAssignmentExpression -> evaluateAssignmentExpression(expression)
+            else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 
     }

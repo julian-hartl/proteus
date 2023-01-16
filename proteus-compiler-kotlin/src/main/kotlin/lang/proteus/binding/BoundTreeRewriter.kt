@@ -100,6 +100,7 @@ internal abstract class BoundTreeRewriter {
             is BoundLiteralExpression<*> -> rewriteLiteralExpression(expression)
             is BoundUnaryExpression -> rewriteUnaryExpression(expression)
             is BoundVariableExpression -> rewriteVariableExpression(expression)
+            BoundErrorExpression -> expression
         }
     }
 

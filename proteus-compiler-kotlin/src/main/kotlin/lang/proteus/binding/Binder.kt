@@ -8,6 +8,7 @@ import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.*
+import java.lang.Error
 import java.util.*
 
 internal class Binder(private var scope: BoundScope) : Diagnosable {
@@ -215,6 +216,9 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
         val boundLeft = bindExpression(binaryExpression.left)
         val boundRight = bindExpression(binaryExpression.right)
+        if(boundLeft.type is TypeSymbol.Error || boundRight.type is TypeSymbol.Error){
+            return BoundErrorExpression
+        }
         val binaryOperator =
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
@@ -224,7 +228,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
                 boundLeft.type,
                 boundRight.type
             )
-            return boundLeft
+            return BoundErrorExpression
         }
         return BoundBinaryExpression(boundLeft, boundRight, binaryOperator)
 
