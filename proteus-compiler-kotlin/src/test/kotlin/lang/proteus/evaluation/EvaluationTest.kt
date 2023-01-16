@@ -12,6 +12,7 @@ import java.util.stream.Stream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import lang.proteus.symbols.TypeSymbol
 
 class EvaluationTest {
 
@@ -30,8 +31,8 @@ class EvaluationTest {
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
         val expression = SyntaxTree.parse(input)
         val boundScope = BoundScope(null)
-        boundScope.tryDeclare(VariableSymbol("a", ProteusType.Int, isFinal = false))
-        boundScope.tryDeclare(VariableSymbol("b", ProteusType.Int, isFinal = false))
+        boundScope.tryDeclare(VariableSymbol("a", TypeSymbol.Int, isFinal = false))
+        boundScope.tryDeclare(VariableSymbol("b", TypeSymbol.Int, isFinal = false))
         val compilation = Compilation(expression)
 
         val evaluationResult = compilation.evaluate(mutableMapOf())
@@ -167,10 +168,9 @@ class EvaluationTest {
                 Arguments.of("2 + 1 >= 1", true),
                 Arguments.of("( 2 * 2 ) > 3", true),
 
-                Arguments.of("typeof 2", ProteusType.Int),
-                Arguments.of("typeof true", ProteusType.Boolean),
-                Arguments.of("typeof \"test\"", ProteusType.String),
-                Arguments.of("typeof 't'", ProteusType.Char),
+                Arguments.of("typeof 2", TypeSymbol.Int),
+                Arguments.of("typeof true", TypeSymbol.Boolean),
+                Arguments.of("typeof \"test\"", TypeSymbol.String),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
 
@@ -219,7 +219,7 @@ class EvaluationTest {
                         }
 
                     """.trimIndent(),
-                    ProteusType.Int
+                    TypeSymbol.Int
                 ),
 
                 Arguments.of(

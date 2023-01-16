@@ -2,6 +2,7 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operator
@@ -67,18 +68,18 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundLower = bindExpression(syntax.lowerBound)
         val boundUpper = bindExpression(syntax.upperBound)
 
-        if (boundLower.type != ProteusType.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), ProteusType.Int, boundLower.type)
+        if (boundLower.type != TypeSymbol.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), TypeSymbol.Int, boundLower.type)
         }
 
-        if (boundUpper.type != ProteusType.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), ProteusType.Int, boundUpper.type)
+        if (boundUpper.type != TypeSymbol.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), TypeSymbol.Int, boundUpper.type)
         }
 
         scope = BoundScope(scope)
 
         val name = syntax.identifier.literal
-        val variable = VariableSymbol(name, ProteusType.Int, isFinal = true)
+        val variable = VariableSymbol(name, TypeSymbol.Int, isFinal = true)
         val declaredVariable = scope.tryLookup(name)
         if (declaredVariable != null) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), name)
@@ -91,19 +92,19 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
-        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
         val body = bindStatement(syntax.body)
         return BoundWhileStatement(condition, body)
     }
 
     private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
-        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
         val thenStatement = bindStatement(syntax.thenStatement)
         val elseStatement = syntax.elseClause?.let { bindStatement(it.elseStatementSyntax) }
         return BoundIfStatement(condition, thenStatement, elseStatement)
     }
 
-    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: ProteusType): BoundExpression {
+    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
         val expression = bindExpression(syntax)
         if (expression.type != expectedType) {
             diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, expression.type)

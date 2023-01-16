@@ -4,12 +4,12 @@ import lang.proteus.api.performance.CompilationPerformance
 import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
-import lang.proteus.binding.ProteusType
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.PrinterColor
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 
@@ -58,7 +58,7 @@ internal class ProteusCompiler() {
         val consolePrinter = ConsolePrinter()
         val value = compilationResult.value
         if (value != null) {
-            val color = ProteusType.fromValueOrObject(value).getOutputColor()
+            val color = TypeSymbol.fromValueOrAny(value).getOutputColor()
             consolePrinter.setColor(color)
             consolePrinter.println()
             consolePrinter.println(value.toString())
@@ -105,15 +105,12 @@ internal class ProteusCompiler() {
     }
 }
 
-private fun ProteusType.getOutputColor(): PrinterColor {
+private fun TypeSymbol.getOutputColor(): PrinterColor {
     return when (this) {
-        ProteusType.Int -> PrinterColor.BLUE
-        ProteusType.Boolean -> PrinterColor.MAGENTA
-        ProteusType.Object -> PrinterColor.CYAN
-        ProteusType.Type -> PrinterColor.RED
-        ProteusType.String -> PrinterColor.GREEN
-        ProteusType.Char -> PrinterColor.BLACK
-        ProteusType.BinaryString -> PrinterColor.BLUE
-        ProteusType.Range -> PrinterColor.MAGENTA
+        TypeSymbol.Int -> PrinterColor.BLUE
+        TypeSymbol.Boolean -> PrinterColor.MAGENTA
+        TypeSymbol.Type -> PrinterColor.RED
+        TypeSymbol.String -> PrinterColor.GREEN
+        TypeSymbol.Any -> PrinterColor.YELLOW
     }
 }

@@ -1,6 +1,6 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.binding.ProteusType
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
@@ -282,7 +282,7 @@ class Parser private constructor(
     private fun parseTypeExpression(): LiteralExpressionSyntax {
         val token = current
         nextToken()
-        return LiteralExpressionSyntax(token, token.value as ProteusType)
+        return LiteralExpressionSyntax(token, token.value as TypeSymbol)
     }
 
     private fun parseNumberExpression(): LiteralExpressionSyntax {
@@ -292,7 +292,7 @@ class Parser private constructor(
             diagnosticsBag.reportInvalidNumber(
                 numberToken.value.toString(),
                 numberToken.span(),
-                ProteusType.Int
+                TypeSymbol.Int
             )
         }
         return LiteralExpressionSyntax(numberToken, numberToken.value as Int)

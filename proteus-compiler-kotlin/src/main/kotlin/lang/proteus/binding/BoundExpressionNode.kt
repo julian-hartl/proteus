@@ -1,13 +1,13 @@
 package lang.proteus.binding
-
+import lang.proteus.symbols.TypeSymbol
 internal sealed class BoundExpression : BoundNode() {
-    abstract val type: ProteusType
+    abstract val type: TypeSymbol
 }
 
 internal class BoundLiteralExpression<T : Any>(val value: T) : BoundExpression() {
 
-    override val type: ProteusType
-        get() = ProteusType.fromValueOrObject(value)
+    override val type: TypeSymbol
+        get() = TypeSymbol.fromValueOrAny(value)
 }
 
 internal class BoundBinaryExpression(
@@ -16,14 +16,14 @@ internal class BoundBinaryExpression(
     val operator: BoundBinaryOperator,
 ) : BoundExpression() {
 
-    override val type: ProteusType
+    override val type: TypeSymbol
         get() = operator.resultType
 }
 
 internal class BoundUnaryExpression(val operand: BoundExpression, val operator: BoundUnaryOperator) :
     BoundExpression() {
 
-    override val type: ProteusType
+    override val type: TypeSymbol
         get() = operator.resultType
 
 }

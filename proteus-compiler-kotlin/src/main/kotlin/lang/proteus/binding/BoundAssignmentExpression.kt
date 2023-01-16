@@ -1,6 +1,7 @@
 package lang.proteus.binding
 
 import lang.proteus.symbols.VariableSymbol
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.AssignmentOperator
 
 internal class BoundAssignmentExpression(
@@ -8,7 +9,7 @@ internal class BoundAssignmentExpression(
     val expression: BoundExpression,
     val assignmentOperator: AssignmentOperator,
 ) : BoundExpression() {
-    override val type: ProteusType
+    override val type: TypeSymbol
         get() = expression.type
 
 }

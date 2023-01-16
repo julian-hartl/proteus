@@ -1,6 +1,6 @@
 package lang.proteus.syntax.lexer.token_lexers
 
-import lang.proteus.binding.ProteusType
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.SyntaxToken
@@ -20,7 +20,7 @@ internal object LetterTokenLexer : TokenLexer() {
         literal: String,
         start: Int,
     ): SyntaxToken<out Token> {
-        val type = ProteusType.fromName(literal)
+        val type = TypeSymbol.fromName(literal)
         if (type != null) {
             return SyntaxToken.typeToken(start, literal, type)
         }

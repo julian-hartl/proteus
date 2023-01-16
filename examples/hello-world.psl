@@ -1,4 +1,3 @@
 {
-    val x = "test";
-    typeof x;
+    1 ** 2;
 }

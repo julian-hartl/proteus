@@ -3,7 +3,7 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
-
+import lang.proteus.symbols.TypeSymbol
 internal class Evaluator(private val root: BoundBlockStatement, private val variables: MutableMap<String, Any>) {
 
     private var lastValue: Any? = null
@@ -137,8 +137,8 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
             BoundBinaryOperator.BoundLeftShiftBinaryOperator -> left as Int shl right as Int
             BoundBinaryOperator.BoundRightShiftBinaryOperator -> left as Int shr right as Int
-            BoundBinaryOperator.BoundIsBinaryOperator -> (right as ProteusType).isAssignableTo(
-                ProteusType.fromValueOrObject(
+            BoundBinaryOperator.BoundIsBinaryOperator -> (right as TypeSymbol).isAssignableTo(
+                TypeSymbol.fromValueOrAny(
                     left
                 )
             )
@@ -154,7 +154,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
             BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
-            BoundUnaryOperator.BoundUnaryTypeOfOperator -> ProteusType.fromValueOrObject(operand)
+            BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.fromValueOrAny(operand)
         }
     }
 

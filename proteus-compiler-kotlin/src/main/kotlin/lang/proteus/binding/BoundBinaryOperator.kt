@@ -1,9 +1,11 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.TypeSymbol
+
 import lang.proteus.syntax.lexer.token.Operator
 
 internal sealed class BoundOperator {
-    fun canBeApplied(vararg types: ProteusType): Boolean {
+    fun canBeApplied(vararg types: TypeSymbol): Boolean {
         return when (this) {
             is BoundBinaryOperator -> BoundBinaryOperator.bind(operator, types[0], types[1]) == this
             is BoundUnaryOperator -> BoundUnaryOperator.bind(operator, types[0]) == this
@@ -12,14 +14,14 @@ internal sealed class BoundOperator {
 }
 
 internal sealed class BoundBinaryOperator(
-    val operator: Operator, val leftType: ProteusType, val rightType: ProteusType, val resultType: ProteusType,
+    val operator: Operator, val leftType: TypeSymbol, val rightType: TypeSymbol, val resultType: TypeSymbol,
     val requiresSameTypes: Boolean = true,
 ) : BoundOperator() {
 
 
-    constructor(operator: Operator, type: ProteusType) : this(operator, type, type, type)
+    constructor(operator: Operator, type: TypeSymbol) : this(operator, type, type, type)
 
-    constructor(operator: Operator, type: ProteusType, resultType: ProteusType) : this(
+    constructor(operator: Operator, type: TypeSymbol, resultType: TypeSymbol) : this(
         operator,
         type,
         type,
@@ -31,7 +33,7 @@ internal sealed class BoundBinaryOperator(
             BoundBinaryOperator::class.sealedSubclasses.filter { it.objectInstance != null }.map { it.objectInstance!! }
         }
 
-        fun bind(operator: Operator, leftType: ProteusType, rightType: ProteusType): BoundBinaryOperator? {
+        fun bind(operator: Operator, leftType: TypeSymbol, rightType: TypeSymbol): BoundBinaryOperator? {
             return operators.value.firstOrNull {
                 val isSuited =
                     it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
@@ -45,55 +47,55 @@ internal sealed class BoundBinaryOperator(
         }
     }
 
-    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, ProteusType.Int)
+    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, TypeSymbol.Int)
 
-    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, ProteusType.Int)
+    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, TypeSymbol.Int)
 
-    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, ProteusType.Int)
+    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, TypeSymbol.Int)
 
-    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, ProteusType.Int)
+    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, TypeSymbol.Int)
 
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleAsterisk, ProteusType.Int)
+    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleAsterisk, TypeSymbol.Int)
 
-    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, ProteusType.Int)
-    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, ProteusType.Int)
+    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, TypeSymbol.Int)
+    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, TypeSymbol.Int)
 
-    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, ProteusType.Int)
-    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, ProteusType.Int)
-    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, ProteusType.Int)
+    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, TypeSymbol.Int)
+    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, TypeSymbol.Int)
+    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, TypeSymbol.Int)
 
-    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, ProteusType.Boolean)
+    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, TypeSymbol.Boolean)
 
-    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, ProteusType.Boolean)
+    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, TypeSymbol.Boolean)
 
-    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, ProteusType.Boolean)
+    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, TypeSymbol.Boolean)
     object BoundEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.DoubleEquals, ProteusType.Object, ProteusType.Boolean)
+        BoundBinaryOperator(Operator.DoubleEquals, TypeSymbol.Any, TypeSymbol.Boolean)
 
     object BoundNotEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.NotEquals, ProteusType.Object, ProteusType.Boolean)
+        BoundBinaryOperator(Operator.NotEquals, TypeSymbol.Any, TypeSymbol.Boolean)
 
-    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, ProteusType.Int, ProteusType.Boolean)
+    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, TypeSymbol.Int, TypeSymbol.Boolean)
 
     object BoundGreaterThanBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThan, ProteusType.Int, ProteusType.Boolean)
+        BoundBinaryOperator(Operator.GreaterThan, TypeSymbol.Int, TypeSymbol.Boolean)
 
     object BoundLessThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.LessThanEquals, ProteusType.Int, ProteusType.Boolean)
+        BoundBinaryOperator(Operator.LessThanEquals, TypeSymbol.Int, TypeSymbol.Boolean)
 
     object BoundGreaterThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThanEquals, ProteusType.Int, ProteusType.Boolean)
+        BoundBinaryOperator(Operator.GreaterThanEquals, TypeSymbol.Int, TypeSymbol.Boolean)
 
     object BoundIsBinaryOperator : BoundBinaryOperator(
         Operator.Is,
-        ProteusType.Object,
-        ProteusType.Type,
-        ProteusType.Boolean, requiresSameTypes = false
+        TypeSymbol.Any,
+        TypeSymbol.Type,
+        TypeSymbol.Boolean, requiresSameTypes = false
     )
 
     object BoundModuloBinaryOperator : BoundBinaryOperator(
         Operator.Percent,
-        ProteusType.Int,
+        TypeSymbol.Int,
     )
 
 
