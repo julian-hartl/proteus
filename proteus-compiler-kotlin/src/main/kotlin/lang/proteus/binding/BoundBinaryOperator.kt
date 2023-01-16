@@ -1,9 +1,11 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.TypeSymbol
+
 import lang.proteus.syntax.lexer.token.Operator
 
 internal sealed class BoundOperator {
-    fun canBeApplied(vararg types: ProteusType): Boolean {
+    fun canBeApplied(vararg types: TypeSymbol): Boolean {
         return when (this) {
             is BoundBinaryOperator -> BoundBinaryOperator.bind(operator, types[0], types[1]) == this
             is BoundUnaryOperator -> BoundUnaryOperator.bind(operator, types[0]) == this
@@ -11,31 +13,127 @@ internal sealed class BoundOperator {
     }
 }
 
-internal sealed class BoundBinaryOperator(
-    val operator: Operator, val leftType: ProteusType, val rightType: ProteusType, val resultType: ProteusType,
-    val requiresSameTypes: Boolean = true,
+internal enum class BoundBinaryOperatorKind {
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Modulo,
+    Exponentiation,
+    LogicalAnd,
+    LogicalOr,
+    LogicalXor,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    BitwiseShiftLeft,
+    BitwiseShiftRight,
+    Equality,
+    Inequality,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+    TypeEquality
+}
+
+internal data class BoundBinaryOperator(
+    val kind: BoundBinaryOperatorKind,
+    val operator: Operator, val leftType: TypeSymbol, val rightType: TypeSymbol, val resultType: TypeSymbol,
+    val requiresSameTypes: Boolean = false,
 ) : BoundOperator() {
 
 
-    constructor(operator: Operator, type: ProteusType) : this(operator, type, type, type)
-
-    constructor(operator: Operator, type: ProteusType, resultType: ProteusType) : this(
+    constructor(kind: BoundBinaryOperatorKind, operator: Operator, type: TypeSymbol) : this(
+        kind,
         operator,
         type,
         type,
-        resultType
+        type,
+        requiresSameTypes = true
+    )
+
+    constructor(kind: BoundBinaryOperatorKind, operator: Operator, type: TypeSymbol, resultType: TypeSymbol) : this(
+        kind,
+        operator,
+        type,
+        type,
+        resultType,
+        requiresSameTypes = true
     )
 
     companion object {
-        private val operators = lazy {
-            BoundBinaryOperator::class.sealedSubclasses.filter { it.objectInstance != null }.map { it.objectInstance!! }
+        private val operators: List<BoundBinaryOperator> = listOf(
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.TypeEquality,
+                Operator.Is,
+                TypeSymbol.Any,
+                TypeSymbol.Type,
+                TypeSymbol.Boolean,
+            ),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Addition, Operator.Plus, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Addition, Operator.Plus, TypeSymbol.String),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Subtraction, Operator.Minus, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Multiplication, Operator.Asterisk, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Division, Operator.Slash, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Modulo, Operator.Percent, TypeSymbol.Int),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.Equality,
+                Operator.DoubleEquals,
+                TypeSymbol.Any,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.Inequality,
+                Operator.NotEquals,
+                TypeSymbol.Any,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.LessThan,
+                Operator.LessThan,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.LessThanOrEqual,
+                Operator.LessThanEquals,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.GreaterThan,
+                Operator.GreaterThan,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(
+                BoundBinaryOperatorKind.GreaterThanOrEqual,
+                Operator.GreaterThanEquals,
+                TypeSymbol.Int,
+                TypeSymbol.Boolean
+            ),
+            BoundBinaryOperator(BoundBinaryOperatorKind.LogicalAnd, Operator.And, TypeSymbol.Boolean),
+            BoundBinaryOperator(BoundBinaryOperatorKind.LogicalOr, Operator.Or, TypeSymbol.Boolean),
+            BoundBinaryOperator(BoundBinaryOperatorKind.LogicalXor, Operator.Xor, TypeSymbol.Boolean),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseShiftLeft, Operator.DoubleLessThan, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseShiftRight, Operator.DoubleGreaterThan, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.Exponentiation, Operator.DoubleAsterisk, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseAnd, Operator.Ampersand, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseOr, Operator.Pipe, TypeSymbol.Int),
+            BoundBinaryOperator(BoundBinaryOperatorKind.BitwiseXor, Operator.Circumflex, TypeSymbol.Int),
+
+            )
+
+        fun findByOperator(operator: Operator): List<BoundBinaryOperator> {
+            return operators.filter { it.operator == operator }
         }
 
-        fun bind(operator: Operator, leftType: ProteusType, rightType: ProteusType): BoundBinaryOperator? {
-            return operators.value.firstOrNull {
+        fun bind(operator: Operator, leftType: TypeSymbol, rightType: TypeSymbol): BoundBinaryOperator? {
+            return operators.firstOrNull {
                 val isSuited =
-                    it.operator == operator && it.leftType.isAssignableTo(leftType) && it.rightType.isAssignableTo(
-                        rightType
+                    it.operator == operator && leftType.isAssignableTo(it.leftType) && rightType.isAssignableTo(
+                        it.rightType
                     )
                 if (isSuited && it.requiresSameTypes) {
                     return@firstOrNull leftType == rightType
@@ -44,57 +142,6 @@ internal sealed class BoundBinaryOperator(
             }
         }
     }
-
-    object BoundAdditionBinaryOperator : BoundBinaryOperator(Operator.Plus, ProteusType.Int)
-
-    object BoundSubtractionBinaryOperator : BoundBinaryOperator(Operator.Minus, ProteusType.Int)
-
-    object BoundMultiplicationBinaryOperator : BoundBinaryOperator(Operator.Asterisk, ProteusType.Int)
-
-    object BoundDivisionBinaryOperator : BoundBinaryOperator(Operator.Slash, ProteusType.Int)
-
-    object BoundExponentiationBinaryOperator : BoundBinaryOperator(Operator.DoubleAsterisk, ProteusType.Int)
-
-    object BoundBitwiseAndBinaryOperator : BoundBinaryOperator(Operator.Ampersand, ProteusType.Int)
-    object BoundBitwiseXorBinaryOperator : BoundBinaryOperator(Operator.Circumflex, ProteusType.Int)
-
-    object BoundBitwiseOrBinaryOperator : BoundBinaryOperator(Operator.Pipe, ProteusType.Int)
-    object BoundRightShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleGreaterThan, ProteusType.Int)
-    object BoundLeftShiftBinaryOperator : BoundBinaryOperator(Operator.DoubleLessThan, ProteusType.Int)
-
-    object BoundBitwiseLogicalAndBinaryOperator : BoundBinaryOperator(Operator.And, ProteusType.Boolean)
-
-    object BoundBitwiseLogicalOrBinaryOperator : BoundBinaryOperator(Operator.Or, ProteusType.Boolean)
-
-    object BoundBitwiseLogicalXorBinaryOperator : BoundBinaryOperator(Operator.Xor, ProteusType.Boolean)
-    object BoundEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.DoubleEquals, ProteusType.Object, ProteusType.Boolean)
-
-    object BoundNotEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.NotEquals, ProteusType.Object, ProteusType.Boolean)
-
-    object BoundLessThanBinaryOperator : BoundBinaryOperator(Operator.LessThan, ProteusType.Int, ProteusType.Boolean)
-
-    object BoundGreaterThanBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThan, ProteusType.Int, ProteusType.Boolean)
-
-    object BoundLessThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.LessThanEquals, ProteusType.Int, ProteusType.Boolean)
-
-    object BoundGreaterThanOrEqualsBinaryOperator :
-        BoundBinaryOperator(Operator.GreaterThanEquals, ProteusType.Int, ProteusType.Boolean)
-
-    object BoundIsBinaryOperator : BoundBinaryOperator(
-        Operator.Is,
-        ProteusType.Object,
-        ProteusType.Type,
-        ProteusType.Boolean, requiresSameTypes = false
-    )
-
-    object BoundModuloBinaryOperator : BoundBinaryOperator(
-        Operator.Percent,
-        ProteusType.Int,
-    )
 
 
 }

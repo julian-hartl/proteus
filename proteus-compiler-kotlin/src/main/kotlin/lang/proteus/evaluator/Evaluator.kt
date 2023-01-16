@@ -3,13 +3,13 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
-
+import lang.proteus.symbols.TypeSymbol
 internal class Evaluator(private val root: BoundBlockStatement, private val variables: MutableMap<String, Any>) {
 
     private var lastValue: Any? = null
 
     fun evaluate(): Any {
-        val labelToIndex = mutableMapOf<LabelSymbol, Int>()
+        val labelToIndex = mutableMapOf<BoundLabel, Int>()
         for ((index, statement) in root.statements.withIndex()) {
             if (statement is BoundLabelStatement) {
                 labelToIndex[statement.label] = index + 1
@@ -25,7 +25,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
         return lastValue ?: "null"
     }
 
-    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<LabelSymbol, Int>): Int {
+    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<BoundLabel, Int>): Int {
         return when (statement) {
             is BoundExpressionStatement -> {
                 evaluateExpressionStatement(statement)
@@ -92,6 +92,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             }
 
             is BoundAssignmentExpression -> evaluateAssignmentExpression(expression)
+            else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 
     }
@@ -116,29 +117,35 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
         val right = evaluateExpression(expression.right)
 
 
-        return when (expression.operator) {
-            BoundBinaryOperator.BoundAdditionBinaryOperator -> left as Int + right as Int
-            BoundBinaryOperator.BoundSubtractionBinaryOperator -> left as Int - right as Int
-            BoundBinaryOperator.BoundDivisionBinaryOperator -> left as Int / right as Int
-            BoundBinaryOperator.BoundMultiplicationBinaryOperator -> left as Int * right as Int
-            BoundBinaryOperator.BoundExponentiationBinaryOperator -> (left as Int).toDouble().pow(right as Int).toInt()
-            BoundBinaryOperator.BoundModuloBinaryOperator -> left as Int % right as Int
-            BoundBinaryOperator.BoundBitwiseAndBinaryOperator -> left as Int and right as Int
-            BoundBinaryOperator.BoundBitwiseXorBinaryOperator -> left as Int xor right as Int
-            BoundBinaryOperator.BoundBitwiseOrBinaryOperator -> left as Int or right as Int
-            BoundBinaryOperator.BoundBitwiseLogicalAndBinaryOperator -> left as Boolean and right as Boolean
-            BoundBinaryOperator.BoundBitwiseLogicalOrBinaryOperator -> left as Boolean or right as Boolean
-            BoundBinaryOperator.BoundBitwiseLogicalXorBinaryOperator -> left as Boolean xor right as Boolean
-            BoundBinaryOperator.BoundEqualsBinaryOperator -> left == right
-            BoundBinaryOperator.BoundNotEqualsBinaryOperator -> left != right
-            BoundBinaryOperator.BoundGreaterThanBinaryOperator -> left as Int > right as Int
-            BoundBinaryOperator.BoundGreaterThanOrEqualsBinaryOperator -> left as Int >= right as Int
-            BoundBinaryOperator.BoundLessThanBinaryOperator -> (left as Int) < (right as Int)
-            BoundBinaryOperator.BoundLessThanOrEqualsBinaryOperator -> left as Int <= right as Int
-            BoundBinaryOperator.BoundLeftShiftBinaryOperator -> left as Int shl right as Int
-            BoundBinaryOperator.BoundRightShiftBinaryOperator -> left as Int shr right as Int
-            BoundBinaryOperator.BoundIsBinaryOperator -> (right as ProteusType).isAssignableTo(
-                ProteusType.fromValueOrObject(
+        return when (expression.operator.kind) {
+            BoundBinaryOperatorKind.Addition -> {
+                if(expression.type == TypeSymbol.Int) {
+                    (left as Int) + (right as Int)
+                } else {
+                    (left as String) + (right as String)
+                }
+            }
+            BoundBinaryOperatorKind.Subtraction -> left as Int - right as Int
+            BoundBinaryOperatorKind.Division -> left as Int / right as Int
+            BoundBinaryOperatorKind.Multiplication -> left as Int * right as Int
+            BoundBinaryOperatorKind.Exponentiation -> (left as Int).toDouble().pow(right as Int).toInt()
+            BoundBinaryOperatorKind.Modulo -> left as Int % right as Int
+            BoundBinaryOperatorKind.BitwiseAnd -> left as Int and right as Int
+            BoundBinaryOperatorKind.BitwiseXor -> left as Int xor right as Int
+            BoundBinaryOperatorKind.BitwiseOr -> left as Int or right as Int
+            BoundBinaryOperatorKind.LogicalAnd -> left as Boolean and right as Boolean
+            BoundBinaryOperatorKind.LogicalOr -> left as Boolean or right as Boolean
+            BoundBinaryOperatorKind.LogicalXor -> left as Boolean xor right as Boolean
+            BoundBinaryOperatorKind.Equality -> left == right
+            BoundBinaryOperatorKind.Inequality -> left != right
+            BoundBinaryOperatorKind.GreaterThan -> left as Int > right as Int
+            BoundBinaryOperatorKind.GreaterThanOrEqual -> left as Int >= right as Int
+            BoundBinaryOperatorKind.LessThan -> (left as Int) < (right as Int)
+            BoundBinaryOperatorKind.LessThanOrEqual -> left as Int <= right as Int
+            BoundBinaryOperatorKind.BitwiseShiftLeft -> left as Int shl right as Int
+            BoundBinaryOperatorKind.BitwiseShiftRight -> left as Int shr right as Int
+            BoundBinaryOperatorKind.TypeEquality -> (right as TypeSymbol).isAssignableTo(
+                TypeSymbol.fromValueOrAny(
                     left
                 )
             )
@@ -154,7 +161,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
             BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
-            BoundUnaryOperator.BoundUnaryTypeOfOperator -> ProteusType.fromValueOrObject(operand)
+            BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.fromValueOrAny(operand)
         }
     }
 

@@ -3,6 +3,8 @@ package lang.proteus.evaluation
 import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
+import lang.proteus.symbols.TypeSymbol
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -29,8 +31,8 @@ class EvaluationTest {
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
         val expression = SyntaxTree.parse(input)
         val boundScope = BoundScope(null)
-        boundScope.tryDeclare(VariableSymbol("a", ProteusType.Int, isFinal = false))
-        boundScope.tryDeclare(VariableSymbol("b", ProteusType.Int, isFinal = false))
+        boundScope.tryDeclare(VariableSymbol("a", TypeSymbol.Int, isFinal = false))
+        boundScope.tryDeclare(VariableSymbol("b", TypeSymbol.Int, isFinal = false))
         val compilation = Compilation(expression)
 
         val evaluationResult = compilation.evaluate(mutableMapOf())
@@ -166,10 +168,9 @@ class EvaluationTest {
                 Arguments.of("2 + 1 >= 1", true),
                 Arguments.of("( 2 * 2 ) > 3", true),
 
-                Arguments.of("typeof 2", ProteusType.Int),
-                Arguments.of("typeof true", ProteusType.Boolean),
-                Arguments.of("typeof \"test\"", ProteusType.String),
-                Arguments.of("typeof 't'", ProteusType.Char),
+                Arguments.of("typeof 2", TypeSymbol.Int),
+                Arguments.of("typeof true", TypeSymbol.Boolean),
+                Arguments.of("typeof \"test\"", TypeSymbol.String),
                 Arguments.of("typeof false == Boolean", true),
                 Arguments.of("typeof false == Int", false),
 
@@ -182,13 +183,15 @@ class EvaluationTest {
                 Arguments.of("{ var a = 0; a = (a = 10) * 10; }", 100),
                 Arguments.of("{ val a = 42; a;}", 42),
                 Arguments.of("{ val b = -4; b;}", -4),
-                Arguments.of("""
+                Arguments.of(
+                    """
                     {
                         val a = 42;
                         val b = a + 1;
                         b;
                     }
-                """.trimIndent(), 43),
+                """.trimIndent(), 43
+                ),
 
                 Arguments.of(
                     """
@@ -218,7 +221,7 @@ class EvaluationTest {
                         }
 
                     """.trimIndent(),
-                    ProteusType.Int
+                    TypeSymbol.Int
                 ),
 
                 Arguments.of(
@@ -304,6 +307,32 @@ class EvaluationTest {
                         }
                     """.trimIndent(),
                     10
+                ),
+
+                Arguments.of(
+                    """
+                        {
+                            val test = "{ val test = a; }";
+                            var a = 0;
+                            if test == "{ val test = a; }" {
+                                a = 10;
+                            } else {
+                                a = 2;
+                            }
+                            a;
+                        }
+                    """.trimIndent(),
+                    10
+                ),
+
+                Arguments.of(
+                    """
+                    {
+                    val a = "Hello" + " " + "World";
+                    a;
+                    }
+                """.trimIndent(),
+                    "Hello World"
                 ),
             )
         }

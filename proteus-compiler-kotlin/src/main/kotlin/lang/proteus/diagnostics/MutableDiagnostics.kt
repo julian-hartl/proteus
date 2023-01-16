@@ -1,6 +1,5 @@
 package lang.proteus.diagnostics
 
-import lang.proteus.diagnostics.TextSpan
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.PrinterColor
 
@@ -33,7 +32,7 @@ class MutableDiagnostics private constructor(private var mutableDiagnostics: Mut
         return mutableDiagnostics.size > 0
     }
 
-    override fun concat(other: Diagnostics){
+    override fun concat(other: Diagnostics) {
         val newDiagnostics = mutableListOf<Diagnostic>()
         newDiagnostics.addAll(mutableDiagnostics)
         newDiagnostics.addAll(other.diagnostics)
@@ -42,6 +41,11 @@ class MutableDiagnostics private constructor(private var mutableDiagnostics: Mut
 
     override fun toString(): String {
         return mutableDiagnostics.joinToString("\n")
+    }
+
+    fun distinct(): MutableDiagnostics {
+        val distinctDiagnostics = mutableDiagnostics.distinctBy { it.span }
+        return MutableDiagnostics(distinctDiagnostics.toMutableList())
     }
 
 }

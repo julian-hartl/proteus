@@ -1,6 +1,7 @@
 package lang.proteus.syntax.parser
 
 import lang.proteus.diagnostics.TextSpan
+import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
@@ -19,6 +20,14 @@ abstract class SyntaxNode {
         } else {
             TextSpan(0, token.literal?.length ?: 0)
         }
+    }
+
+    fun getLastToken(): SyntaxToken<*> {
+        if(this is SyntaxToken<*>) {
+            return this
+        }
+        val children = getChildren()
+        return getChildren().last().getLastToken()
     }
 
     fun getChildren(): List<SyntaxNode> {

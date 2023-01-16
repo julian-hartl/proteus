@@ -1,12 +1,12 @@
 package lang.proteus.diagnostics
 
-import lang.proteus.binding.ProteusType
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Token
 
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
 
-    fun reportInvalidNumber(literal: String, span: TextSpan, type: ProteusType) {
+    fun reportInvalidNumber(literal: String, span: TextSpan, type: TypeSymbol) {
         report("Invalid literal for type $type: '${literal}'", span)
     }
 
@@ -18,14 +18,14 @@ internal class DiagnosticsBag {
         report("Unexpected token <${actual}>, expected <${expected}>", span)
     }
 
-    fun reportBinaryOperatorMismatch(literal: String, span: TextSpan, leftType: ProteusType, rightType: ProteusType) {
+    fun reportBinaryOperatorMismatch(literal: String, span: TextSpan, leftType: TypeSymbol, rightType: TypeSymbol) {
         report(
             "Operator '${literal}' is not defined for types '${leftType}' and '${rightType}'",
             span
         )
     }
 
-    fun reportUnaryOperatorMismatch(literal: String, span: TextSpan, type: ProteusType) {
+    fun reportUnaryOperatorMismatch(literal: String, span: TextSpan, type: TypeSymbol) {
         report("Operator '${literal}' is not defined for type '${type}'", span)
     }
 
@@ -41,7 +41,7 @@ internal class DiagnosticsBag {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
-    fun reportCannotConvert(span: TextSpan, expectedType: ProteusType, actualType: ProteusType) {
+    fun reportCannotConvert(span: TextSpan, expectedType: TypeSymbol, actualType: TypeSymbol) {
         report("Cannot convert type '${actualType}' to '${expectedType}'", span)
     }
 
@@ -65,7 +65,19 @@ internal class DiagnosticsBag {
         report("Invalid number string identifier '$literal'", span)
     }
 
+    fun reportUnterminatedString(start: Int) {
+        report("Unterminated string literal", TextSpan(start, 1))
+    }
+
+    fun reportIllegalEscape(current: Char, position: Int) {
+        report("Illegal escape sequence '$current'", TextSpan.fromLiteral(position, current.toString()))
+    }
+
 
     val diagnostics: Diagnostics
         get() = mutableDiagnostics
+
+    fun distinctDiagnostics(): Diagnostics {
+        return mutableDiagnostics.distinct()
+    }
 }

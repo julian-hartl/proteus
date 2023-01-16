@@ -1,6 +1,6 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.binding.ProteusType
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
@@ -207,10 +207,6 @@ class Parser private constructor(
                 return parseCharLiteralExpression()
             }
 
-            Token.QuotationMark -> {
-                return parseStringLiteralExpression()
-            }
-
             Keyword.False, Keyword.True -> {
                 return parseBooleanLiteral()
             }
@@ -227,12 +223,22 @@ class Parser private constructor(
                 return parseNumberExpression()
             }
 
+            Token.String -> {
+                return parseStringExpression()
+            }
+
+
             else -> {
                 diagnosticsBag.reportUnexpectedToken(current.span(), current.token, Token.Expression)
                 return parseNameExpression()
             }
         }
 
+    }
+
+    private fun parseStringExpression(): ExpressionSyntax {
+        val token = matchToken(Token.String)
+        return LiteralExpressionSyntax(token, token.literal)
     }
 
     private fun parseBitStringLiteral(): ExpressionSyntax {
@@ -273,20 +279,10 @@ class Parser private constructor(
         return LiteralExpressionSyntax(token, chars[0])
     }
 
-    private fun parseStringLiteralExpression(): ExpressionSyntax {
-        val token = matchToken(Token.QuotationMark)
-        val expression = nextToken()
-        if (expression.token is Token.QuotationMark) {
-            return LiteralExpressionSyntax(token, "")
-        }
-        matchToken(Token.QuotationMark)
-        return LiteralExpressionSyntax(token, expression.literal)
-    }
-
     private fun parseTypeExpression(): LiteralExpressionSyntax {
         val token = current
         nextToken()
-        return LiteralExpressionSyntax(token, token.value as ProteusType)
+        return LiteralExpressionSyntax(token, token.value as TypeSymbol)
     }
 
     private fun parseNumberExpression(): LiteralExpressionSyntax {
@@ -296,7 +292,7 @@ class Parser private constructor(
             diagnosticsBag.reportInvalidNumber(
                 numberToken.value.toString(),
                 numberToken.span(),
-                ProteusType.Int
+                TypeSymbol.Int
             )
         }
         return LiteralExpressionSyntax(numberToken, numberToken.value as Int)

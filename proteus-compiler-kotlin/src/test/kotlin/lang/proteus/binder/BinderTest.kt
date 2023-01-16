@@ -2,8 +2,8 @@ package lang.proteus.binder
 
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
-import lang.proteus.binding.ProteusType
-import lang.proteus.binding.VariableSymbol
+import lang.proteus.symbols.TypeSymbol
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText
@@ -25,7 +25,7 @@ class BinderTest {
             TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
         )
         val scope = BoundScope(null)
-        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, ProteusType.Int, isFinal = false))
+        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
         binder = Binder(scope)
         binder.bindStatement(expression)
     }

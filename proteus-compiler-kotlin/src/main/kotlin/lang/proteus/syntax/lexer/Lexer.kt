@@ -1,6 +1,7 @@
 package lang.proteus.syntax.lexer
 
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.lexer.token_lexers.*
 import lang.proteus.text.SourceText
 
@@ -29,6 +30,9 @@ internal class Lexer private constructor(
 
     fun nextToken(): SyntaxToken<*> {
 
+        if (current == '"') {
+            return readString();
+        }
         val matchingLexer = tokenLexers.firstOrNull { it.match(current) }
         if (matchingLexer != null) {
             var length = 0
@@ -51,6 +55,56 @@ internal class Lexer private constructor(
         diagnosticsBag.reportBadCharacter(current, position)
         next()
         return SyntaxToken.badToken(position, current.toString())
+    }
+
+    private val isAtEnd: Boolean
+        get() = position >= sourceText.length
+
+    private fun readString(): SyntaxToken<*> {
+
+        val start = position
+        next()
+        val literal = StringBuilder()
+        var done = false
+        while (!done && !isAtEnd) {
+
+            when (current) {
+                '"' -> {
+                    done = true
+                    next()
+                }
+
+                '\n', '\r' -> {
+                    diagnosticsBag.reportUnterminatedString(start)
+                    done = true
+                }
+
+                '\\' -> {
+                    next()
+                    when (current) {
+                        '"' -> literal.append('"')
+                        '\\' -> literal.append('\\')
+                        'n' -> literal.append('\n')
+                        'r' -> literal.append('\r')
+                        't' -> literal.append('\t')
+                        else -> {
+                            diagnosticsBag.reportIllegalEscape(current, position)
+                        }
+                    }
+                    next()
+                }
+
+                else -> {
+                    literal.append(current)
+                    next()
+                }
+            }
+        }
+        if(!done) {
+            diagnosticsBag.reportUnterminatedString(start)
+        }
+        return Token.String.toSyntaxToken(start, literal.toString())
+
     }
 
 

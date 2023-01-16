@@ -2,6 +2,8 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.symbols.TypeSymbol
+import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*
@@ -66,18 +68,18 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundLower = bindExpression(syntax.lowerBound)
         val boundUpper = bindExpression(syntax.upperBound)
 
-        if (boundLower.type != ProteusType.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), ProteusType.Int, boundLower.type)
+        if (boundLower.type != TypeSymbol.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), TypeSymbol.Int, boundLower.type)
         }
 
-        if (boundUpper.type != ProteusType.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), ProteusType.Int, boundUpper.type)
+        if (boundUpper.type != TypeSymbol.Int) {
+            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), TypeSymbol.Int, boundUpper.type)
         }
 
         scope = BoundScope(scope)
 
         val name = syntax.identifier.literal
-        val variable = VariableSymbol(name, ProteusType.Int, isFinal = true)
+        val variable = VariableSymbol(name, TypeSymbol.Int, isFinal = true)
         val declaredVariable = scope.tryLookup(name)
         if (declaredVariable != null) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), name)
@@ -90,22 +92,23 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
-        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
         val body = bindStatement(syntax.body)
         return BoundWhileStatement(condition, body)
     }
 
     private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
-        val condition = bindExpressionWithType(syntax.condition, ProteusType.Boolean)
+        val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
         val thenStatement = bindStatement(syntax.thenStatement)
         val elseStatement = syntax.elseClause?.let { bindStatement(it.elseStatementSyntax) }
         return BoundIfStatement(condition, thenStatement, elseStatement)
     }
 
-    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: ProteusType): BoundExpression {
+    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
         val expression = bindExpression(syntax)
-        if (expression.type != expectedType) {
+        if (expression.type != expectedType && expectedType != TypeSymbol.Error && expression.type != TypeSymbol.Error) {
             diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, expression.type)
+            return BoundErrorExpression
         }
         return expression
     }
@@ -174,12 +177,20 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val typesAreApplicable = when (assignmentOperator) {
             is Operator.PlusEquals -> {
 
-                BoundBinaryOperator.BoundAdditionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+                val plusOperators = BoundBinaryOperator.findByOperator(Operator.Plus)
+
+                plusOperators.any {
+                    it.canBeApplied(declaredVariable.type, variableType)
+                }
             }
 
             is Operator.MinusEquals -> {
 
-                BoundBinaryOperator.BoundSubtractionBinaryOperator.canBeApplied(declaredVariable.type, variableType)
+                val minusOperators = BoundBinaryOperator.findByOperator(Operator.Minus)
+
+                minusOperators.any {
+                    it.canBeApplied(declaredVariable.type, variableType)
+                }
             }
 
             else -> true
@@ -197,13 +208,12 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
         val name = syntax.identifierToken.literal
         if (name.isEmpty()) {
-            // Token was inserted by parser. We already reported that error so we can just return an error expression.
-            return BoundLiteralExpression(0)
+            return BoundErrorExpression
         }
         val variable = scope.tryLookup(name)
         if (variable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)
-            return BoundLiteralExpression(0)
+            return BoundErrorExpression
         }
         return BoundVariableExpression(variable)
     }
@@ -213,6 +223,9 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
         val boundLeft = bindExpression(binaryExpression.left)
         val boundRight = bindExpression(binaryExpression.right)
+        if (boundLeft.type is TypeSymbol.Error || boundRight.type is TypeSymbol.Error) {
+            return BoundErrorExpression
+        }
         val binaryOperator =
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
@@ -222,7 +235,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
                 boundLeft.type,
                 boundRight.type
             )
-            return boundLeft
+            return BoundErrorExpression
         }
         return BoundBinaryExpression(boundLeft, boundRight, binaryOperator)
 
@@ -231,6 +244,9 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
         val boundOperand = bindExpression(unaryExpression.operand)
+        if (boundOperand.type is TypeSymbol.Error) {
+            return BoundErrorExpression
+        }
         val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
         if (boundOperator == null) {
             diagnosticsBag.reportUnaryOperatorMismatch(
@@ -238,7 +254,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
                 unaryExpression.operatorSyntaxToken.span(),
                 boundOperand.type
             )
-            return boundOperand
+            return BoundErrorExpression
         }
         return BoundUnaryExpression(boundOperand, boundOperator)
     }
