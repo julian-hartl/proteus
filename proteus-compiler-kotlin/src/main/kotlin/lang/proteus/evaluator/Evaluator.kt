@@ -3,6 +3,7 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import lang.proteus.symbols.BuiltInFunctions
 import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.ProteusExternalFunction
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
@@ -109,7 +110,11 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
     private fun evaluateCallExpression(expression: BoundCallExpression): Any? {
         val function = expression.functionSymbol
         val arguments = expression.arguments.map { evaluateExpression(it)!! }
-        return callFunction(function, arguments)
+        if (expression.isExternal) {
+            val externalFunction = ProteusExternalFunction.lookup(function.name)!!
+            return externalFunction.call(arguments)
+        }
+        return null;
     }
 
     private fun callFunction(function: FunctionSymbol, arguments: List<Any>): Any? {

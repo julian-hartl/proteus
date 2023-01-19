@@ -1,5 +1,7 @@
 package lang.proteus.symbols
 
+import lang.proteus.external.Functions
+
 internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val function: (List<Any?>) -> Any?) {
     fun call(arguments: List<Any?>): Any? {
         return function(arguments)
@@ -7,16 +9,22 @@ internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val func
 
     companion object {
 
-        private fun lookup(name: String, arguments: List<ParameterSymbol>): ProteusExternalFunction? {
+        fun lookup(name: String): ProteusExternalFunction? {
             return try {
                 val className = "lang.proteus.external.Functions"
                 val clazz = Class.forName(className)
-                val method = clazz.getMethod(name, *arguments.map { it.type.getJavaClass() }.toTypedArray())
+                val method = clazz.methods.firstOrNull() { it.name == name } ?: return null
                 val function = { args: List<Any?> ->
                     method.invoke(null, *args.toTypedArray())
                 }
-                ProteusExternalFunction(FunctionSymbol(name, arguments, TypeSymbol.fromJavaType(method.returnType)), function)
+                val arguments: List<ParameterSymbol> =
+                    method.parameterTypes.map { ParameterSymbol(it.name, TypeSymbol.fromJavaType(it)) }
+                ProteusExternalFunction(
+                    FunctionSymbol(name, arguments, TypeSymbol.fromJavaType(method.returnType)),
+                    function
+                )
             } catch (e: Exception) {
+                e.printStackTrace()
                 null
             }
         }

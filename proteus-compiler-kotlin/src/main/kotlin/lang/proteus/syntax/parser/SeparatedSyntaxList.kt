@@ -15,6 +15,10 @@ data class SeparatedSyntaxList<T : SyntaxNode>(val separatorsAndNodes: List<Synt
         return separatorsAndNodes[index * 2 + 1] as SyntaxToken<Token.Comma>
     }
 
+    fun getNodes(): List<T> {
+        return iterator().asSequence().toList()
+    }
+
     override fun iterator(): Iterator<T> {
         return iterator {
             for (i in 0 until count) {

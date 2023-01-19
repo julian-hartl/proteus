@@ -3,7 +3,7 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextSpan
-import lang.proteus.symbols.BuiltInFunctions
+import lang.proteus.symbols.ProteusExternalFunction
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
@@ -178,7 +178,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindCallExpression(syntax: CallExpressionSyntax): BoundExpression {
-        val functionSymbol = BuiltInFunctions.fromName(syntax.functionIdentifier.literal)
+        val functionSymbol = ProteusExternalFunction.lookup(syntax.functionIdentifier.literal)?.symbol
         if (functionSymbol == null) {
             diagnosticsBag.reportUndefinedFunction(syntax.functionIdentifier.span(), syntax.functionIdentifier.literal)
             return BoundErrorExpression
@@ -218,7 +218,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         }
 
 
-        return BoundCallExpression(functionSymbol, boundParameters)
+        return BoundCallExpression(functionSymbol, boundParameters, isExternal = true)
     }
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
