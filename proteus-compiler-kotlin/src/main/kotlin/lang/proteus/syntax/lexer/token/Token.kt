@@ -3,6 +3,7 @@ package lang.proteus.syntax.lexer.token
 import lang.proteus.syntax.lexer.SyntaxToken
 
 sealed class Token(open val literal: kotlin.String? = null) {
+
     object EndOfFile : Token()
     object Identifier : Token()
     object Whitespace : Token()
@@ -21,6 +22,8 @@ sealed class Token(open val literal: kotlin.String? = null) {
     object ElseClause : Token()
 
     object SemiColon : Token(";")
+
+    object Comma : Token(",")
 
     object String : Token()
 

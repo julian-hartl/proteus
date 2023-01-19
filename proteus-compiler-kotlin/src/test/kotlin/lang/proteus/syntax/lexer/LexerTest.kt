@@ -222,6 +222,7 @@ internal class LexerTest {
                 Arguments.of(Keyword.In, "in"),
 
                 Arguments.of(Token.SemiColon, ";"),
+                Arguments.of(Token.Comma, ","),
 
                 )
         }

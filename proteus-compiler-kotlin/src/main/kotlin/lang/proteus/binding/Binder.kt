@@ -2,6 +2,8 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.diagnostics.TextSpan
+import lang.proteus.symbols.BuiltInFunctions
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
@@ -125,7 +127,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindExpressionStatement(syntax: ExpressionStatementSyntax): BoundStatement {
-        val boundExpression = bindExpression(syntax.expression)
+        val boundExpression = bindExpression(syntax.expression, canBeVoid = true)
         return BoundExpressionStatement(boundExpression)
     }
 
@@ -140,7 +142,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         )
     }
 
-    fun bindExpression(syntax: ExpressionSyntax): BoundExpression {
+    private fun bindExpressionInternal(syntax: ExpressionSyntax): BoundExpression {
         return when (syntax) {
             is LiteralExpressionSyntax -> {
                 bindLiteralExpression(syntax)
@@ -161,7 +163,62 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
             is NameExpressionSyntax -> bindNameExpressionSyntax(syntax)
             is AssignmentExpressionSyntax -> bindAssignmentExpression(syntax)
+            is CallExpressionSyntax -> bindCallExpression(syntax)
         }
+    }
+
+    private fun bindExpression(syntax: ExpressionSyntax, canBeVoid: Boolean = false): BoundExpression {
+        val result = bindExpressionInternal(syntax)
+        if (!canBeVoid && result.type == TypeSymbol.Unit) {
+            val span = syntax.span()
+            diagnosticsBag.reportExpressionMustHaveValue(span)
+            return BoundErrorExpression
+        }
+        return result
+    }
+
+    private fun bindCallExpression(syntax: CallExpressionSyntax): BoundExpression {
+        val functionSymbol = BuiltInFunctions.fromName(syntax.functionIdentifier.literal)
+        if (functionSymbol == null) {
+            diagnosticsBag.reportUndefinedFunction(syntax.functionIdentifier.span(), syntax.functionIdentifier.literal)
+            return BoundErrorExpression
+        }
+        if (syntax.arguments.count < functionSymbol.parameters.size) {
+            diagnosticsBag.reportTooFewArguments(
+                TextSpan(syntax.closeParenthesis.span().start - 1, 1),
+                syntax.functionIdentifier.literal,
+                functionSymbol.parameters.size,
+                syntax.arguments.count
+            )
+            return BoundErrorExpression
+        }
+        if (syntax.arguments.count > functionSymbol.parameters.size) {
+            val count = syntax.arguments.count - functionSymbol.parameters.size
+            val start = syntax.arguments.get(syntax.arguments.count - count).span().start
+            val end = syntax.arguments.get(syntax.arguments.count - 1).span().end
+            val span = TextSpan(start, end - start)
+            diagnosticsBag.reportTooManyArguments(
+                span,
+                syntax.functionIdentifier.literal,
+                functionSymbol.parameters.size,
+                syntax.arguments.count
+            )
+            return BoundErrorExpression
+        }
+        val boundParameters: MutableList<BoundExpression> = mutableListOf()
+        for ((index, parameter) in functionSymbol.parameters.withIndex()) {
+
+            val argument: ExpressionSyntax = syntax.arguments.get(index)
+            val boundArgument = bindExpression(argument)
+            if (!boundArgument.type.isAssignableTo(parameter.type)) {
+                diagnosticsBag.reportCannotConvert(argument.span(), parameter.type, boundArgument.type)
+                return BoundErrorExpression
+            }
+            boundParameters.add(boundArgument)
+        }
+
+
+        return BoundCallExpression(functionSymbol, boundParameters)
     }
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {

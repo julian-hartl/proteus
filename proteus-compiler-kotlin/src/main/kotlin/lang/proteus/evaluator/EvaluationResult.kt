@@ -5,7 +5,7 @@ import lang.proteus.diagnostics.Diagnostics
 
 data class EvaluationResult<T>(
     val diagnostics: Diagnostics,
-    val value: T,
+    val value: T?,
     val parseTime: ComputationTime,
     val evaluationTime: ComputationTime
 )

@@ -19,6 +19,27 @@ internal class ParserTest {
         errorAsserter.assertErrorFromTo(from, to)
     }
 
+    @Test
+    fun `should parse function call`() {
+        val text = """
+            
+                foo(x, y)
+            
+        """.trimIndent()
+        val expression = SyntaxTree.parse(text)
+        val errorAsserter = ErrorAsserter(expression.diagnostics)
+        errorAsserter.assertNoErrors()
+        val e = AssertingEnumerator.fromExpression(expression.root.statement)
+        e.assertExpression(CallExpressionSyntax::class)
+        e.assertToken(Token.Identifier, "foo")
+        e.assertToken(Operator.OpenParenthesis, "(")
+        e.assertToken(Token.Identifier, "x")
+        e.assertToken(Token.Comma, ",")
+        e.assertToken(Token.Identifier, "y")
+        e.assertToken(Operator.CloseParenthesis, ")")
+        e.dispose()
+    }
+
     @ParameterizedTest(name = "Precedence: a {0} b {1} c")
     @MethodSource
     fun `parser BinaryExpression honors precedences`(op1: Operator, op2: Operator) {
@@ -99,11 +120,11 @@ internal class ParserTest {
             Stream.of(
                 Arguments.of(
                     "{10 +}".trimIndent(),
-                    5,6
+                    5, 6
                 ),
                 Arguments.of(
                     "{10 + 20".trimIndent(),
-                    8,8
+                    8, 8
                 ),
             )
 

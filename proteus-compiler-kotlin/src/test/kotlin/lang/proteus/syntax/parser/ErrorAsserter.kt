@@ -16,7 +16,7 @@ class ErrorAsserter(private val diagnosticsWrapper: Diagnostics) {
 
     fun assertNoErrors() {
         if (diagnosticsWrapper.hasErrors()) {
-            throw AssertionError("Expected no errors, but found ${diagnostics.size} errors")
+            throw AssertionError("Expected no errors, but found ${diagnostics.size} errors: $diagnostics")
         }
     }
 
