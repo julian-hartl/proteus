@@ -1,14 +1,18 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
+import lang.proteus.symbols.BuiltInFunctions
+import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.ProteusExternalFunction
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Operator
 import kotlin.math.pow
-import lang.proteus.symbols.TypeSymbol
+
 internal class Evaluator(private val root: BoundBlockStatement, private val variables: MutableMap<String, Any>) {
 
     private var lastValue: Any? = null
 
-    fun evaluate(): Any {
+    fun evaluate(): Any? {
         val labelToIndex = mutableMapOf<BoundLabel, Int>()
         for ((index, statement) in root.statements.withIndex()) {
             if (statement is BoundLabelStatement) {
@@ -19,10 +23,15 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
         var index = 0
         while (index < root.statements.size) {
             val statement = root.statements[index]
-            val newIndex = evaluateFlattened(statement, index, labelToIndex)
+            val newIndex = try {
+                evaluateFlattened(statement, index, labelToIndex)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                index + 1
+            }
             index = newIndex
         }
-        return lastValue ?: "null"
+        return lastValue
     }
 
     private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<BoundLabel, Int>): Int {
@@ -66,7 +75,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
 
     private fun evaluateVariableDeclaration(statement: BoundVariableDeclaration) {
         val value = evaluateExpression(statement.initializer)
-        variables[statement.variable.name] = value
+        variables[statement.variable.name] = value!!
         lastValue = value
     }
 
@@ -75,7 +84,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
         lastValue = value
     }
 
-    private fun evaluateExpression(expression: BoundExpression): Any {
+    private fun evaluateExpression(expression: BoundExpression): Any? {
         // This suppression is needed in order to compile.
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
 
@@ -92,9 +101,67 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             }
 
             is BoundAssignmentExpression -> evaluateAssignmentExpression(expression)
+            is BoundCallExpression -> evaluateCallExpression(expression)
+            is BoundConversionExpression -> evaluateConversionExpression(expression)
             else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 
+    }
+
+    private fun evaluateConversionExpression(expression: BoundConversionExpression): Any? {
+        val value = evaluateExpression(expression.expression)
+        return convert(value!!, expression.type)
+    }
+
+    private fun convert(value: Any, type: TypeSymbol): Any {
+        return when (type) {
+            TypeSymbol.Int -> Integer.parseInt(value.toString())
+            TypeSymbol.Boolean -> parseBoolean(value.toString())
+            TypeSymbol.String -> value.toString()
+            else -> throwUnsupportedOperation(type.name)
+        }
+    }
+
+    private fun parseBoolean(toString: String): Any {
+        return when (toString) {
+            "true" -> true
+            "false" -> false
+            else -> throw IllegalStateException("Cannot parse $toString to boolean")
+        }
+    }
+
+    private fun evaluateCallExpression(expression: BoundCallExpression): Any? {
+        val function = expression.functionSymbol
+        val arguments = expression.arguments.map { evaluateExpression(it)!! }
+        if (expression.isExternal) {
+            val externalFunction = ProteusExternalFunction.lookup(function.name)!!
+            return externalFunction.call(arguments)
+        }
+        return null;
+    }
+
+    private fun callFunction(function: FunctionSymbol, arguments: List<Any>): Any? {
+        when (function) {
+            BuiltInFunctions.Print -> {
+                println(arguments[0])
+                return null
+            }
+
+            BuiltInFunctions.Input -> {
+                return readLine()!!
+            }
+
+
+        }
+        throwUnsupportedOperation("Unimplemented function call: ${function.name}")
+    }
+
+    private fun cast(value: Any, type: TypeSymbol): Any {
+        return when (type) {
+            TypeSymbol.Int -> value.toString().toInt()
+            TypeSymbol.String -> value.toString()
+            else -> throwUnsupportedOperation("Unimplemented cast to type: ${type.name}")
+        }
     }
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
@@ -108,7 +175,7 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
             Operator.MinusEquals -> (variables[expression.variableSymbol.name] as Int) - (expressionValue as Int)
             Operator.PlusEquals -> (variables[expression.variableSymbol.name] as Int) + (expressionValue as Int)
         }
-        variables[expression.variableSymbol.name] = value
+        variables[expression.variableSymbol.name] = value!!
         return value
     }
 
@@ -119,12 +186,13 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
 
         return when (expression.operator.kind) {
             BoundBinaryOperatorKind.Addition -> {
-                if(expression.type == TypeSymbol.Int) {
+                if (expression.type == TypeSymbol.Int) {
                     (left as Int) + (right as Int)
                 } else {
                     (left as String) + (right as String)
                 }
             }
+
             BoundBinaryOperatorKind.Subtraction -> left as Int - right as Int
             BoundBinaryOperatorKind.Division -> left as Int / right as Int
             BoundBinaryOperatorKind.Multiplication -> left as Int * right as Int

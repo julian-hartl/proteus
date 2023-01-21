@@ -1,10 +1,10 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.symbols.TypeSymbol
 import lang.proteus.binding.types.KotlinBinaryString
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.*
@@ -158,8 +158,19 @@ class Parser private constructor(
             val expression = parseAssigmentExpression()
             return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
-
+        if(peek(1).token is Keyword.As) {
+            return parseTypeCastExpression()
+        }
         return parseBinaryExpression()
+    }
+
+    private fun parseTypeCastExpression(): ExpressionSyntax {
+        val castExpression = parseBinaryExpression()
+        return CastExpressionSyntax(
+            castExpression,
+            matchToken(Keyword.As),
+            matchToken(Token.Type)
+        )
     }
 
     private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {
@@ -216,7 +227,7 @@ class Parser private constructor(
             }
 
             Token.Identifier -> {
-                return parseNameExpression()
+                return parseNameOrCallExpression()
             }
 
             Token.Number -> {
@@ -230,7 +241,7 @@ class Parser private constructor(
 
             else -> {
                 diagnosticsBag.reportUnexpectedToken(current.span(), current.token, Token.Expression)
-                return parseNameExpression()
+                return parseNameOrCallExpression()
             }
         }
 
@@ -312,11 +323,40 @@ class Parser private constructor(
         return LiteralExpressionSyntax(token, value)
     }
 
-    private fun parseNameExpression(): NameExpressionSyntax {
+    private fun parseNameOrCallExpression(): ExpressionSyntax {
         val token = matchToken(Token.Identifier)
+        if (current.token is Operator.OpenParenthesis
+        ) {
+            return parseCallExpression(token);
+        }
 
-        return NameExpressionSyntax(token)
+        return parseNameExpression(token)
     }
+
+    private fun parseCallExpression(token: SyntaxToken<Token.Identifier>): ExpressionSyntax {
+        val openParenthesis = matchToken(Operator.OpenParenthesis)
+        val arguments = parseArguments()
+        val closeParenthesis = matchToken(Operator.CloseParenthesis)
+        return CallExpressionSyntax(token, openParenthesis, arguments, closeParenthesis)
+    }
+
+    private fun parseArguments(): SeparatedSyntaxList<ExpressionSyntax> {
+        val nodesAndSeparators = mutableListOf<SyntaxNode>()
+
+        while (current.token !is Operator.CloseParenthesis && current.token !is Token.EndOfFile) {
+            val expression = parseExpression()
+            nodesAndSeparators.add(expression)
+            if (current.token !is Operator.CloseParenthesis) {
+                val comma = matchToken(Token.Comma)
+                nodesAndSeparators.add(comma)
+            }
+        }
+
+        return SeparatedSyntaxList(nodesAndSeparators)
+    }
+
+    private fun parseNameExpression(token: SyntaxToken<Token.Identifier>) =
+        NameExpressionSyntax(token)
 
     private fun <T : Token> matchOneToken(tokens: List<T>, expect: T? = null): SyntaxToken<T> {
         for (token in tokens) {

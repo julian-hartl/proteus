@@ -80,4 +80,24 @@ internal class DiagnosticsBag {
     fun distinctDiagnostics(): Diagnostics {
         return mutableDiagnostics.distinct()
     }
+
+    fun reportUndefinedFunction(span: TextSpan, literal: String) {
+        report("Undefined function '$literal'", span)
+    }
+
+    fun reportTooFewArguments(span: TextSpan, literal: String, size: Int, count: Int) {
+        report("Too few arguments for function '$literal'. Expected $size, got $count", span)
+    }
+
+    fun reportTooManyArguments(span: TextSpan, literal: String, size: Int, count: Int) {
+        report("Too many arguments for function '$literal'. Expected $size, got $count", span)
+    }
+
+    fun reportExpressionMustHaveValue(span: TextSpan) {
+        report("Expression must have a value", span)
+    }
+
+    fun reportUndefinedType(span: TextSpan, literal: String) {
+        report("Undefined type '$literal'", span)
+    }
 }

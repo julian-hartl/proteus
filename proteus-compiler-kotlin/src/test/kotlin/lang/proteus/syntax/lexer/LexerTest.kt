@@ -221,7 +221,10 @@ internal class LexerTest {
                 Arguments.of(Keyword.Until, "until"),
                 Arguments.of(Keyword.In, "in"),
 
+                Arguments.of(Keyword.As, "as"),
+
                 Arguments.of(Token.SemiColon, ";"),
+                Arguments.of(Token.Comma, ","),
 
                 )
         }

@@ -1,5 +1,6 @@
 package lang.proteus.syntax.parser
 
+import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.token.Token
@@ -8,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
+import kotlin.test.assertTrue
 
 internal class ParserTest {
 
@@ -17,6 +19,30 @@ internal class ParserTest {
         val expression = SyntaxTree.parse(text)
         val errorAsserter = ErrorAsserter(expression.diagnostics)
         errorAsserter.assertErrorFromTo(from, to)
+    }
+
+    @Test
+    fun `should parse function call`() {
+        val text = """
+            
+                foo(x, y)
+            
+        """.trimIndent()
+        val expression = SyntaxTree.parse(text)
+        val errorAsserter = ErrorAsserter(expression.diagnostics)
+        errorAsserter.assertNoErrors()
+        val e = AssertingEnumerator.fromExpression(expression.root.statement)
+        val classExpression = e.assertExpression(CallExpressionSyntax::class)
+        val argumentsIterator = classExpression.arguments.iterator()
+        val firstArgument = argumentsIterator.next()
+        assertTrue(firstArgument is NameExpressionSyntax)
+        val secondArgument = argumentsIterator.next()
+        assertTrue(secondArgument is NameExpressionSyntax)
+
+        e.assertToken(Token.Identifier, "foo")
+        e.assertToken(Operator.OpenParenthesis, "(")
+        e.assertToken(Operator.CloseParenthesis, ")")
+        e.dispose()
     }
 
     @ParameterizedTest(name = "Precedence: a {0} b {1} c")
@@ -99,11 +125,11 @@ internal class ParserTest {
             Stream.of(
                 Arguments.of(
                     "{10 +}".trimIndent(),
-                    5,6
+                    5, 6
                 ),
                 Arguments.of(
                     "{10 + 20".trimIndent(),
-                    8,8
+                    8, 8
                 ),
             )
 

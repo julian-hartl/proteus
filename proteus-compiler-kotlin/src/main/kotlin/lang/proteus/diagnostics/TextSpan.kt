@@ -9,7 +9,7 @@ data class TextSpan(val start: Int, val length: Int) {
 
         fun fromBounds(start: Int, end: Int): TextSpan {
             if(end < start) {
-                throw IllegalArgumentException("end must be greater than start")
+                throw IllegalArgumentException("end must be greater than start: $start, $end")
             }
             return TextSpan(start, end - start)
         }

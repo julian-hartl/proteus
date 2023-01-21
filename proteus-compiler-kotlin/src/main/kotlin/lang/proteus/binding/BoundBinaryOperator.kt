@@ -34,7 +34,7 @@ internal enum class BoundBinaryOperatorKind {
     LessThanOrEqual,
     GreaterThan,
     GreaterThanOrEqual,
-    TypeEquality
+    TypeEquality,
 }
 
 internal data class BoundBinaryOperator(

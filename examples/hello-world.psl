@@ -1,3 +1,4 @@
 {
-    val a = typeof 1;
+    val random = "10";
+    random(random as Int, 20);
 }

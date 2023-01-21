@@ -58,12 +58,12 @@ internal class ProteusCompiler() {
         val consolePrinter = ConsolePrinter()
         val value = compilationResult.value
         if (value != null) {
+            consolePrinter.println()
             val color = TypeSymbol.fromValueOrAny(value).getOutputColor()
             consolePrinter.setColor(color)
-            consolePrinter.println()
             consolePrinter.println(value.toString())
-            consolePrinter.println()
         }
+        consolePrinter.println()
     }
 
     private fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {

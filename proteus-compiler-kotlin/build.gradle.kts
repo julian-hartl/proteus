@@ -37,6 +37,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation ("org.junit.jupiter:junit-jupiter-params:5.9.1")
     implementation(kotlin("reflect"))
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 
@@ -63,4 +64,12 @@ tasks.withType<KotlinCompile> {
 
 application {
     mainClass.set("MainKt")
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }

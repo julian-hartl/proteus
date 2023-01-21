@@ -1,10 +1,10 @@
 package lang.proteus.syntax.parser
 
 import lang.proteus.diagnostics.TextSpan
-import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.isAccessible
 
 abstract class SyntaxNode {
@@ -22,18 +22,14 @@ abstract class SyntaxNode {
         }
     }
 
-    fun getLastToken(): SyntaxToken<*> {
-        if(this is SyntaxToken<*>) {
-            return this
-        }
-        val children = getChildren()
-        return getChildren().last().getLastToken()
-    }
-
     fun getChildren(): List<SyntaxNode> {
         val children = mutableListOf<SyntaxNode>()
-
-        val properties: Collection<KProperty1<out SyntaxNode, *>> = this::class.memberProperties
+        val memberProperties = this::class.memberProperties
+        val properties: Collection<KProperty1<out SyntaxNode, *>> =
+            this::class.primaryConstructor!!.parameters
+                .map { parameter ->
+                    memberProperties.first { it.name == parameter.name }
+                }
 
         for (property in properties) {
             val property = property as KProperty1<Any, *>
