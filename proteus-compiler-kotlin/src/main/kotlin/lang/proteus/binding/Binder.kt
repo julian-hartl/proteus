@@ -107,12 +107,24 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
-        val expression = bindExpression(syntax)
-        if (expression.type != expectedType && expectedType != TypeSymbol.Error && expression.type != TypeSymbol.Error) {
-            diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, expression.type)
+        return bindConversion(syntax, expectedType)
+    }
+
+    private fun bindConversion(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
+        val boundExpression = bindExpression(syntax)
+        val conversion = Conversion.classify(boundExpression.type, expectedType)
+        if (conversion.isIdentity) {
+            return boundExpression
+        }
+        if (!conversion.exists) {
+            if (boundExpression.type == TypeSymbol.Error || expectedType == TypeSymbol.Error) {
+                return BoundErrorExpression
+            }
+            diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, boundExpression.type)
             return BoundErrorExpression
         }
-        return expression
+
+        return BoundConversionExpression(expectedType, boundExpression, conversion)
     }
 
     private fun bindVariableDeclaration(syntax: VariableDeclarationSyntax): BoundStatement {
@@ -169,24 +181,13 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindCastExpression(syntax: CastExpressionSyntax): BoundExpression {
-        val boundExpression = bindExpression(syntax.expressionSyntax)
         val type = TypeSymbol.fromName(syntax.typeToken.literal)
         if (type == null) {
             diagnosticsBag.reportUndefinedType(syntax.typeToken.span(), syntax.typeToken.literal)
             return BoundErrorExpression
         }
 
-        if (boundExpression.type == TypeSymbol.Error) {
-            return boundExpression
-        }
-
-        val conversion = Conversion.classify(boundExpression.type, type)
-        if (!conversion.exists) {
-            diagnosticsBag.reportCannotConvert(syntax.span(), type, boundExpression.type)
-            return BoundErrorExpression
-        }
-
-        return BoundConversionExpression(type, boundExpression, conversion)
+        return bindConversion(syntax.expressionSyntax, type)
 
     }
 
