@@ -24,6 +24,7 @@ sealed class Token(open val literal: kotlin.String? = null) {
     object SemiColon : Token(";")
 
     object Comma : Token(",")
+    object Colon : Token(":")
 
     object String : Token()
 

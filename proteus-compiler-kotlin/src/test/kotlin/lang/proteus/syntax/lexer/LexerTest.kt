@@ -225,6 +225,7 @@ internal class LexerTest {
 
                 Arguments.of(Token.SemiColon, ";"),
                 Arguments.of(Token.Comma, ","),
+                Arguments.of(Token.Colon, ":"),
 
                 )
         }
