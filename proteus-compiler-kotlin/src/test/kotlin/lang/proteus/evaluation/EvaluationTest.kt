@@ -334,6 +334,15 @@ class EvaluationTest {
                 """.trimIndent(),
                     "Hello World"
                 ),
+
+                Arguments.of(
+                    """
+                        {
+                            val random = "1";
+                            random(random as Int, 1);
+                        }
+                    """.trimIndent(), 1
+                )
             )
         }
     }
