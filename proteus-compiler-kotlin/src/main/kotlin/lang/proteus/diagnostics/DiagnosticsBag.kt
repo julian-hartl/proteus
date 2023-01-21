@@ -1,5 +1,6 @@
 package lang.proteus.diagnostics
 
+import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Token
 
@@ -81,6 +82,12 @@ internal class DiagnosticsBag {
         return mutableDiagnostics.distinct()
     }
 
+    fun addAll(diagnostics: Diagnostics) {
+        for (diagnostic in diagnostics.diagnostics) {
+            mutableDiagnostics.add(diagnostic)
+        }
+    }
+
     fun reportUndefinedFunction(span: TextSpan, literal: String) {
         report("Undefined function '$literal'", span)
     }
@@ -112,4 +119,9 @@ internal class DiagnosticsBag {
     fun reportFunctionAlreadyDeclared(span: TextSpan, literal: String) {
         report("Function '$literal' already declared", span)
     }
+
+    fun reportMainMustHaveNoParameters(mainFunction: FunctionSymbol) {
+        report("Main function must have no parameters", mainFunction.declaration!!.span())
+    }
+
 }

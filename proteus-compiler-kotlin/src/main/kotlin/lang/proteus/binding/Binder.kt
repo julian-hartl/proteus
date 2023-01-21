@@ -2,7 +2,6 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
-import lang.proteus.diagnostics.MutableDiagnostics
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.lowering.Lowerer
 import lang.proteus.symbols.*
@@ -80,19 +79,33 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
             val functionBodies = mutableMapOf<FunctionSymbol, BoundBlockStatement>()
 
-            val diagnostics = MutableDiagnostics()
-            diagnostics.concat(globalScope.diagnostics)
+            val diagnostics = DiagnosticsBag()
+            diagnostics.addAll(globalScope.diagnostics)
+
 
             for (function in globalScope.functions) {
+
                 val binder = Binder(parentScope ?: BoundScope(null), function)
                 val body = binder.bindStatement(function.declaration!!.body)
                 val loweredBody = Lowerer.lower(body)
                 functionBodies[function] = loweredBody
 
-                diagnostics.concat(binder.diagnostics)
+                diagnostics.addAll(binder.diagnostics)
             }
 
-            return BoundProgram(globalScope, diagnostics, functionBodies)
+
+            return BoundProgram(globalScope, diagnostics.diagnostics, functionBodies)
+        }
+
+        private fun validateMainFunction(mainFunction: FunctionSymbol?, diagnostics: DiagnosticsBag) {
+            if (mainFunction == null) {
+                throw IllegalStateException("No main function found")
+            } else if (mainFunction.parameters.isNotEmpty()) {
+                diagnostics.reportMainMustHaveNoParameters(mainFunction)
+            }
+//            else if (mainFunction.returnType != TypeSymbol.Int) {
+//                diagnostics.reportMainMustHaveIntReturnType(mainFunction)
+//            }
         }
     }
 

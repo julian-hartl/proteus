@@ -4,7 +4,6 @@ import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.ProteusExternalFunction
 import lang.proteus.symbols.TypeSymbol
-import lang.proteus.syntax.lexer.token.Operator
 import java.util.*
 import kotlin.math.pow
 
@@ -84,7 +83,7 @@ internal class Evaluator(
 
     private fun evaluateVariableDeclaration(statement: BoundVariableDeclaration) {
         val value = evaluateExpression(statement.initializer)
-        if(statement.variable.isLocal){
+        if (statement.variable.isLocal) {
             locals.peek()[statement.variable.name] = value!!
         } else {
             globals[statement.variable.name] = value!!

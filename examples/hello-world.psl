@@ -10,4 +10,4 @@ fn count(number: Int) {
     }
 }
 
-count(20);
+count(800);
