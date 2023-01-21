@@ -6,6 +6,7 @@ internal sealed class Conversion(val exists: Boolean, val isIdentity: Boolean, v
     companion object {
         fun classify(from: TypeSymbol, to: TypeSymbol): Conversion {
             if (from == to) return IdentityConversion
+            if(from.isAssignableTo(to)) return ImplicitConversion
             if (from == TypeSymbol.Boolean || from == TypeSymbol.Int) {
                 if (to == TypeSymbol.String) return ExplicitConversion
             }

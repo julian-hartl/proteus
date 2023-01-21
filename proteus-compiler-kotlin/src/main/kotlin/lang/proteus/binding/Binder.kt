@@ -112,6 +112,15 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
     private fun bindConversion(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
         val boundExpression = bindExpression(syntax)
+        val textSpan = syntax.span()
+        return bindConversion(boundExpression, expectedType, textSpan)
+    }
+
+    private fun bindConversion(
+        boundExpression: BoundExpression,
+        expectedType: TypeSymbol,
+        textSpan: TextSpan,
+    ): BoundExpression {
         val conversion = Conversion.classify(boundExpression.type, expectedType)
         if (conversion.isIdentity) {
             return boundExpression
@@ -120,7 +129,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             if (boundExpression.type == TypeSymbol.Error || expectedType == TypeSymbol.Error) {
                 return BoundErrorExpression
             }
-            diagnosticsBag.reportCannotConvert(syntax.span(), expectedType, boundExpression.type)
+            diagnosticsBag.reportCannotConvert(textSpan, expectedType, boundExpression.type)
             return BoundErrorExpression
         }
 
@@ -249,41 +258,16 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val assignmentOperator = syntax.assignmentOperator.token
         val boundExpression = bindExpression(syntax.expression)
         val variableName = syntax.identifierToken.literal
-        val variableType = boundExpression.type
         val declaredVariable = scope.tryLookupVariable(variableName)
         if (declaredVariable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
             return boundExpression
         }
-        val typesAreApplicable = when (assignmentOperator) {
-            is Operator.PlusEquals -> {
-
-                val plusOperators = BoundBinaryOperator.findByOperator(Operator.Plus)
-
-                plusOperators.any {
-                    it.canBeApplied(declaredVariable.type, variableType)
-                }
-            }
-
-            is Operator.MinusEquals -> {
-
-                val minusOperators = BoundBinaryOperator.findByOperator(Operator.Minus)
-
-                minusOperators.any {
-                    it.canBeApplied(declaredVariable.type, variableType)
-                }
-            }
-
-            else -> true
-        }
         if (declaredVariable.isFinal) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
-        } else {
-            if (!typesAreApplicable || !variableType.isAssignableTo(declaredVariable.type)) {
-                diagnosticsBag.reportCannotConvert(syntax.expression.span(), declaredVariable.type, variableType)
-            }
         }
-        return BoundAssignmentExpression(declaredVariable, boundExpression, assignmentOperator)
+        val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.span())
+        return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
