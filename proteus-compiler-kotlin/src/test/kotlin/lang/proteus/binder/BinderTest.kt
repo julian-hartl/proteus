@@ -25,7 +25,7 @@ class BinderTest {
             TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
         )
         val scope = BoundScope(null)
-        scope.tryDeclare(VariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
+        scope.tryDeclareVariable(VariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
         binder = Binder(scope)
         binder.bindStatement(expression)
     }

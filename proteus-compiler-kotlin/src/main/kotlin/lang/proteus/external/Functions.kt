@@ -5,13 +5,13 @@ import java.lang.Error
 class Functions {
     companion object {
         @JvmStatic
-        fun println(s: String) {
-            println(s)
+        fun println(s: Any) {
+            kotlin.io.println(s)
         }
 
         @JvmStatic
-        fun print(s: String) {
-            print(s)
+        fun print(s: Any) {
+            kotlin.io.print(s)
         }
 
         @JvmStatic
@@ -27,6 +27,11 @@ class Functions {
         @JvmStatic
         fun multiply(a: Int, b: Int): Int {
             return a * b
+        }
+
+        @JvmStatic
+        fun random(lower: Int, upper: Int): Int {
+            return (Math.random() * (upper - lower)).toInt() + lower
         }
     }
 }

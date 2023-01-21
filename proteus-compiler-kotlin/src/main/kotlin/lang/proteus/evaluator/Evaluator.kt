@@ -102,9 +102,32 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
 
             is BoundAssignmentExpression -> evaluateAssignmentExpression(expression)
             is BoundCallExpression -> evaluateCallExpression(expression)
+            is BoundConversionExpression -> evaluateConversionExpression(expression)
             else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 
+    }
+
+    private fun evaluateConversionExpression(expression: BoundConversionExpression): Any? {
+        val value = evaluateExpression(expression.expression)
+        return convert(value!!, expression.type)
+    }
+
+    private fun convert(value: Any, type: TypeSymbol): Any {
+        return when (type) {
+            TypeSymbol.Int -> Integer.parseInt(value.toString())
+            TypeSymbol.Boolean -> parseBoolean(value.toString())
+            TypeSymbol.String -> value.toString()
+            else -> throwUnsupportedOperation(type.name)
+        }
+    }
+
+    private fun parseBoolean(toString: String): Any {
+        return when (toString) {
+            "true" -> true
+            "false" -> false
+            else -> throw IllegalStateException("Cannot parse $toString to boolean")
+        }
     }
 
     private fun evaluateCallExpression(expression: BoundCallExpression): Any? {

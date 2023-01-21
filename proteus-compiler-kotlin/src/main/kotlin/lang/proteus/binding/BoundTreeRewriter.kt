@@ -102,7 +102,16 @@ internal abstract class BoundTreeRewriter {
             is BoundVariableExpression -> rewriteVariableExpression(expression)
             is BoundErrorExpression -> rewriteErrorExpression(expression)
             is BoundCallExpression -> rewriteCallExpression(expression)
+            is BoundConversionExpression -> rewriteConversionExpression(expression)
         }
+    }
+
+    protected open fun rewriteConversionExpression(expression: BoundConversionExpression): BoundExpression {
+        val rewritten = rewriteExpression(expression.expression)
+        if (expression.expression == rewritten) {
+            return expression
+        }
+        return BoundConversionExpression(expression.type, expression, expression.conversion)
     }
 
     protected open fun rewriteCallExpression(expression: BoundCallExpression): BoundExpression {

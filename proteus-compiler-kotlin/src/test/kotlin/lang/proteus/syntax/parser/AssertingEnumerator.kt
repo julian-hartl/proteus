@@ -40,10 +40,11 @@ internal class AssertingEnumerator<T> private constructor(
     }
 
 
-    fun <T : ExpressionSyntax> assertExpression(expressionClass: KClass<T>, value: Any? = null) {
+    fun <T : ExpressionSyntax> assertExpression(expressionClass: KClass<T>, value: Any? = null): T {
         assertTrue(iterator.hasNext(), "Expected an expression, but found nothing")
         val next = iterator.next()
         val isCorrectExpression = expressionClass.isInstance(next)
+        println(flattenedTree)
         assertTrue(
             isCorrectExpression,
             "Expected ${expressionClass.simpleName} but got ${next::class.simpleName}\nTree: $flattenedTree"
@@ -51,6 +52,7 @@ internal class AssertingEnumerator<T> private constructor(
         if (value != null) {
             assertEquals(value, (next as LiteralExpressionSyntax).value, "Expected value $value")
         }
+        return next as T
 
     }
 

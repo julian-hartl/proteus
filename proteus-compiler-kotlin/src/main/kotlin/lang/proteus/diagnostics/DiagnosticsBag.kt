@@ -96,4 +96,8 @@ internal class DiagnosticsBag {
     fun reportExpressionMustHaveValue(span: TextSpan) {
         report("Expression must have a value", span)
     }
+
+    fun reportUndefinedType(span: TextSpan, literal: String) {
+        report("Undefined type '$literal'", span)
+    }
 }

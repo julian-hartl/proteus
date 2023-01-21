@@ -158,8 +158,19 @@ class Parser private constructor(
             val expression = parseAssigmentExpression()
             return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
-
+        if(peek(1).token is Keyword.As) {
+            return parseTypeCastExpression()
+        }
         return parseBinaryExpression()
+    }
+
+    private fun parseTypeCastExpression(): ExpressionSyntax {
+        val castExpression = parseBinaryExpression()
+        return CastExpressionSyntax(
+            castExpression,
+            matchToken(Keyword.As),
+            matchToken(Token.Type)
+        )
     }
 
     private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {

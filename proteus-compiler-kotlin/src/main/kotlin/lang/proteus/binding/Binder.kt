@@ -42,7 +42,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
                 previous = stack.pop()
                 val scope = BoundScope(parent)
                 for (variable in previous.variables) {
-                    scope.tryDeclare(variable)
+                    scope.tryDeclareVariable(variable)
                 }
 
                 parent = scope
@@ -82,12 +82,12 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
 
         val name = syntax.identifier.literal
         val variable = VariableSymbol(name, TypeSymbol.Int, isFinal = true)
-        val declaredVariable = scope.tryLookup(name)
+        val declaredVariable = scope.tryLookupVariable(name)
         if (declaredVariable != null) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), name)
         }
 
-        scope.tryDeclare(variable)
+        scope.tryDeclareVariable(variable)
         val body = bindStatement(syntax.body)
         scope = scope.parent!!
         return BoundForStatement(variable, boundLower, syntax.rangeOperator.token, boundUpper, body)
@@ -119,7 +119,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundExpression = bindExpression(syntax.initializer)
         val isFinal = syntax.keyword is Keyword.Val
         val symbol = VariableSymbol(syntax.identifier.literal, boundExpression.type, isFinal)
-        val isVariableAlreadyDeclared = scope.tryDeclare(symbol) == null
+        val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol) == null
         if (isVariableAlreadyDeclared) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
         }
@@ -164,7 +164,30 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             is NameExpressionSyntax -> bindNameExpressionSyntax(syntax)
             is AssignmentExpressionSyntax -> bindAssignmentExpression(syntax)
             is CallExpressionSyntax -> bindCallExpression(syntax)
+            is CastExpressionSyntax -> bindCastExpression(syntax)
         }
+    }
+
+    private fun bindCastExpression(syntax: CastExpressionSyntax): BoundExpression {
+        val boundExpression = bindExpression(syntax.expressionSyntax)
+        val type = TypeSymbol.fromName(syntax.typeToken.literal)
+        if (type == null) {
+            diagnosticsBag.reportUndefinedType(syntax.typeToken.span(), syntax.typeToken.literal)
+            return BoundErrorExpression
+        }
+
+        if (boundExpression.type == TypeSymbol.Error) {
+            return boundExpression
+        }
+
+        val conversion = Conversion.classify(boundExpression.type, type)
+        if (!conversion.exists) {
+            diagnosticsBag.reportCannotConvert(syntax.span(), type, boundExpression.type)
+            return BoundErrorExpression
+        }
+
+        return BoundConversionExpression(type, boundExpression, conversion)
+
     }
 
     private fun bindExpression(syntax: ExpressionSyntax, canBeVoid: Boolean = false): BoundExpression {
@@ -226,7 +249,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         val boundExpression = bindExpression(syntax.expression)
         val variableName = syntax.identifierToken.literal
         val variableType = boundExpression.type
-        val declaredVariable = scope.tryLookup(variableName)
+        val declaredVariable = scope.tryLookupVariable(variableName)
         if (declaredVariable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
             return boundExpression
@@ -267,7 +290,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         if (name.isEmpty()) {
             return BoundErrorExpression
         }
-        val variable = scope.tryLookup(name)
+        val variable = scope.tryLookupVariable(name)
         if (variable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)
             return BoundErrorExpression

@@ -31,8 +31,8 @@ class EvaluationTest {
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
         val expression = SyntaxTree.parse(input)
         val boundScope = BoundScope(null)
-        boundScope.tryDeclare(VariableSymbol("a", TypeSymbol.Int, isFinal = false))
-        boundScope.tryDeclare(VariableSymbol("b", TypeSymbol.Int, isFinal = false))
+        boundScope.tryDeclareVariable(VariableSymbol("a", TypeSymbol.Int, isFinal = false))
+        boundScope.tryDeclareVariable(VariableSymbol("b", TypeSymbol.Int, isFinal = false))
         val compilation = Compilation(expression)
 
         val evaluationResult = compilation.evaluate(mutableMapOf())

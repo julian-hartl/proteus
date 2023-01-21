@@ -33,6 +33,7 @@ internal sealed class Keyword(override val literal: kotlin.String) : Token() {
 
     internal object Else : Keyword("else")
     internal object While : Keyword("while")
+    internal object As : Keyword("as")
 
     internal object For : Keyword("for")
     internal object In : Keyword("in")
