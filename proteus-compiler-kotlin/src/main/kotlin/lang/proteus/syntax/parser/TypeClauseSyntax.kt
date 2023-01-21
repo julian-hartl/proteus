@@ -7,3 +7,4 @@ class TypeClauseSyntax(val colonToken: SyntaxToken<Token.Colon>, val type: Synta
     override val token: Token
         get() = Token.TypeClause
 }
+

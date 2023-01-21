@@ -27,7 +27,13 @@ sealed class Token(open val literal: kotlin.String? = null) {
     object Comma : Token(",")
     object Colon : Token(":")
 
+    object Arrow : Token("->")
+
     object String : Token()
+    object GlobalStatement : Token()
+    object FunctionDeclaration : Token()
+    object FunctionReturnType : Token()
+    object Parameter : Token()
 
     fun toSyntaxToken(position: Int, literal: kotlin.String, value: Any? = null): SyntaxToken<Token> {
         return SyntaxToken(this, position, literal, value, usePositionBasedSpan = true)

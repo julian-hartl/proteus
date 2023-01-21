@@ -5,7 +5,7 @@ import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.AssignmentOperator
 
 internal class BoundAssignmentExpression(
-    val variableSymbol: VariableSymbol,
+    val variable: VariableSymbol,
     val expression: BoundExpression,
     val assignmentOperator: AssignmentOperator,
 ) : BoundExpression() {

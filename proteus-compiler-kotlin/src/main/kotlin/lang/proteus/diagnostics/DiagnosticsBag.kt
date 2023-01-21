@@ -100,4 +100,16 @@ internal class DiagnosticsBag {
     fun reportUndefinedType(span: TextSpan, literal: String) {
         report("Undefined type '$literal'", span)
     }
+
+    fun reportParameterAlreadyDeclared(span: TextSpan, name: String) {
+        report("Parameter '$name' already declared", span)
+    }
+
+    fun reportFunctionsAreNotSupported(span: TextSpan) {
+        report("Functions are not supported", span)
+    }
+
+    fun reportFunctionAlreadyDeclared(span: TextSpan, literal: String) {
+        report("Function '$literal' already declared", span)
+    }
 }

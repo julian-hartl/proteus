@@ -1,3 +1,3 @@
 package lang.proteus.symbols
 
-class ParameterSymbol(name: String, type: TypeSymbol) : VariableSymbol(name, type, isFinal = true)
+class ParameterSymbol(name: String, type: TypeSymbol) : LocalVariableSymbol(name, type, isFinal = true)

@@ -5,7 +5,6 @@ import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
-import lang.proteus.binding.BoundStatement
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.lowering.Lowerer
@@ -46,9 +45,13 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         if (diagnostics.hasErrors()) {
             return EvaluationResult(diagnostics, null, parseTime, ComputationTime(0))
         }
+        val program = Binder.bindProgram(globalScope)
+        if (program.diagnostics.hasErrors()) {
+            return EvaluationResult(program.diagnostics, null, parseTime, ComputationTime(0))
+        }
         computationTimeStopper.start()
         val statement = getStatement()
-        val evaluator = Evaluator(statement, variables)
+        val evaluator = Evaluator(statement, variables, program.functionBodies)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime)

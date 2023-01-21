@@ -1,6 +1,6 @@
 package lang.proteus.symbols
 
-import lang.proteus.external.Functions
+import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 
 internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val function: (List<Any?>) -> Any?) {
     fun call(arguments: List<Any?>): Any? {
@@ -43,9 +43,10 @@ internal object BuiltInFunctions {
 
 }
 
-data class FunctionSymbol(
+internal data class FunctionSymbol(
     override val name: String,
     val parameters: List<ParameterSymbol>,
     val returnType: TypeSymbol,
+    val declaration: FunctionDeclarationSyntax? = null,
 ) : Symbol()
 
