@@ -109,7 +109,11 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         return bindConversion(syntax, expectedType)
     }
 
-    private fun bindConversion(syntax: ExpressionSyntax, expectedType: TypeSymbol, isCastExplicit: Boolean = false): BoundExpression {
+    private fun bindConversion(
+        syntax: ExpressionSyntax,
+        expectedType: TypeSymbol,
+        isCastExplicit: Boolean = false,
+    ): BoundExpression {
         val boundExpression = bindExpression(syntax)
         val textSpan = syntax.span()
         return bindConversion(boundExpression, expectedType, textSpan, isCastExplicit)
@@ -119,7 +123,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         boundExpression: BoundExpression,
         expectedType: TypeSymbol,
         textSpan: TextSpan,
-        isCastExplicit: Boolean = false
+        isCastExplicit: Boolean = false,
     ): BoundExpression {
         val conversion = Conversion.classify(boundExpression.type, expectedType)
         if (conversion.isIdentity) {
@@ -137,14 +141,26 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
     }
 
     private fun bindVariableDeclaration(syntax: VariableDeclarationSyntax): BoundStatement {
-        val boundExpression = bindExpression(syntax.initializer)
+        val initializer = bindExpression(syntax.initializer)
         val isFinal = syntax.keyword is Keyword.Val
-        val symbol = VariableSymbol(syntax.identifier.literal, boundExpression.type, isFinal)
+        val typeClause = bindTypeClause(syntax.typeClauseSyntax)
+        val type = typeClause ?: initializer.type
+        val convertedInitializer = bindConversion(initializer, type, syntax.initializer.span())
+        val symbol = VariableSymbol(syntax.identifier.literal, type, isFinal)
         val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol) == null
         if (isVariableAlreadyDeclared) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
         }
-        return BoundVariableDeclaration(symbol, boundExpression)
+        return BoundVariableDeclaration(symbol, convertedInitializer)
+    }
+
+    private fun bindTypeClause(syntax: TypeClauseSyntax?): TypeSymbol? {
+        if (syntax == null) return null
+        val type = TypeSymbol.fromName(syntax.type.literal)
+        if (type == null) {
+            diagnosticsBag.reportUndefinedType(syntax.type.span(), syntax.type.literal)
+        }
+        return type
     }
 
     private fun bindExpressionStatement(syntax: ExpressionStatementSyntax): BoundStatement {

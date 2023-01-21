@@ -112,9 +112,25 @@ class Parser private constructor(
     private fun parseVariableDeclarationStatement(): StatementSyntax {
         val keyword = nextToken().token as Keyword
         val identifier = matchToken(Token.Identifier)
+        val typeClause = parseOptionalTypeClause()
         val equals = matchToken(Operator.Equals)
         val expression = parseExpression()
-        return VariableDeclarationSyntax(keyword, identifier, equals, expression)
+        return VariableDeclarationSyntax(keyword, identifier, typeClause, equals, expression)
+    }
+
+    private fun parseOptionalTypeClause(): TypeClauseSyntax? {
+        return if (current.token == Token.Colon) {
+            parseTypeClause()
+        } else {
+            null
+        }
+
+    }
+
+    private fun parseTypeClause(): TypeClauseSyntax {
+        val colonToken = matchToken(Token.Colon)
+        val type = matchToken(Token.Type)
+        return TypeClauseSyntax(colonToken, type)
     }
 
     private fun parseBlockStatement(): StatementSyntax {
@@ -158,7 +174,7 @@ class Parser private constructor(
             val expression = parseAssigmentExpression()
             return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
-        if(peek(1).token is Keyword.As) {
+        if (peek(1).token is Keyword.As) {
             return parseTypeCastExpression()
         }
         return parseBinaryExpression()

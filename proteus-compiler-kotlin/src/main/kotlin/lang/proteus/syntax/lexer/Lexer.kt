@@ -103,7 +103,7 @@ internal class Lexer private constructor(
         if(!done) {
             diagnosticsBag.reportUnterminatedString(start)
         }
-        return Token.String.toSyntaxToken(start, literal.toString())
+        return Token.String.toSyntaxToken(start + 1, literal.toString())
 
     }
 

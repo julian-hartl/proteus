@@ -31,7 +31,8 @@ internal class LexerTest {
                 Token.EndOfFile,
                 Token.Expression,
                 Token.Statement,
-                Token.ElseClause
+                Token.ElseClause,
+                Token.TypeClause,
             )
         )
 

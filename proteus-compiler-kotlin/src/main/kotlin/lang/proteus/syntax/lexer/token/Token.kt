@@ -20,6 +20,7 @@ sealed class Token(open val literal: kotlin.String? = null) {
     object CloseBrace : Token("}")
     object SingleQuote : Token("'")
     object ElseClause : Token()
+    object TypeClause : Token()
 
     object SemiColon : Token(";")
 
@@ -35,4 +36,5 @@ sealed class Token(open val literal: kotlin.String? = null) {
     override fun toString(): kotlin.String {
         return this::class.simpleName!!
     }
+
 }
