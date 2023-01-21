@@ -2,11 +2,11 @@ package lang.proteus.binding
 
 import lang.proteus.symbols.TypeSymbol
 
-internal sealed class Conversion(val exists: Boolean, val isIdentity: Boolean, val isImplicit: Boolean) {
+internal sealed class Conversion() {
     companion object {
         fun classify(from: TypeSymbol, to: TypeSymbol): Conversion {
             if (from == to) return IdentityConversion
-            if(from.isAssignableTo(to)) return ImplicitConversion
+            if (from.isAssignableTo(to)) return ImplicitConversion
             if (from == TypeSymbol.Boolean || from == TypeSymbol.Int) {
                 if (to == TypeSymbol.String) return ExplicitConversion
             }
@@ -18,29 +18,24 @@ internal sealed class Conversion(val exists: Boolean, val isIdentity: Boolean, v
     }
 
     val isExplicit: Boolean
-        get() = exists && !isImplicit
+        get() = this is ExplicitConversion
+
+    val isImplicit: Boolean
+        get() = this is ImplicitConversion
+
+    val isIdentity: Boolean
+        get() = this is IdentityConversion
+
+    val isNone: Boolean
+        get() = this is NoConversion
+
+    val exists get() = !isNone
 }
 
-internal object ImplicitConversion : Conversion(
-    exists = true,
-    isIdentity = false,
-    isImplicit = true
-)
+internal object ImplicitConversion : Conversion()
 
-internal object ExplicitConversion : Conversion(
-    exists = true,
-    isIdentity = false,
-    isImplicit = false
-)
+internal object ExplicitConversion : Conversion()
 
-internal object IdentityConversion : Conversion(
-    exists = true,
-    isIdentity = true,
-    isImplicit = true
-)
+internal object IdentityConversion : Conversion()
 
-internal object NoConversion : Conversion(
-    exists = false,
-    isIdentity = false,
-    isImplicit = false
-)
+internal object NoConversion : Conversion()

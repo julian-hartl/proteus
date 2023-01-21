@@ -393,4 +393,26 @@ class BinderTest {
         )
         assertTrue(!binder.hasErrors())
     }
+
+    @Test
+    fun shouldNotAllowPlusEqualsAssignmentWithWrongType() {
+        useExpression("""
+            {
+                var a = 1
+                a += true
+            }
+        """.trimIndent())
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotAllowMinusEqualsAssignmentWithWrongType() {
+        useExpression("""
+            {
+                var a = 1
+                a -= true
+            }
+        """.trimIndent())
+        assertTrue(binder.hasErrors())
+    }
 }

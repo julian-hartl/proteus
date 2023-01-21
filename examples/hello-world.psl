@@ -1,4 +1,4 @@
 {
-    val random = "10";
-    random(random as Int, 20);
+    var test = 1;
+    test += "je" as Int;
 }

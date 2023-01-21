@@ -7,7 +7,6 @@ import lang.proteus.symbols.ProteusExternalFunction
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.*
 import java.util.*
@@ -110,22 +109,23 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         return bindConversion(syntax, expectedType)
     }
 
-    private fun bindConversion(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
+    private fun bindConversion(syntax: ExpressionSyntax, expectedType: TypeSymbol, isCastExplicit: Boolean = false): BoundExpression {
         val boundExpression = bindExpression(syntax)
         val textSpan = syntax.span()
-        return bindConversion(boundExpression, expectedType, textSpan)
+        return bindConversion(boundExpression, expectedType, textSpan, isCastExplicit)
     }
 
     private fun bindConversion(
         boundExpression: BoundExpression,
         expectedType: TypeSymbol,
         textSpan: TextSpan,
+        isCastExplicit: Boolean = false
     ): BoundExpression {
         val conversion = Conversion.classify(boundExpression.type, expectedType)
         if (conversion.isIdentity) {
             return boundExpression
         }
-        if (!conversion.exists) {
+        if (conversion.isNone || (conversion.isExplicit && !isCastExplicit)) {
             if (boundExpression.type == TypeSymbol.Error || expectedType == TypeSymbol.Error) {
                 return BoundErrorExpression
             }
@@ -196,7 +196,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
             return BoundErrorExpression
         }
 
-        return bindConversion(syntax.expressionSyntax, type)
+        return bindConversion(syntax.expressionSyntax, type, isCastExplicit = true)
 
     }
 
@@ -265,6 +265,7 @@ internal class Binder(private var scope: BoundScope) : Diagnosable {
         }
         if (declaredVariable.isFinal) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
+            return BoundErrorExpression
         }
         val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.span())
         return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator)
