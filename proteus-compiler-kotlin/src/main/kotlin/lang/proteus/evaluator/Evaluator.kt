@@ -31,7 +31,7 @@ internal class Evaluator(
         while (index < body.statements.size) {
             val statement = body.statements[index]
             val newIndex = try {
-                evaluateFlattened(statement, index, labelToIndex)
+                evaluateFlattened(statement, index, labelToIndex, body.statements.size)
             } catch (e: Exception) {
                 e.printStackTrace()
                 index + 1
@@ -41,7 +41,7 @@ internal class Evaluator(
         return lastValue
     }
 
-    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<BoundLabel, Int>): Int {
+    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<BoundLabel, Int>, totalStatements: Int): Int {
         return when (statement) {
             is BoundExpressionStatement -> {
                 evaluateExpressionStatement(statement)
@@ -75,7 +75,7 @@ internal class Evaluator(
 
             is BoundReturnStatement -> {
                 lastValue = if (statement.expression == null) null else evaluateExpression(statement.expression)
-                currentIndex + 1
+                totalStatements
             }
 
             else -> {

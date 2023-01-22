@@ -494,13 +494,13 @@ class EvaluationTest {
                         var result = 0;
                         while true {
                             if i == 0 return result;
-                            result += result + i;
+                            result += i;
                             i -= 1;
                         }
                     }
 
                     val sum = sum(90);
-                """.trimIndent(), 4050
+                """.trimIndent(), 4095
             )
         )
 

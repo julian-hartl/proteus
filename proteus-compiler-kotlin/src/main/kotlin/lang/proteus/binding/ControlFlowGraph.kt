@@ -110,7 +110,7 @@ internal class ControlFlowGraph private constructor(
         }
 
         fun allPathsReturn(body: BoundBlockStatement): Boolean {
-            val graph = create(body)
+            val graph = createAndOutput(body)
 
             for (block in graph.end.incoming) {
                 val path = graph.findPath(graph.start, block) ?: return false
@@ -144,6 +144,7 @@ internal class ControlFlowGraph private constructor(
                     connect(start, end)
                 } else {
                     connect(start, blocks.first())
+                    connect(blocks.last(), end)
                 }
                 for (block in blocks) {
                     for (statement in block.statements) {

@@ -1,12 +1,9 @@
-val a = 10;
 fn main() {
-    var a = 5;
-    while (a > 0) {
-        println(a);
-        a = a - 1;
-        var a = 10;
-    }
-    return;
+   var a = 1;
+                    while true {
+                        if a == 10 {
+                            break;
+                        }
+                        a += 1;
+                    }
 }
-
-main();
