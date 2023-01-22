@@ -172,6 +172,11 @@ internal class Evaluator(
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
+        val currentValue = if (expression.variable.isLocal) {
+            locals.peek()[expression.variable.name]!!
+        } else {
+            globals[expression.variable.name]!!
+        }
         val expressionValue = evaluateExpression(expression.expression)
         if (expression.variable.isGlobal) {
             globals[expression.variable.name] = expressionValue!!
@@ -179,7 +184,7 @@ internal class Evaluator(
             locals.peek()[expression.variable.name] = expressionValue!!
         }
 
-        return expressionValue
+        return if (expression.returnAssignment) expressionValue else currentValue
     }
 
     private fun evaluateBinaryExpression(expression: BoundBinaryExpression): Any {

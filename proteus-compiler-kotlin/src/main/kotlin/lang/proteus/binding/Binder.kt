@@ -228,6 +228,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         scope.tryDeclareVariable(variable)
         controlStructureStack.push(Keyword.For)
         val body = bindStatement(syntax.body)
+        controlStructureStack.pop()
         scope = scope.parent!!
         return BoundForStatement(variable, boundLower, syntax.rangeOperator.token, boundUpper, body)
     }
@@ -236,7 +237,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
         controlStructureStack.push(Keyword.While)
         val body = bindStatement(syntax.body)
-
+        controlStructureStack.pop()
         return BoundWhileStatement(condition, body)
     }
 
@@ -439,7 +440,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return BoundErrorExpression
         }
         val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.span())
-        return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator)
+        return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator, returnAssignment = true)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {

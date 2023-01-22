@@ -45,7 +45,7 @@ internal abstract class BoundTreeRewriter {
         if (condition == statement.condition) {
             return statement
         }
-        return BoundConditionalGotoStatement(condition, statement.label)
+        return BoundConditionalGotoStatement(condition, statement.label, statement.jumpIfFalse)
     }
 
     protected open fun rewriteWhileStatement(node: BoundWhileStatement): BoundStatement {
@@ -172,7 +172,7 @@ internal abstract class BoundTreeRewriter {
         val expression = rewriteExpression(node.expression)
         if (expression == node.expression)
             return node
-        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator)
+        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator, node.returnAssignment)
     }
 
 }

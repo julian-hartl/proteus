@@ -39,9 +39,6 @@ internal class Optimizer private constructor() : BoundTreeRewriter() {
 
     override fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
         val initializer = rewriteExpression(node.initializer)
-        if (initializer is BoundLiteralExpression<*>) {
-            return BoundExpressionStatement(BoundAssignmentExpression(node.variable, initializer, Operator.Equals))
-        }
         if (initializer == node.initializer) {
             return node
         }
@@ -61,7 +58,7 @@ internal class Optimizer private constructor() : BoundTreeRewriter() {
         if (expression == node.expression) {
             return node
         }
-        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator)
+        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator, node.returnAssignment)
     }
 
     override fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {

@@ -1,6 +1,7 @@
 fn main() {
     for x in 1 until 10 {
         var i = -1;
+        println("x = " + x as String);
         if x == 5 {
             continue;
         }
@@ -9,7 +10,7 @@ fn main() {
             if i == 5 {
                 continue;
             }
-            println(i);
+            println("i = " + i as String);
         }
     }
 }

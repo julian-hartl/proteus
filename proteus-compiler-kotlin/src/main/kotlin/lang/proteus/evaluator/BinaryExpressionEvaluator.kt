@@ -6,7 +6,7 @@ import kotlin.math.pow
 
 internal object BinaryExpressionEvaluator {
     fun evaluate(kind: BoundBinaryOperatorKind, resultType: TypeSymbol, left: Any, right: Any): Any {
-        return when (kind) {
+        val result =  when (kind) {
             BoundBinaryOperatorKind.Addition -> {
                 if (resultType == TypeSymbol.Int) {
                     (left as Int) + (right as Int)
@@ -41,5 +41,6 @@ internal object BinaryExpressionEvaluator {
             )
 
         }
+        return result
     }
 }
