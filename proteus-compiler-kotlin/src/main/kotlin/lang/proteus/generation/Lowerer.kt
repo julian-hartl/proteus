@@ -1,6 +1,7 @@
 package lang.proteus.generation
 
 import lang.proteus.binding.*
+import lang.proteus.symbols.LocalVariableSymbol
 import lang.proteus.syntax.lexer.token.Operator
 import java.util.*
 
@@ -28,33 +29,38 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     *
     * -->
     * {
-    *   var <var> = <lower>;
-    *   while <var> <= <upper> {
+    *
+    *   var <random_uuid> = <lower>;
+    *   while <random_uuid> <= <upper> {
+    *       var <var> = <random_uuid>;
+    *       <random_uuid> += 1;
     *       <body>;
-    *       <var> += 1;
     *   }
     * }
      */
     override fun rewriteForStatement(node: BoundForStatement): BoundStatement {
-        val variableDeclaration = BoundVariableDeclaration(node.variable, node.lowerBound)
+        val randomUuid = UUID.randomUUID().toString()
+        val loopCounterVariable = LocalVariableSymbol("loop_counter_${randomUuid}", node.variable.type, false)
+        val loopCounterVariableDeclaration = BoundVariableDeclaration(loopCounterVariable, node.lowerBound)
+        val loopValueVariableDeclaration = BoundVariableDeclaration(node.variable, BoundVariableExpression(loopCounterVariable))
         val increment = BoundAssignmentExpression(
-            node.variable,
+            loopCounterVariable,
             BoundLiteralExpression(1),
             Operator.PlusEquals,
             returnAssignment = false
         )
         val condition = BoundBinaryExpression(
-            increment,
+            BoundVariableExpression(loopCounterVariable),
             node.upperBound,
-            BoundBinaryOperator.bind(Operator.LessThanEquals, node.variable.type, node.variable.type)!!,
+            BoundBinaryOperator.bind(Operator.LessThanEquals, loopCounterVariable.type, node.upperBound.type)!!,
         )
         val whileStatement = BoundWhileStatement(
             condition,
-            BoundBlockStatement(listOf(node.body))
+            BoundBlockStatement(listOf(loopValueVariableDeclaration, BoundExpressionStatement(increment), node.body))
         )
         val result = BoundBlockStatement(
             listOf(
-                variableDeclaration,
+                loopCounterVariableDeclaration,
                 whileStatement,
             ),
         )
@@ -100,9 +106,10 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
             )
             return rewriteStatement(result)
         }
-        val elseLabel = generateLabel("else")
+        val labelIfCount = ifCount++
+        val elseLabel = generateLabel("else_${labelIfCount}")
         val goToElse = BoundConditionalGotoStatement(node.condition, elseLabel, jumpIfFalse = true)
-        val endLabel = generateLabel("if_${ifCount++}_end")
+        val endLabel = generateLabel("if_${labelIfCount}_end")
         val goToEnd = BoundGotoStatement(endLabel)
         val elseLabelStatement = BoundLabelStatement(elseLabel)
         val endLabelStatement = BoundLabelStatement(endLabel)

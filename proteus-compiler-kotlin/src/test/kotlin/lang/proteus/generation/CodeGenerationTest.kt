@@ -59,7 +59,7 @@ class CodeGenerationTest {
                         fn main() -> Unit {
                             var a = 1;
                             var b = 2;
-                            var c = (a + b);
+                            var c = ((a) + (b));
                         }
                         {
                             main();
@@ -97,14 +97,14 @@ class CodeGenerationTest {
                     """.trimIndent(),
                     """
                         fn main() -> Unit {
-                            gotoIfFalse label0 true;
+                            gotoIfFalse else_0 true;
                             var a = 1;
                             var b = 2;
-                            var c = (a + b);
-                            goto label1;
-                            label0:
+                            var c = ((a) + (b));
+                            goto if_0_end;
+                            else_0:
                             var a = 1;
-                            label1:
+                            if_0_end:
                         }
                         {
                         }
