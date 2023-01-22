@@ -395,6 +395,29 @@ class EvaluationTest {
                         hello + " " + number as String;
                     """.trimIndent(), "Hello 2"
                 ),
+
+                Arguments.of("""
+                    var a = 1;
+                    while true {
+                        if a == 10 {
+                            break;
+                        }
+                        a += 1;
+                    }
+                """.trimIndent(), 10),
+
+                Arguments.of("""
+                    var a = 0;
+                    var b = 0;
+                    while true {
+                        if a == 10 break;
+                        a += 1;
+                        if a == 2 {
+                           continue;
+                        }
+                        b += a;
+                    }
+                """.trimIndent(), 53),
             )
         }
     }
