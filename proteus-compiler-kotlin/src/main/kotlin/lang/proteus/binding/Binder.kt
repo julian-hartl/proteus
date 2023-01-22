@@ -95,8 +95,17 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
                     val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
-                    if (!ControlFlowGraph.allPathsReturn(optimizedBody, output = true)) {
+                    val graph = ControlFlowGraph.createAndOutput(optimizedBody)
+                    if (!graph.allPathsReturn()) {
                         diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.span())
+                    } else {
+                        if (function.returnType !is TypeSymbol.Unit) {
+                            for (incoming in graph.end.incoming) {
+                                if (incoming.statements.lastOrNull() !is BoundReturnStatement) {
+                                    diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.span())
+                                }
+                            }
+                        }
                     }
                     functionBodies[function] = optimizedBody
                 }
