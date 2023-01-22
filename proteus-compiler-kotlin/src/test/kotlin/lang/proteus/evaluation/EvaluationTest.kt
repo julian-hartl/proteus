@@ -418,6 +418,17 @@ class EvaluationTest {
                         b += a;
                     }
                 """.trimIndent(), 53),
+
+                Arguments.of(
+                    """
+                        var i = 0;
+                        while i < 5 {
+                            i += 1;
+                            if i == 5 continue;
+                        }
+                        i;
+                    """.trimIndent(), 5
+                )
             )
         }
     }
