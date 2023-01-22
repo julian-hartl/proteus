@@ -11,6 +11,7 @@ class PerformancePrinter {
         consolePrinter.println("Performance")
         printComputationTime("Lexing", performance.lexingTime)
         printComputationTime("Parsing", performance.parsingTime)
+        printComputationTime("Code-Generation", performance.codeGenerationTime)
         printComputationTime("Evaluation", performance.evaluationTime)
         consolePrinter.println("Memory usage: ${formatMemoryUsageToMegaBytes(performance.memoryUsage)}")
     }

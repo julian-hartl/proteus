@@ -55,6 +55,26 @@ class EvaluationTest {
     }
 
     @ParameterizedTest
+    @MethodSource("validSyntaxWithoutMainFunction")
+    fun `test valid inputs to evaluate correctly without main function`(input: String, value: Any) {
+        val expression = SyntaxTree.parse(
+            input
+        )
+        val compilation = Compilation(expression)
+
+        val evaluationResult = compilation.evaluate(mutableMapOf())
+        assertFalse(
+            evaluationResult.diagnostics.hasErrors(),
+            "Compilation should not have errors, but it has: ${evaluationResult.diagnostics}"
+        )
+        assertEquals(
+            value,
+            evaluationResult.value,
+            "Evaluation result should be $value, but was $evaluationResult"
+        )
+    }
+
+    @ParameterizedTest
     @MethodSource("getBlockStatements")
     fun `should value from last statement in block`(input: String, expectedValue: Any) {
         assertValue(
@@ -69,7 +89,7 @@ class EvaluationTest {
 
     private fun assertValue(input: String, expectedValue: Any) {
         val compiler = ProteusCompiler()
-        val result = compiler.compile(input)
+        val result = compiler.compile(input, generateCode = false)
         assertEquals(
             expectedValue,
             result.evaluationResult?.value,
@@ -396,7 +416,8 @@ class EvaluationTest {
                     """.trimIndent(), "Hello 2"
                 ),
 
-                Arguments.of("""
+                Arguments.of(
+                    """
                     var a = 1;
                     while true {
                         if a == 10 {
@@ -404,9 +425,11 @@ class EvaluationTest {
                         }
                         a += 1;
                     }
-                """.trimIndent(), 10),
+                """.trimIndent(), 10
+                ),
 
-                Arguments.of("""
+                Arguments.of(
+                    """
                     var a = 0;
                     var b = 0;
                     while true {
@@ -417,9 +440,70 @@ class EvaluationTest {
                         }
                         b += a;
                     }
-                """.trimIndent(), 53),
-            )
+                """.trimIndent(), 53
+                ),
+
+                Arguments.of(
+                    """
+                        var i = 0;
+                        while i < 5 {
+                            i += 1;
+                            if i == 5 continue;
+                        }
+                        i;
+                    """.trimIndent(), 5
+                ),
+
+
+                )
         }
+
+        @JvmStatic
+        fun validSyntaxWithoutMainFunction(): Stream<Arguments> = Stream.of(
+            Arguments.of(
+                """
+                        fn test() -> Int{
+                            return 10;
+                        }
+                        test();
+                    """.trimIndent(),
+                10,
+            ),
+
+            Arguments.of(
+                """
+                        var a = 0;
+                        fn test() {
+                            if a == 0 {
+                                return;
+                            }
+                            else {
+                                a = 10;
+                            }
+                            
+                        }
+                        val x = a;
+                    """.trimIndent(),
+                0,
+            ),
+
+            Arguments.of(
+                """
+                    fn sum(n: Int) -> Int {
+                        var i = n;
+                        var result = 0;
+                        while true {
+                            if i == 0 return result;
+                            result += i;
+                            i -= 1;
+                        }
+                    }
+
+                    val sum = sum(90);
+                """.trimIndent(), 4095
+            )
+        )
+
     }
 
     @Test

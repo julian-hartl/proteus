@@ -1,10 +1,10 @@
 package lang.proteus.api
 
-import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
+import lang.proteus.binding.ControlFlowGraph
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
@@ -36,7 +36,7 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         return Compilation(this, syntaxTree)
     }
 
-    fun evaluate(variables: MutableMap<String, Any>): EvaluationResult<*> {
+    fun evaluate(variables: MutableMap<String, Any>, generateCode: Boolean = false): EvaluationResult<*> {
 
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
@@ -45,21 +45,26 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         val diagnostics = globalScope.diagnostics
         val parseTime = computationTimeStopper.stop()
         if (diagnostics.hasErrors()) {
-            return EvaluationResult(diagnostics, null, parseTime, ComputationTime(0), null)
+            return EvaluationResult(diagnostics, null, parseTime)
         }
         val program = Binder.bindProgram(globalScope)
+
         if (program.diagnostics.hasErrors()) {
-            return EvaluationResult(program.diagnostics, null, parseTime, ComputationTime(0), null)
+            return EvaluationResult(program.diagnostics, null, parseTime)
         }
         diagnostics.concat(program.diagnostics)
         computationTimeStopper.start()
         val statement = getStatement()
-        val generatedCode = CodeGenerator.generate(statement, program.functionBodies)
-        CodeGenerator.emitGeneratedCode(generatedCode)
+        val codeGenerationTime = computationTimeStopper.stop()
+        if (generateCode) {
+            val generatedCode = CodeGenerator.generate(statement, program.functionBodies)
+            CodeGenerator.emitGeneratedCode(generatedCode)
+        }
+        computationTimeStopper.start()
         val evaluator = Evaluator(statement, variables, program.functionBodies)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
-        return EvaluationResult(diagnostics, value, parseTime, evaluationTime, generatedCode)
+        return EvaluationResult(diagnostics, value, parseTime, evaluationTime, codeGenerationTime)
     }
 
     private fun getStatement(): BoundBlockStatement {

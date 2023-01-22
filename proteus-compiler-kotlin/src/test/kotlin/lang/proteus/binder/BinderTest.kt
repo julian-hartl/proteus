@@ -4,6 +4,7 @@ import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
 import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
+import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.GlobalStatementSyntax
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.syntax.parser.statements.StatementSyntax
@@ -31,7 +32,11 @@ class BinderTest {
     private fun parseExpression(input: String): StatementSyntax {
         val parser = Parser(SourceText.from(input))
         val compilationUnitSyntax = parser.parseCompilationUnit()
-        return (compilationUnitSyntax.members[0] as GlobalStatementSyntax).statement
+        val member = compilationUnitSyntax.members[0]
+        return when (member) {
+            is GlobalStatementSyntax -> member.statement
+            is FunctionDeclarationSyntax -> member.body
+        }
     }
 
     @Test
@@ -419,5 +424,12 @@ class BinderTest {
         )
         assertTrue(binder.hasErrors())
     }
+
+    @Test
+    fun shouldReportErrorWhenUsingFunctionWithWrongNumberOfArguments() {
+        useExpression("print();")
+        assertTrue(binder.hasErrors())
+    }
+
 
 }

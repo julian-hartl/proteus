@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
     var text = textInputReader.read()
     while (text != null) {
         try {
-            compiler.compile(text, verbose = verbose)
+            compiler.compile(text, verbose = verbose, generateCode = true)
             text = textInputReader.read()
         } catch (e: Exception) {
             e.printStackTrace()

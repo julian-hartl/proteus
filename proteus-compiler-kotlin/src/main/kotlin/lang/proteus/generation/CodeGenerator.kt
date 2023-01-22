@@ -13,7 +13,10 @@ internal class CodeGenerator private constructor(
     BoundTreeRewriter() {
 
     companion object {
-        fun generate(statement: BoundStatement, functionBodies: Map<FunctionSymbol, BoundBlockStatement>): String {
+        fun generate(
+            statement: BoundStatement,
+            functionBodies: Map<FunctionSymbol, BoundBlockStatement> = mapOf(),
+        ): String {
             val generator = CodeGenerator(functionBodies = functionBodies)
             return generator.generateCode(statement)
         }
@@ -45,7 +48,7 @@ internal class CodeGenerator private constructor(
                 codeBuilder.delete(codeBuilder.length - 2, codeBuilder.length)
             }
             codeBuilder.append(") ")
-            codeBuilder.append("-> ${declaration.returnTypeClause?.type ?: "Unit"} ")
+            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"} ")
             rewriteBlockStatement(body)
         }
     }
@@ -112,6 +115,16 @@ internal class CodeGenerator private constructor(
         return expression
     }
 
+    override fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
+        codeBuilder.append("return")
+        if (statement.expression != null) {
+            codeBuilder.append(" ")
+            rewriteExpression(statement.expression)
+        }
+        codeBuilder.append(";")
+        return statement
+    }
+
     override fun rewriteGotoStatement(statement: BoundGotoStatement): BoundStatement {
         codeBuilder.append("goto ")
         codeBuilder.append(statement.label)
@@ -126,10 +139,10 @@ internal class CodeGenerator private constructor(
 
     override fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
         val value =
-        when (expression.type) {
-            is TypeSymbol.String -> "\"${expression.value}\""
-            else -> expression.value
-        }
+            when (expression.type) {
+                is TypeSymbol.String -> "\"${expression.value}\""
+                else -> expression.value
+            }
         codeBuilder.append(value)
         return expression
     }

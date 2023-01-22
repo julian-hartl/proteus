@@ -16,7 +16,13 @@ internal abstract class BoundTreeRewriter {
             is BoundNopStatement -> rewriteNopStatement(statement)
             is BoundBreakStatement -> rewriteBreakStatement(statement)
             is BoundContinueStatement -> rewriteContinueStatement(statement)
+            is BoundReturnStatement -> rewriteReturnStatement(statement)
         }
+    }
+
+    protected open fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
+        val expression = statement.expression?.let { rewriteExpression(it) }
+        return BoundReturnStatement(expression)
     }
 
     protected open fun rewriteContinueStatement(statement: BoundContinueStatement): BoundStatement {

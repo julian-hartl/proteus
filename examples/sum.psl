@@ -1,0 +1,9 @@
+fn sum(n: Int) -> Int {
+    var i = n;
+    var result = 0;
+    while true {
+        if i == 0 return result;
+        result += result + i;
+        i -= 1;
+    }
+}

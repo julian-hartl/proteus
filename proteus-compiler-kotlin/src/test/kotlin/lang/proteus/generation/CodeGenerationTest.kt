@@ -110,6 +110,37 @@ class CodeGenerationTest {
                         }
                         
                     """.trimIndent()
+                ),
+
+                Arguments.of(
+                    """
+                        fn main() {
+                            return;
+                        }
+                    """.trimIndent(),
+                    """
+                        fn main() -> Unit {
+                            return;
+                        }
+                        {
+                        }
+                        
+                    """.trimIndent()
+                ),
+                Arguments.of(
+                    """
+                        fn main() -> Int{
+                            return 1 + 1;
+                        }
+                    """.trimIndent(),
+                    """
+                        fn main() -> Int {
+                            return ((1) + (1));
+                        }
+                        {
+                        }
+                        
+                    """.trimIndent()
                 )
             )
         }

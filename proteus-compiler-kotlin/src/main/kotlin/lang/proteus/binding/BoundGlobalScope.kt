@@ -9,5 +9,5 @@ internal data class BoundGlobalScope(
     val diagnostics: Diagnostics,
     val functions: List<FunctionSymbol>,
     val variables: List<VariableSymbol>,
-    val statement: BoundStatement,
+    val statement: BoundBlockStatement,
 )
