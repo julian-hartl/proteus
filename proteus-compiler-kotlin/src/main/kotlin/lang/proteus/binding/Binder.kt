@@ -134,11 +134,6 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
 
         val returnType = bindOptionalReturnTypeClause(function.returnTypeClause) ?: TypeSymbol.Unit
-
-        if (returnType !is TypeSymbol.Unit) {
-            diagnosticsBag.reportFunctionsAreNotSupported(function.span())
-        }
-
         val functionSymbol = FunctionSymbol(function.identifier.literal, parameters, returnType, function)
         if (scope.tryDeclareFunction(functionSymbol) == null) {
             diagnosticsBag.reportFunctionAlreadyDeclared(function.identifier.span(), function.identifier.literal)

@@ -20,7 +20,7 @@ internal class ProteusCompiler() {
 
     private val variables = mutableMapOf<String, Any>()
 
-    fun compile(text: String, verbose: Boolean = false): CompilationResult {
+    fun compile(text: String, verbose: Boolean = false, generateCode: Boolean = false): CompilationResult {
         val sourceText = SourceText.from(text)
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
@@ -37,7 +37,7 @@ internal class ProteusCompiler() {
 
 
         val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
-        val compilationResult = compilation.evaluate(variables)
+        val compilationResult = compilation.evaluate(variables, generateCode = generateCode)
         val memoryUsage = getMemoryUsage()
         if (compilationResult.diagnostics.hasErrors()) {
             printDiagnostics(compilationResult.diagnostics, sourceText)
@@ -48,8 +48,9 @@ internal class ProteusCompiler() {
         }
         val performance = CompilationPerformance(
             lexerTime,
-            compilationResult.parseTime,
-            compilationResult.evaluationTime,
+            compilationResult.parseTime ?: ComputationTime(0),
+            compilationResult.evaluationTime ?: ComputationTime(0),
+            compilationResult.codeGenerationTime ?: ComputationTime(0),
             memoryUsage
         )
         val performancePrinter = PerformancePrinter()

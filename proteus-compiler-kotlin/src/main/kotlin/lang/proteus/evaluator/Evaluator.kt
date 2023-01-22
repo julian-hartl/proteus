@@ -73,6 +73,11 @@ internal class Evaluator(
                 currentIndex + 1
             }
 
+            is BoundReturnStatement -> {
+                lastValue = if (statement.expression == null) null else evaluateExpression(statement.expression)
+                currentIndex + 1
+            }
+
             else -> {
                 throwUnsupportedOperation(statement::class.simpleName!!)
             }

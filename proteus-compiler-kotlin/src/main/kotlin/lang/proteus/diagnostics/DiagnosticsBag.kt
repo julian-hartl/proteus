@@ -112,10 +112,6 @@ internal class DiagnosticsBag {
         report("Parameter '$name' already declared", span)
     }
 
-    fun reportFunctionsAreNotSupported(span: TextSpan) {
-        report("Functions are not supported", span)
-    }
-
     fun reportFunctionAlreadyDeclared(span: TextSpan, literal: String) {
         report("Function '$literal' already declared", span)
     }
