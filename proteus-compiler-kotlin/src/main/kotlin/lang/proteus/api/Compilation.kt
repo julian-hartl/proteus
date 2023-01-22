@@ -4,7 +4,6 @@ import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
-import lang.proteus.binding.ControlFlowGraph
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
@@ -49,10 +48,6 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         }
         val program = Binder.bindProgram(globalScope)
 
-        if (program.diagnostics.hasErrors()) {
-            return EvaluationResult(program.diagnostics, null, parseTime)
-        }
-        diagnostics.concat(program.diagnostics)
         computationTimeStopper.start()
         val statement = getStatement()
         val codeGenerationTime = computationTimeStopper.stop()
@@ -60,6 +55,11 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
             val generatedCode = CodeGenerator.generate(statement, program.functionBodies)
             CodeGenerator.emitGeneratedCode(generatedCode)
         }
+        if (program.diagnostics.hasErrors()) {
+            return EvaluationResult(program.diagnostics, null, parseTime)
+        }
+        diagnostics.concat(program.diagnostics)
+
         computationTimeStopper.start()
         val evaluator = Evaluator(statement, variables, program.functionBodies)
         val value = evaluator.evaluate()

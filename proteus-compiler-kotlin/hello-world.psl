@@ -6,9 +6,10 @@ fn sum(n: Int) -> Int {
 }
 
 fn main() {
-    val b = a + 1;
-    val c = b + 1;
-    val d = sum(c);
+   val a = 10;
+   while a > 9 {
+
+   }
 }
 
-val test = sum(10);
+main();
