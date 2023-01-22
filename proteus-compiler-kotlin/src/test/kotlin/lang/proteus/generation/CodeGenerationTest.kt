@@ -1,6 +1,6 @@
 package lang.proteus.generation
 
-import lang.proteus.api.Compilation
+import lang.proteus.binding.Binder
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -11,9 +11,9 @@ import kotlin.test.assertEquals
 class CodeGenerationTest {
     private fun useProgram(input: String): String {
         val parsed = SyntaxTree.parse(input)
-        val compilation = Compilation(parsed)
-        val code = compilation.evaluate(mutableMapOf()).generatedCode
-        return code!!
+        val globalScope = Binder.bindGlobalScope(null, parsed.root)
+        val program = Binder.bindProgram(globalScope, optimize = false)
+        return CodeGenerator.generate(program.globalScope.statement, program.functionBodies)
     }
 
     @ParameterizedTest
@@ -63,6 +63,21 @@ class CodeGenerationTest {
                         }
                         {
                             main();
+                        }
+                        
+                    """.trimIndent()
+                ),
+                Arguments.of(
+                    """
+                        fn main() {
+                            val test = "test";
+                        }
+                    """.trimIndent(),
+                    """
+                        fn main() -> Unit {
+                            var test = "test";
+                        }
+                        {
                         }
                         
                     """.trimIndent()

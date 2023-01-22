@@ -2,6 +2,7 @@ package lang.proteus.generation
 
 import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.TypeSymbol
 import java.io.File
 import java.time.Instant
 
@@ -122,7 +123,12 @@ internal class CodeGenerator private constructor(
     }
 
     override fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
-        codeBuilder.append(expression.value)
+        val value =
+        when (expression.type) {
+            is TypeSymbol.String -> "\"${expression.value}\""
+            else -> expression.value
+        }
+        codeBuilder.append(value)
         return expression
     }
 
@@ -157,4 +163,5 @@ internal class CodeGenerator private constructor(
         codeBuilder.append(";")
         return statement
     }
+
 }

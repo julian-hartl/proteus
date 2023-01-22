@@ -75,7 +75,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return parent;
         }
 
-        fun bindProgram(globalScope: BoundGlobalScope): BoundProgram {
+        fun bindProgram(globalScope: BoundGlobalScope, optimize: Boolean = true): BoundProgram {
 
             val parentScope = createParentScopes(globalScope)
 
@@ -91,7 +91,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 val body = binder.bindStatement(function.declaration!!.body)
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
-                    val optimizedBody = Optimizer.optimize(loweredBody)
+                    val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
                     functionBodies[function] = optimizedBody
                 }
                 diagnostics.addAll(binder.diagnostics)
