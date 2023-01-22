@@ -17,12 +17,11 @@ internal class CodeGenerator private constructor(
             return generator.generateCode(statement)
         }
 
-        fun emitGeneratedCode(statement: BoundStatement, functionBodies: Map<FunctionSymbol, BoundBlockStatement>) {
-            val generatedCode = generate(statement, functionBodies)
+        fun emitGeneratedCode(code: String) {
             val outputDirectory = System.getProperty("user.dir") + "/generated"
             val outputFile = File(outputDirectory, "generated_${Instant.now().toEpochMilli()}.psl")
             outputFile.parentFile.mkdirs()
-            outputFile.writeText(generatedCode)
+            outputFile.writeText(code)
             println("Generated code written to ${outputFile.absolutePath}")
         }
     }
@@ -36,7 +35,7 @@ internal class CodeGenerator private constructor(
     private fun generateFunctionDeclarations(functions: Map<FunctionSymbol, BoundBlockStatement>) {
         for ((symbol, body) in functions) {
             val declaration = symbol.declaration!!;
-            codeBuilder.append("fun ${symbol.name}(")
+            codeBuilder.append("fn ${symbol.name}(")
             for (parameter in declaration.parameters) {
                 codeBuilder.append("${parameter.identifier.literal}: ${parameter.typeClause.type.literal}, ")
             }
@@ -44,8 +43,8 @@ internal class CodeGenerator private constructor(
             if (declaration.parameters.count != 0) {
                 codeBuilder.delete(codeBuilder.length - 2, codeBuilder.length)
             }
-            codeBuilder.append(")")
-            codeBuilder.append("-> ${declaration.returnTypeClause?.type ?: "Unit"}")
+            codeBuilder.append(") ")
+            codeBuilder.append("-> ${declaration.returnTypeClause?.type ?: "Unit"} ")
             rewriteBlockStatement(body)
         }
     }
@@ -61,7 +60,9 @@ internal class CodeGenerator private constructor(
     override fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {
         codeBuilder.append("(")
         rewriteExpression(node.left)
+        codeBuilder.append(" ")
         codeBuilder.append(node.operator.operator.literal)
+        codeBuilder.append(" ")
         rewriteExpression(node.right)
         codeBuilder.append(")")
         return node
@@ -96,6 +97,7 @@ internal class CodeGenerator private constructor(
         codeBuilder.append(statement.label)
         codeBuilder.append(" ")
         rewriteExpression(statement.condition)
+        codeBuilder.append(";")
         return statement
     }
 
@@ -110,6 +112,7 @@ internal class CodeGenerator private constructor(
     override fun rewriteGotoStatement(statement: BoundGotoStatement): BoundStatement {
         codeBuilder.append("goto ")
         codeBuilder.append(statement.label)
+        codeBuilder.append(";")
         return statement
     }
 
