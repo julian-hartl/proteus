@@ -7,6 +7,7 @@ import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
+import lang.proteus.generation.CodeGenerator
 import lang.proteus.lowering.Lowerer
 import lang.proteus.syntax.parser.SyntaxTree
 
@@ -43,19 +44,21 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         val diagnostics = globalScope.diagnostics
         val parseTime = computationTimeStopper.stop()
         if (diagnostics.hasErrors()) {
-            return EvaluationResult(diagnostics, null, parseTime, ComputationTime(0))
+            return EvaluationResult(diagnostics, null, parseTime, ComputationTime(0), null)
         }
         val program = Binder.bindProgram(globalScope)
         if (program.diagnostics.hasErrors()) {
-            return EvaluationResult(program.diagnostics, null, parseTime, ComputationTime(0))
+            return EvaluationResult(program.diagnostics, null, parseTime, ComputationTime(0), null)
         }
         diagnostics.concat(program.diagnostics)
         computationTimeStopper.start()
         val statement = getStatement()
+        val generatedCode = CodeGenerator.generate(statement, program.functionBodies)
+        CodeGenerator.emitGeneratedCode(generatedCode)
         val evaluator = Evaluator(statement, variables, program.functionBodies)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
-        return EvaluationResult(diagnostics, value, parseTime, evaluationTime)
+        return EvaluationResult(diagnostics, value, parseTime, evaluationTime, generatedCode)
     }
 
     private fun getStatement(): BoundBlockStatement {

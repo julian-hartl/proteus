@@ -7,5 +7,6 @@ data class EvaluationResult<T>(
     val diagnostics: Diagnostics,
     val value: T?,
     val parseTime: ComputationTime,
-    val evaluationTime: ComputationTime
+    val evaluationTime: ComputationTime,
+    val generatedCode: String?
 )

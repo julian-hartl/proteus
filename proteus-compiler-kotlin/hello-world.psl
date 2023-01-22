@@ -1,9 +1,11 @@
-fn sayHello() {
-    println("Hello, world!");
+val count = 100;
+
+fn recursive(n: Int) {
+    println(n);
+    if n == 0
+        println("Done")
+    else
+        recursive(n - 1);
 }
 
-fn main() {
-    sayHello();
-}
-
-main();
+recursive(count);
