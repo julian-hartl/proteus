@@ -12,6 +12,7 @@ import lang.proteus.printing.PrinterColor
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
+import java.lang.management.MemoryUsage
 
 internal class ProteusCompiler() {
 
@@ -29,7 +30,7 @@ internal class ProteusCompiler() {
             return CompilationResult(
                 tree,
                 null,
-                CompilationPerformance(computationTimeStopper.stop(), ComputationTime(0), ComputationTime(0))
+                null
             )
         }
         val lexerTime = computationTimeStopper.stop()
@@ -37,6 +38,7 @@ internal class ProteusCompiler() {
 
         val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
         val compilationResult = compilation.evaluate(variables)
+        val memoryUsage = getMemoryUsage()
         if (compilationResult.diagnostics.hasErrors()) {
             printDiagnostics(compilationResult.diagnostics, sourceText)
         } else {
@@ -47,11 +49,17 @@ internal class ProteusCompiler() {
         val performance = CompilationPerformance(
             lexerTime,
             compilationResult.parseTime,
-            compilationResult.evaluationTime
+            compilationResult.evaluationTime,
+            memoryUsage
         )
         val performancePrinter = PerformancePrinter()
         performancePrinter.print(performance)
         return CompilationResult(tree, compilationResult, performance)
+    }
+
+    private fun getMemoryUsage(): Int {
+        val memoryUsage: MemoryUsage = java.lang.management.ManagementFactory.getMemoryMXBean().heapMemoryUsage
+        return (memoryUsage.used).toInt()
     }
 
     private fun printResult(compilationResult: EvaluationResult<*>) {
@@ -72,8 +80,10 @@ internal class ProteusCompiler() {
         for (diagnostic in diagnostics.diagnostics) {
 
             val lineIndex = sourceText.getLineIndex(diagnostic.span.start)
+            val endLineIndex  = sourceText.getLineIndex(diagnostic.span.end)
             val lineNumber = lineIndex + 1
             val line = sourceText.lines[lineIndex]
+            val endLine = sourceText.lines[endLineIndex]
             val character = diagnostic.span.start - line.start + 1
 
             printer.println()
@@ -81,7 +91,7 @@ internal class ProteusCompiler() {
             val prefixSpan = TextSpan.fromBounds(line.start, diagnostic.span.start)
             val prefix = sourceText.toString(prefixSpan)
             val error = text.substring(diagnostic.span.start, diagnostic.span.end)
-            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, line.endIncludingLineBreak)
+            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, endLine.endIncludingLineBreak)
             val suffix = sourceText.toString(suffixSpan)
 
 

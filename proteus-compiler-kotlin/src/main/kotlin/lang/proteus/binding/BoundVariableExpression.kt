@@ -3,10 +3,10 @@ package lang.proteus.binding
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.symbols.TypeSymbol
 internal class BoundVariableExpression(
-    val symbol: VariableSymbol
+    val variable: VariableSymbol
 ) : BoundExpression() {
     override val type: TypeSymbol
-        get() = symbol.type
+        get() = variable.type
 
 
 }

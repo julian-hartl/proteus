@@ -1,5 +1,6 @@
 package lang.proteus.diagnostics
 
+import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Token
 
@@ -81,6 +82,12 @@ internal class DiagnosticsBag {
         return mutableDiagnostics.distinct()
     }
 
+    fun addAll(diagnostics: Diagnostics) {
+        for (diagnostic in diagnostics.diagnostics) {
+            mutableDiagnostics.add(diagnostic)
+        }
+    }
+
     fun reportUndefinedFunction(span: TextSpan, literal: String) {
         report("Undefined function '$literal'", span)
     }
@@ -100,4 +107,29 @@ internal class DiagnosticsBag {
     fun reportUndefinedType(span: TextSpan, literal: String) {
         report("Undefined type '$literal'", span)
     }
+
+    fun reportParameterAlreadyDeclared(span: TextSpan, name: String) {
+        report("Parameter '$name' already declared", span)
+    }
+
+    fun reportFunctionsAreNotSupported(span: TextSpan) {
+        report("Functions are not supported", span)
+    }
+
+    fun reportFunctionAlreadyDeclared(span: TextSpan, literal: String) {
+        report("Function '$literal' already declared", span)
+    }
+
+    fun reportMainMustHaveNoParameters(mainFunction: FunctionSymbol) {
+        report("Main function must have no parameters", mainFunction.declaration!!.span())
+    }
+
+    fun reportInvalidTopLevelStatement(span: TextSpan) {
+        report("Invalid top-level statement", span)
+    }
+
+    fun reportExpectedGlobalStatement() {
+        report("Expected a global statement", TextSpan(0, 0))
+    }
+
 }

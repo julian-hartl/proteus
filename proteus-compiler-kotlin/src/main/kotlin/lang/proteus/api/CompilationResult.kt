@@ -7,5 +7,5 @@ import lang.proteus.syntax.parser.SyntaxTree
 internal data class CompilationResult(
     val syntaxTree: SyntaxTree,
     val evaluationResult: EvaluationResult<*>?,
-    val performance: CompilationPerformance
+    val performance: CompilationPerformance?
 )

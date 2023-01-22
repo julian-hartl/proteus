@@ -44,10 +44,103 @@ class Parser private constructor(
     }
 
     internal fun parseCompilationUnit(): CompilationUnitSyntax {
-        val expression = parseStatement()
+        val members = parseMembers()
+        if(members.isEmpty()){
+            diagnosticsBag.reportExpectedGlobalStatement()
+        }
         val endOfFileToken = matchToken(Token.EndOfFile)
-        return CompilationUnitSyntax(expression, endOfFileToken)
+        return CompilationUnitSyntax(members, endOfFileToken)
     }
+
+    private fun parseMembers(): List<MemberSyntax> {
+        val members = mutableListOf<MemberSyntax>()
+        while (current.token != Token.EndOfFile) {
+            val start = current
+            val member = parseMember()
+            members.add(member)
+            if (current == start) {
+                nextToken()
+            }
+        }
+        return members
+    }
+
+    private fun parseMember(): MemberSyntax {
+        return when (current.token) {
+
+            is Keyword.Fn -> parseFunctionDeclaration()
+            else -> parseGlobalStatement()
+        }
+    }
+
+    private fun parseFunctionDeclaration(): MemberSyntax {
+        val functionKeyword = matchToken(Keyword.Fn)
+        val identifier = matchToken(Token.Identifier)
+        val openParenthesis = matchToken(Operator.OpenParenthesis)
+        val parameterList = parseParameterList()
+        val closeParenthesis = matchToken(Operator.CloseParenthesis)
+        val returnTypeSyntax = parseOptionalFunctionReturnType()
+        val body = parseBlockStatement()
+        return FunctionDeclarationSyntax(
+            functionKeyword,
+            identifier,
+            openParenthesis,
+            parameterList,
+            closeParenthesis,
+            returnTypeSyntax,
+            body
+        )
+    }
+
+    private fun parseOptionalFunctionReturnType(): FunctionReturnTypeSyntax? {
+        return if (current.token == Token.Arrow) {
+            parseFunctionReturnType()
+        } else {
+            null
+        }
+    }
+
+    private fun parseFunctionReturnType(): FunctionReturnTypeSyntax {
+        val arrow = matchToken(Token.Arrow)
+        val type = matchToken(Token.Type)
+        return FunctionReturnTypeSyntax(arrow, type)
+    }
+
+
+    private fun parseParameterList(): SeparatedSyntaxList<ParameterSyntax> {
+        val parameters = mutableListOf<SyntaxNode>()
+        if (current.token != Operator.CloseParenthesis) {
+            do {
+                val parameter = parseParameter()
+                parameters.add(parameter)
+                if (current.token is Token.Comma) {
+                    parameters.add(matchToken(Token.Comma))
+                }
+            } while (current.token == Token.Comma)
+        }
+        return SeparatedSyntaxList(parameters)
+    }
+
+    private fun parseParameter(): ParameterSyntax {
+        val identifier = matchToken(Token.Identifier)
+        val typeClauseSyntax = parseTypeClause()
+        return ParameterSyntax(identifier, typeClauseSyntax)
+    }
+
+    private fun parseGlobalStatement(): GlobalStatementSyntax {
+        val statement = parseStatement()
+        if (statement !is VariableDeclarationSyntax) {
+            if (statement !is ExpressionStatementSyntax || statement.expression !is CallExpressionSyntax) {
+                diagnosticsBag.reportInvalidTopLevelStatement(statement.span())
+            }
+        }
+        val semiColon = if (peek(-1).token !is Token.CloseBrace) {
+            matchToken(Token.SemiColon)
+        } else null
+
+        return GlobalStatementSyntax(statement, semiColon)
+    }
+
 
     private fun parseStatement(): StatementSyntax {
         when (current.token) {
@@ -112,12 +205,28 @@ class Parser private constructor(
     private fun parseVariableDeclarationStatement(): StatementSyntax {
         val keyword = nextToken().token as Keyword
         val identifier = matchToken(Token.Identifier)
+        val typeClause = parseOptionalTypeClause()
         val equals = matchToken(Operator.Equals)
         val expression = parseExpression()
-        return VariableDeclarationSyntax(keyword, identifier, equals, expression)
+        return VariableDeclarationSyntax(keyword, identifier, typeClause, equals, expression)
     }
 
-    private fun parseBlockStatement(): StatementSyntax {
+    private fun parseOptionalTypeClause(): TypeClauseSyntax? {
+        return if (current.token == Token.Colon) {
+            parseTypeClause()
+        } else {
+            null
+        }
+
+    }
+
+    private fun parseTypeClause(): TypeClauseSyntax {
+        val colonToken = matchToken(Token.Colon)
+        val type = matchToken(Token.Type)
+        return TypeClauseSyntax(colonToken, type)
+    }
+
+    private fun parseBlockStatement(): BlockStatementSyntax {
         val openBrace = matchToken(Token.OpenBrace)
         val statements = mutableListOf<StatementSyntax>()
         while (current.token !is Token.CloseBrace && current.token !is Token.EndOfFile) {
@@ -158,14 +267,11 @@ class Parser private constructor(
             val expression = parseAssigmentExpression()
             return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
-        if(peek(1).token is Keyword.As) {
-            return parseTypeCastExpression()
-        }
         return parseBinaryExpression()
     }
 
-    private fun parseTypeCastExpression(): ExpressionSyntax {
-        val castExpression = parseBinaryExpression()
+    private fun parseTypeCastExpression(expressionToCast: ExpressionSyntax? = null): ExpressionSyntax {
+        val castExpression = expressionToCast ?: parseBinaryExpression()
         return CastExpressionSyntax(
             castExpression,
             matchToken(Keyword.As),
@@ -187,6 +293,10 @@ class Parser private constructor(
 
         while (true) {
             val precedence = currentOperator?.precedence ?: 0
+
+            if (current.token is Keyword.As) {
+                return parseTypeCastExpression(left)
+            }
 
             if (current.token is Token.SemiColon) {
                 break

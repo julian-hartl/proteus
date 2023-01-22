@@ -39,5 +39,6 @@ internal sealed class Keyword(override val literal: kotlin.String) : Token() {
     internal object In : Keyword("in")
 
     internal object Until : Keyword("until")
+    internal object Fn : Keyword("fn")
 }
 

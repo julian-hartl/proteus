@@ -1,28 +1,36 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
-import lang.proteus.symbols.BuiltInFunctions
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.ProteusExternalFunction
 import lang.proteus.symbols.TypeSymbol
-import lang.proteus.syntax.lexer.token.Operator
+import java.util.*
 import kotlin.math.pow
 
-internal class Evaluator(private val root: BoundBlockStatement, private val variables: MutableMap<String, Any>) {
+internal class Evaluator(
+    private val root: BoundBlockStatement,
+    private val globals: MutableMap<String, Any>,
+    private val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
+    private val locals: Stack<MutableMap<String, Any>> = Stack(),
+) {
 
     private var lastValue: Any? = null
 
     fun evaluate(): Any? {
+        return evaluateStatement(root)
+    }
+
+    private fun evaluateStatement(body: BoundBlockStatement): Any? {
         val labelToIndex = mutableMapOf<BoundLabel, Int>()
-        for ((index, statement) in root.statements.withIndex()) {
+        for ((index, statement) in body.statements.withIndex()) {
             if (statement is BoundLabelStatement) {
                 labelToIndex[statement.label] = index + 1
             }
         }
 
         var index = 0
-        while (index < root.statements.size) {
-            val statement = root.statements[index]
+        while (index < body.statements.size) {
+            val statement = body.statements[index]
             val newIndex = try {
                 evaluateFlattened(statement, index, labelToIndex)
             } catch (e: Exception) {
@@ -75,7 +83,11 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
 
     private fun evaluateVariableDeclaration(statement: BoundVariableDeclaration) {
         val value = evaluateExpression(statement.initializer)
-        variables[statement.variable.name] = value!!
+        if (statement.variable.isLocal) {
+            locals.peek()[statement.variable.name] = value!!
+        } else {
+            globals[statement.variable.name] = value!!
+        }
         lastValue = value
     }
 
@@ -130,53 +142,41 @@ internal class Evaluator(private val root: BoundBlockStatement, private val vari
         }
     }
 
-    private fun evaluateCallExpression(expression: BoundCallExpression): Any? {
-        val function = expression.functionSymbol
-        val arguments = expression.arguments.map { evaluateExpression(it)!! }
-        if (expression.isExternal) {
+    private fun evaluateCallExpression(callExpression: BoundCallExpression): Any? {
+        val function = callExpression.functionSymbol
+        val arguments = callExpression.arguments.map { evaluateExpression(it)!! }
+        if (callExpression.isExternal) {
             val externalFunction = ProteusExternalFunction.lookup(function.name)!!
             return externalFunction.call(arguments)
         }
-        return null;
-    }
-
-    private fun callFunction(function: FunctionSymbol, arguments: List<Any>): Any? {
-        when (function) {
-            BuiltInFunctions.Print -> {
-                println(arguments[0])
-                return null
-            }
-
-            BuiltInFunctions.Input -> {
-                return readLine()!!
-            }
-
-
+        val stackFrame = mutableMapOf<String, Any>()
+        for ((index, parameter) in function.parameters.withIndex()) {
+            stackFrame[parameter.name] = arguments[index]
         }
-        throwUnsupportedOperation("Unimplemented function call: ${function.name}")
-    }
-
-    private fun cast(value: Any, type: TypeSymbol): Any {
-        return when (type) {
-            TypeSymbol.Int -> value.toString().toInt()
-            TypeSymbol.String -> value.toString()
-            else -> throwUnsupportedOperation("Unimplemented cast to type: ${type.name}")
-        }
+        locals.push(stackFrame)
+        val statement = functionBodies[function]
+        val value = evaluateStatement(statement ?: throw IllegalStateException("Function body not found for $function"))
+        locals.pop()
+        return value
     }
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
-        return variables[expression.symbol.name]!!
+        if (expression.variable.isLocal) {
+            if(locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.name}")
+            return locals.peek()[expression.variable.name]!!
+        }
+        return globals[expression.variable.name]!!
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
         val expressionValue = evaluateExpression(expression.expression)
-        val value = when (expression.assignmentOperator) {
-            Operator.Equals -> expressionValue
-            Operator.MinusEquals -> (variables[expression.variableSymbol.name] as Int) - (expressionValue as Int)
-            Operator.PlusEquals -> (variables[expression.variableSymbol.name] as Int) + (expressionValue as Int)
+        if (expression.variable.isGlobal) {
+            globals[expression.variable.name] = expressionValue!!
+        } else {
+            locals.peek()[expression.variable.name] = expressionValue!!
         }
-        variables[expression.variableSymbol.name] = value!!
-        return value
+
+        return expressionValue
     }
 
     private fun evaluateBinaryExpression(expression: BoundBinaryExpression): Any {

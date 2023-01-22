@@ -12,6 +12,12 @@ class PerformancePrinter {
         printComputationTime("Lexing", performance.lexingTime)
         printComputationTime("Parsing", performance.parsingTime)
         printComputationTime("Evaluation", performance.evaluationTime)
+        consolePrinter.println("Memory usage: ${formatMemoryUsageToMegaBytes(performance.memoryUsage)}")
+    }
+
+    private fun formatMemoryUsageToMegaBytes(memoryUsage: Int): String {
+        val megaBytes = memoryUsage / 1024 / 1024
+        return "$megaBytes MB"
     }
 
     private fun printComputationTime(prefix: String, time: ComputationTime) {

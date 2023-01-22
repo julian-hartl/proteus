@@ -167,5 +167,30 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         return BoundBlockStatement(statements.toList())
     }
 
+    /*
+    * We should rewrite arithmetic assignment expressions to binary expressions
+    * and assignment expressions.
+    * For example:
+    * a += b
+    * -->
+    * a = a + b
+     */
+    override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
+        return when (node.assignmentOperator) {
+            Operator.Equals -> super.rewriteAssignmentExpression(node)
+            Operator.MinusEquals -> rewriteArithmeticAssignmentExpression(node, Operator.Minus)
+            Operator.PlusEquals -> rewriteArithmeticAssignmentExpression(node, Operator.Plus)
+        }
+    }
 
+    private fun rewriteArithmeticAssignmentExpression(
+        node: BoundAssignmentExpression,
+        operator: Operator,
+    ): BoundExpression {
+        val left = BoundVariableExpression(node.variable)
+        val right = node.expression
+        val operator = BoundBinaryOperator.bind(operator, node.variable.type, node.variable.type)
+        val binaryExpression = BoundBinaryExpression(left, right, operator!!)
+        return BoundAssignmentExpression(node.variable, binaryExpression, Operator.Equals)
+    }
 }

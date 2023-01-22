@@ -8,7 +8,7 @@ import lang.proteus.printing.PrinterColor
 
 private val defaultInputReader = ConsoleInputReader()
 
-private const val exampleSourcePath = "../examples/hello-world.psl"
+private const val exampleSourcePath = "hello-world.psl"
 
 fun main(args: Array<String>) {
     Functions;

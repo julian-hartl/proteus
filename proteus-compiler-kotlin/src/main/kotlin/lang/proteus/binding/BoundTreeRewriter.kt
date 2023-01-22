@@ -156,7 +156,7 @@ internal abstract class BoundTreeRewriter {
         val expression = rewriteExpression(node.expression)
         if (expression == node.expression)
             return node
-        return BoundAssignmentExpression(node.variableSymbol, expression, node.assignmentOperator)
+        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator)
     }
 
 }

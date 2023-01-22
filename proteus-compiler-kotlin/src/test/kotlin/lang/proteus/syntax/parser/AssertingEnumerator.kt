@@ -17,9 +17,12 @@ internal class AssertingEnumerator<T> private constructor(
     companion object {
         fun fromExpression(expression: SyntaxNode): AssertingEnumerator<SyntaxNode> {
             val flattenedTree = flatten(expression)
-            assertTrue(expression is ExpressionStatementSyntax, "root expression must be an expression statement, but was ${expression::class.simpleName}")
+            assertTrue(expression is GlobalStatementSyntax, "root expression must be global statement syntax statement, but was ${expression::class.simpleName}")
+
             val iterator = flattenedTree.iterator()
             iterator.next()
+            val expressionStatement = iterator.next()
+            assertTrue(expressionStatement is ExpressionStatementSyntax, "first expression must be expression statement syntax, but was ${expressionStatement::class.simpleName}")
             return AssertingEnumerator(flattenedTree, iterator);
         }
 
