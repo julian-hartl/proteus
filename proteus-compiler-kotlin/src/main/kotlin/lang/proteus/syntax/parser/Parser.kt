@@ -148,7 +148,7 @@ class Parser private constructor(
                 return parseBlockStatement()
             }
 
-            Keyword.Var, Keyword.Val -> {
+            Keyword.Var, Keyword.Val, Keyword.Const -> {
                 return parseVariableDeclarationStatement()
             }
 
@@ -185,8 +185,8 @@ class Parser private constructor(
 
         val returnKeyword = matchToken(Keyword.Return)
 
-        val expression = if (current.token is Token.SemiColon) null else parseExpression()
-        return ReturnStatementSyntax(returnKeyword, expression)
+        val statement = if (current.token is Token.SemiColon) null else parseExpression()
+        return ReturnStatementSyntax(returnKeyword, statement)
     }
 
     private fun parseBreakStatement(): StatementSyntax {

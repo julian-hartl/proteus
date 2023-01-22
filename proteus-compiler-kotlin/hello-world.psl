@@ -1,9 +1,14 @@
-fn main() {
-   var a = 1;
-                    while true {
-                        if a == 10 {
-                            break;
-                        }
-                        a += 1;
-                    }
+const a = 1;
+
+fn sum(n: Int) -> Int {
+  if (n == 0) 0
+  else n + sum(n - 1);
 }
+
+fn main() {
+    val b = a + 1;
+    val c = b + 1;
+    val d = sum(c);
+}
+
+val test = sum(10);

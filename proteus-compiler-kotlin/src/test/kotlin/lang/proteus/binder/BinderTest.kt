@@ -24,7 +24,7 @@ class BinderTest {
     private fun useExpression(input: String) {
         val expression = parseExpression(input)
         val scope = BoundScope(null)
-        scope.tryDeclareVariable(GlobalVariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
+        scope.tryDeclareVariable(GlobalVariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false, isConst = false))
         binder = Binder(scope, null)
         binder.bindStatement(expression)
     }
@@ -429,6 +429,24 @@ class BinderTest {
     fun shouldReportErrorWhenUsingFunctionWithWrongNumberOfArguments() {
         useExpression("print();")
         assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldReportErrorWhenNonConstantIsUsedInConstantDeclaration() {
+        useExpression("""
+            var a = 20;
+            const a = 2 * a;
+        """.trimIndent())
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotReportErrorWhenConstantIsUsedInConstantDeclaration() {
+        useExpression("""
+            const a = 20;
+            const b = 2 * a;
+        """.trimIndent())
+        assertTrue(!binder.hasErrors())
     }
 
 

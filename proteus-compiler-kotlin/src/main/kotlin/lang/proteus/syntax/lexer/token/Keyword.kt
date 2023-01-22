@@ -28,6 +28,7 @@ internal sealed class Keyword(override val literal: kotlin.String) : Token() {
     internal object Val : Keyword("val")
 
     internal object Var : Keyword("var")
+    internal object Const : Keyword("const")
 
     internal object If : Keyword("if")
 

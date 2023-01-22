@@ -95,7 +95,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
                     val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
-                    if (!ControlFlowGraph.allPathsReturn(optimizedBody)) {
+                    if (!ControlFlowGraph.allPathsReturn(optimizedBody, output = true)) {
                         diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.span())
                     }
                     functionBodies[function] = optimizedBody
@@ -178,12 +178,12 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     }
 
     private fun bindReturnStatement(syntax: ReturnStatementSyntax): BoundStatement {
-        val expression = if (syntax.expression == null) null else bindExpression(syntax.expression)
+        val statement = if (syntax.expression == null) null else bindExpression(syntax.expression)
         if (!isInsideFunction()) {
             diagnosticsBag.reportReturnNotAllowed(syntax.returnKeyword.span())
         } else {
             val functionReturnType = function!!.returnType
-            val actualReturnType = expression?.type ?: TypeSymbol.Unit
+            val actualReturnType = statement?.type ?: TypeSymbol.Unit
             val conversion = Conversion.classify(actualReturnType, functionReturnType)
             if (conversion.isNone) {
                 diagnosticsBag.reportInvalidReturnType(
@@ -193,7 +193,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 )
             }
         }
-        return BoundReturnStatement(expression)
+        return BoundReturnStatement(statement)
     }
 
     private fun isInsideFunction(): Boolean {
@@ -305,15 +305,27 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
     private fun bindVariableDeclaration(syntax: VariableDeclarationSyntax): BoundStatement {
         val initializer = bindExpression(syntax.initializer)
-        val isFinal = syntax.keyword is Keyword.Val
+        val isConst = syntax.keyword is Keyword.Const
+        val isFinal = isConst || syntax.keyword is Keyword.Val
         val typeClause = bindOptionalTypeClause(syntax.typeClauseSyntax)
         val type = typeClause ?: initializer.type
         val convertedInitializer = bindConversion(initializer, type, syntax.initializer.span())
         val symbol = if (function == null) GlobalVariableSymbol(
             syntax.identifier.literal,
             type,
-            isFinal
+            isFinal,
         ) else LocalVariableSymbol(syntax.identifier.literal, type, isFinal)
+        if (isConst) {
+            val optimized = Optimizer.optimize(BoundExpressionStatement(convertedInitializer))
+            if (optimized is BoundExpressionStatement) {
+                if (optimized.expression is BoundLiteralExpression<*>) {
+                    symbol.constantValue = optimized.expression
+                }
+            }
+            if (symbol.constantValue == null) {
+                diagnosticsBag.reportExpectedConstantExpression(syntax.initializer.span())
+            }
+        }
         val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol) == null
         if (isVariableAlreadyDeclared) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
@@ -455,7 +467,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
             return boundExpression
         }
-        if (declaredVariable.isFinal) {
+        if (declaredVariable.isReadOnly) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
             return BoundErrorExpression
         }

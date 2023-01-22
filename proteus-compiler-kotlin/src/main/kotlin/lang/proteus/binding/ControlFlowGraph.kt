@@ -109,8 +109,8 @@ internal class ControlFlowGraph private constructor(
 
         }
 
-        fun allPathsReturn(body: BoundBlockStatement): Boolean {
-            val graph = createAndOutput(body)
+        fun allPathsReturn(body: BoundBlockStatement, output: Boolean = false): Boolean {
+            val graph = if (output) createAndOutput(body) else create(body)
 
             for (block in graph.end.incoming) {
                 val path = graph.findPath(graph.start, block) ?: return false
@@ -122,7 +122,7 @@ internal class ControlFlowGraph private constructor(
             return graph.end.incoming.isNotEmpty()
         }
 
-        private val path = "graphs/cfg_${Instant.now().toEpochMilli()}.dot"
+        private val path get() = "graphs/cfg_${Instant.now().toEpochMilli()}.dot"
 
         private fun output(cfg: ControlFlowGraph): String {
             val output = cfg.outputAsGraphviz()

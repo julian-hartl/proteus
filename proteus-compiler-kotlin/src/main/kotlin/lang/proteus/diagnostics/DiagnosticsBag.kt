@@ -149,5 +149,9 @@ internal class DiagnosticsBag {
         report("Not all code paths return a value. Hint: To fix this, you could add a return statement.", span)
     }
 
+    fun reportExpectedConstantExpression(span: TextSpan) {
+        report("Expected a constant expression", span)
+    }
+
 
 }

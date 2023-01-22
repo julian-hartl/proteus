@@ -117,9 +117,9 @@ internal class CodeGenerator private constructor(
 
     override fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
         codeBuilder.append("return")
-        if (statement.expression != null) {
+        if (statement.boundExpression != null) {
             codeBuilder.append(" ")
-            rewriteExpression(statement.expression)
+            rewriteExpression(statement.boundExpression)
         }
         codeBuilder.append(";")
         return statement

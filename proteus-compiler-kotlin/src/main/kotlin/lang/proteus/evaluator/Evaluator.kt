@@ -74,7 +74,7 @@ internal class Evaluator(
             }
 
             is BoundReturnStatement -> {
-                lastValue = if (statement.expression == null) null else evaluateExpression(statement.expression)
+                lastValue = if (statement.boundExpression == null) null else evaluateExpression(statement.boundExpression)
                 totalStatements
             }
 

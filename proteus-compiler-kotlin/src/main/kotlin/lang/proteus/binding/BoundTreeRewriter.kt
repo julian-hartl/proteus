@@ -21,7 +21,7 @@ internal abstract class BoundTreeRewriter {
     }
 
     protected open fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
-        val expression = statement.expression?.let { rewriteExpression(it) }
+        val expression = statement.boundExpression?.let { rewriteExpression(it) }
         return BoundReturnStatement(expression)
     }
 
