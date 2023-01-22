@@ -3,7 +3,8 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextSpan
-import lang.proteus.lowering.Lowerer
+import lang.proteus.generation.Lowerer
+import lang.proteus.generation.Optimizer
 import lang.proteus.symbols.*
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.parser.*
@@ -90,7 +91,8 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 val body = binder.bindStatement(function.declaration!!.body)
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
-                    functionBodies[function] = loweredBody
+                    val optimizedBody = Optimizer.optimize(loweredBody)
+                    functionBodies[function] = optimizedBody
                 }
                 diagnostics.addAll(binder.diagnostics)
             }

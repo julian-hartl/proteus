@@ -1,4 +1,4 @@
-val count = 100;
+val count = 1 * 900 ;
 
 fn recursive(n: Int) {
     println(n);
@@ -8,4 +8,12 @@ fn recursive(n: Int) {
         recursive(n - 1);
 }
 
+fn test() {
+    if 1 == (2 - 1)
+        print("Hi")
+    else
+        val x = false and true;
+}
+
+test();
 recursive(count);

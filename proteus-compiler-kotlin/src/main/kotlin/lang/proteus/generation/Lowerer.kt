@@ -1,4 +1,4 @@
-package lang.proteus.lowering
+package lang.proteus.generation
 
 import lang.proteus.binding.*
 import lang.proteus.syntax.lexer.token.Operator

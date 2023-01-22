@@ -5,7 +5,6 @@ import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.ProteusExternalFunction
 import lang.proteus.symbols.TypeSymbol
 import java.util.*
-import kotlin.math.pow
 
 internal class Evaluator(
     private val root: BoundBlockStatement,
@@ -162,7 +161,7 @@ internal class Evaluator(
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
         if (expression.variable.isLocal) {
-            if(locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.name}")
+            if (locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.name}")
             return locals.peek()[expression.variable.name]!!
         }
         return globals[expression.variable.name]!!
@@ -184,53 +183,14 @@ internal class Evaluator(
         val right = evaluateExpression(expression.right)
 
 
-        return when (expression.operator.kind) {
-            BoundBinaryOperatorKind.Addition -> {
-                if (expression.type == TypeSymbol.Int) {
-                    (left as Int) + (right as Int)
-                } else {
-                    (left as String) + (right as String)
-                }
-            }
-
-            BoundBinaryOperatorKind.Subtraction -> left as Int - right as Int
-            BoundBinaryOperatorKind.Division -> left as Int / right as Int
-            BoundBinaryOperatorKind.Multiplication -> left as Int * right as Int
-            BoundBinaryOperatorKind.Exponentiation -> (left as Int).toDouble().pow(right as Int).toInt()
-            BoundBinaryOperatorKind.Modulo -> left as Int % right as Int
-            BoundBinaryOperatorKind.BitwiseAnd -> left as Int and right as Int
-            BoundBinaryOperatorKind.BitwiseXor -> left as Int xor right as Int
-            BoundBinaryOperatorKind.BitwiseOr -> left as Int or right as Int
-            BoundBinaryOperatorKind.LogicalAnd -> left as Boolean and right as Boolean
-            BoundBinaryOperatorKind.LogicalOr -> left as Boolean or right as Boolean
-            BoundBinaryOperatorKind.LogicalXor -> left as Boolean xor right as Boolean
-            BoundBinaryOperatorKind.Equality -> left == right
-            BoundBinaryOperatorKind.Inequality -> left != right
-            BoundBinaryOperatorKind.GreaterThan -> left as Int > right as Int
-            BoundBinaryOperatorKind.GreaterThanOrEqual -> left as Int >= right as Int
-            BoundBinaryOperatorKind.LessThan -> (left as Int) < (right as Int)
-            BoundBinaryOperatorKind.LessThanOrEqual -> left as Int <= right as Int
-            BoundBinaryOperatorKind.BitwiseShiftLeft -> left as Int shl right as Int
-            BoundBinaryOperatorKind.BitwiseShiftRight -> left as Int shr right as Int
-            BoundBinaryOperatorKind.TypeEquality -> (right as TypeSymbol).isAssignableTo(
-                TypeSymbol.fromValueOrAny(
-                    left
-                )
-            )
-
-        }
+        return BinaryExpressionEvaluator.evaluate(expression.operator.kind, expression.type, left!!, right!!)
 
     }
 
 
     private fun evaluateUnaryExpression(expression: BoundUnaryExpression): Any {
         val operand = evaluateExpression(expression.operand)
-        return when (expression.operator) {
-            BoundUnaryOperator.BoundUnaryIdentityOperator -> operand as Int
-            BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
-            BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
-            BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.fromValueOrAny(operand)
-        }
+        return UnaryExpressionEvaluator.evaluate(expression.operator, operand!!)
     }
 
 

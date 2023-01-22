@@ -116,6 +116,11 @@ internal class CodeGenerator private constructor(
         return statement
     }
 
+    override fun rewriteNopStatement(statement: BoundNopStatement): BoundStatement {
+        codeBuilder.append("nop;")
+        return statement
+    }
+
     override fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
         codeBuilder.append(expression.value)
         return expression

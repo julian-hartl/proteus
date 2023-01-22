@@ -8,7 +8,8 @@ import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
-import lang.proteus.lowering.Lowerer
+import lang.proteus.generation.Lowerer
+import lang.proteus.generation.Optimizer
 import lang.proteus.syntax.parser.SyntaxTree
 
 internal class Compilation internal constructor(val previous: Compilation?, val syntaxTree: SyntaxTree) {
@@ -62,7 +63,9 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
     }
 
     private fun getStatement(): BoundBlockStatement {
-        return Lowerer.lower(globalScope.statement)
+        val lowered = Lowerer.lower(globalScope.statement)
+        val optimized = Optimizer.optimize(lowered)
+        return optimized
     }
 
 

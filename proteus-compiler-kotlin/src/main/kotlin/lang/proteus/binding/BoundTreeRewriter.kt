@@ -13,7 +13,12 @@ internal abstract class BoundTreeRewriter {
             is BoundConditionalGotoStatement -> rewriteConditionalGotoStatement(statement)
             is BoundGotoStatement -> rewriteGotoStatement(statement)
             is BoundLabelStatement -> rewriteLabelStatement(statement)
+            is BoundNopStatement -> rewriteNopStatement(statement)
         }
+    }
+
+    protected open fun rewriteNopStatement(statement: BoundNopStatement): BoundStatement {
+        return statement
     }
 
     protected open fun rewriteLabelStatement(statement: BoundLabelStatement): BoundStatement {
