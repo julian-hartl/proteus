@@ -1,8 +1,10 @@
-package lang.proteus.lowering
+package lang.proteus.generation
 
 import lang.proteus.binding.*
+import lang.proteus.symbols.LocalVariableSymbol
 import lang.proteus.syntax.lexer.token.Operator
 import java.util.*
+
 
 internal class Lowerer private constructor() : BoundTreeRewriter() {
     companion object {
@@ -13,7 +15,13 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         }
     }
 
-    private var labelCount = 0;
+    private var ifCount = 0;
+
+    private data class Loop(val breakLabel: BoundLabel, val continueLabel: BoundLabel)
+
+    private val loopStack: Stack<Loop> = Stack()
+    private val whileCount
+        get() = loopStack.size
 
     /*
     * for <var> in <iterator>
@@ -21,32 +29,38 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     *
     * -->
     * {
-    *   var <var> = <lower>;
-    *   while <var> <= <upper> {
+    *
+    *   var <random_uuid> = <lower>;
+    *   while <random_uuid> <= <upper> {
+    *       var <var> = <random_uuid>;
+    *       <random_uuid> += 1;
     *       <body>;
-    *       <var> += 1;
     *   }
     * }
      */
     override fun rewriteForStatement(node: BoundForStatement): BoundStatement {
-        val variableDeclaration = BoundVariableDeclaration(node.variable, node.lowerBound)
-        val condition = BoundBinaryExpression(
-            BoundVariableExpression(node.variable),
-            node.upperBound,
-            BoundBinaryOperator.bind(Operator.LessThanEquals, node.variable.type, node.variable.type)!!,
-        )
+        val randomUuid = UUID.randomUUID().toString()
+        val loopCounterVariable = LocalVariableSymbol("loop_counter_${randomUuid}", node.variable.type, false)
+        val loopCounterVariableDeclaration = BoundVariableDeclaration(loopCounterVariable, node.lowerBound)
+        val loopValueVariableDeclaration = BoundVariableDeclaration(node.variable, BoundVariableExpression(loopCounterVariable))
         val increment = BoundAssignmentExpression(
-            node.variable,
+            loopCounterVariable,
             BoundLiteralExpression(1),
             Operator.PlusEquals,
+            returnAssignment = false
+        )
+        val condition = BoundBinaryExpression(
+            BoundVariableExpression(loopCounterVariable),
+            node.upperBound,
+            BoundBinaryOperator.bind(Operator.LessThanEquals, loopCounterVariable.type, node.upperBound.type)!!,
         )
         val whileStatement = BoundWhileStatement(
             condition,
-            BoundBlockStatement(listOf(node.body, BoundExpressionStatement(increment)))
+            BoundBlockStatement(listOf(loopValueVariableDeclaration, BoundExpressionStatement(increment), node.body))
         )
         val result = BoundBlockStatement(
             listOf(
-                variableDeclaration,
+                loopCounterVariableDeclaration,
                 whileStatement,
             ),
         )
@@ -80,7 +94,7 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
      */
     override fun rewriteIfStatement(node: BoundIfStatement): BoundStatement {
         if (node.elseStatement == null) {
-            val endLabel = generateLabel()
+            val endLabel = generateLabel("if_${ifCount++}_end")
             val gotoFalse = BoundConditionalGotoStatement(node.condition, endLabel, jumpIfFalse = true)
             val endLabelStatement = BoundLabelStatement(endLabel)
             val result = BoundBlockStatement(
@@ -92,9 +106,10 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
             )
             return rewriteStatement(result)
         }
-        val elseLabel = generateLabel()
+        val labelIfCount = ifCount++
+        val elseLabel = generateLabel("else_${labelIfCount}")
         val goToElse = BoundConditionalGotoStatement(node.condition, elseLabel, jumpIfFalse = true)
-        val endLabel = generateLabel()
+        val endLabel = generateLabel("if_${labelIfCount}_end")
         val goToEnd = BoundGotoStatement(endLabel)
         val elseLabelStatement = BoundLabelStatement(elseLabel)
         val endLabelStatement = BoundLabelStatement(endLabel)
@@ -124,9 +139,9 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     * end:
      */
     override fun rewriteWhileStatement(node: BoundWhileStatement): BoundStatement {
-        val condition = node.condition
-        val checkLabel = generateLabel()
-        val endLabel = generateLabel()
+        val condition = rewriteExpression(node.condition)
+        val checkLabel = generateLabel("while_${whileCount}_condition")
+        val endLabel = generateLabel("while_${whileCount}_end")
         val checkLabelStatement = BoundLabelStatement(checkLabel)
         val goToEnd = BoundConditionalGotoStatement(condition, endLabel, jumpIfFalse = true)
         val gotoCheck = BoundGotoStatement(checkLabel)
@@ -140,12 +155,21 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
                 endLabelStatement,
             ),
         )
-        return rewriteStatement(result)
+        loopStack.push(Loop(endLabel, checkLabel))
+        val statement = rewriteStatement(result)
+        loopStack.pop()
+        return statement
     }
 
-    private fun generateLabel(): BoundLabel {
-        val name = "label${labelCount++}"
-        return BoundLabel(name)
+    private val labelSet = mutableSetOf<BoundLabel>()
+
+    private fun generateLabel(name: String): BoundLabel {
+        val label = BoundLabel(name)
+        val isLegal = labelSet.add(label)
+        if (!isLegal) {
+            throw IllegalStateException("Label $name is already used")
+        }
+        return label
     }
 
     private fun flatten(statement: BoundStatement): BoundBlockStatement {
@@ -191,6 +215,19 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         val right = node.expression
         val operator = BoundBinaryOperator.bind(operator, node.variable.type, node.variable.type)
         val binaryExpression = BoundBinaryExpression(left, right, operator!!)
-        return BoundAssignmentExpression(node.variable, binaryExpression, Operator.Equals)
+        return BoundAssignmentExpression(node.variable, binaryExpression, Operator.Equals, node.returnAssignment)
+    }
+
+    override fun rewriteBreakStatement(statement: BoundBreakStatement): BoundStatement {
+        val loop = loopStack.peek()
+        val result = BoundGotoStatement(loop.breakLabel)
+        return rewriteStatement(result)
+    }
+
+    override fun rewriteContinueStatement(statement: BoundContinueStatement): BoundStatement {
+        val loop = loopStack.peek()
+        val continueLabel = loop.continueLabel
+        val result = BoundGotoStatement(continueLabel)
+        return rewriteStatement(result)
     }
 }

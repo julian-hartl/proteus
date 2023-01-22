@@ -3,7 +3,8 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextSpan
-import lang.proteus.lowering.Lowerer
+import lang.proteus.generation.Lowerer
+import lang.proteus.generation.Optimizer
 import lang.proteus.symbols.*
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.parser.*
@@ -20,6 +21,9 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             }
         }
     }
+
+    private val controlStructureStack: Stack<Keyword> = Stack()
+
 
     companion object {
         fun bindGlobalScope(previous: BoundGlobalScope?, syntax: CompilationUnitSyntax): BoundGlobalScope {
@@ -74,7 +78,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return parent;
         }
 
-        fun bindProgram(globalScope: BoundGlobalScope): BoundProgram {
+        fun bindProgram(globalScope: BoundGlobalScope, optimize: Boolean = true): BoundProgram {
 
             val parentScope = createParentScopes(globalScope)
 
@@ -90,7 +94,8 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 val body = binder.bindStatement(function.declaration!!.body)
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
-                    functionBodies[function] = loweredBody
+                    val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
+                    functionBodies[function] = optimizedBody
                 }
                 diagnostics.addAll(binder.diagnostics)
             }
@@ -168,7 +173,35 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             is IfStatementSyntax -> bindIfStatement(syntax)
             is WhileStatementSyntax -> bindWhileStatement(syntax)
             is ForStatementSyntax -> bindForStatement(syntax)
+            is BreakStatementSyntax -> bindBreakStatement(syntax)
+            is ContinueStatementSyntax -> bindContinueStatement(syntax)
         }
+    }
+
+    private fun bindContinueStatement(syntax: ContinueStatementSyntax): BoundStatement {
+        val isInsideLoop = isInsideLoop()
+        if (!isInsideLoop) {
+            diagnosticsBag.reportContinueOutsideLoop(syntax.span())
+        }
+        return BoundContinueStatement()
+    }
+
+    private fun bindBreakStatement(syntax: BreakStatementSyntax): BoundStatement {
+        if(!isInsideLoop()) {
+            diagnosticsBag.reportBreakOutsideLoop(syntax.span())
+        }
+        return BoundBreakStatement()
+    }
+
+    private fun isInsideLoop(): Boolean {
+        var isInsideLoop = false
+        for (keyword in controlStructureStack) {
+            if (keyword == Keyword.While || keyword == Keyword.For) {
+                isInsideLoop = true
+                break
+            }
+        }
+        return isInsideLoop
     }
 
     private fun bindForStatement(syntax: ForStatementSyntax): BoundStatement {
@@ -193,16 +226,21 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
 
         scope.tryDeclareVariable(variable)
+        controlStructureStack.push(Keyword.For)
         val body = bindStatement(syntax.body)
+        controlStructureStack.pop()
         scope = scope.parent!!
         return BoundForStatement(variable, boundLower, syntax.rangeOperator.token, boundUpper, body)
     }
 
     private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
         val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
+        controlStructureStack.push(Keyword.While)
         val body = bindStatement(syntax.body)
+        controlStructureStack.pop()
         return BoundWhileStatement(condition, body)
     }
+
 
     private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
         val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
@@ -402,7 +440,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return BoundErrorExpression
         }
         val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.span())
-        return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator)
+        return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator, returnAssignment = true)
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {

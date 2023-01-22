@@ -2,6 +2,7 @@ package lang.proteus.generation
 
 import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.TypeSymbol
 import java.io.File
 import java.time.Instant
 
@@ -59,11 +60,13 @@ internal class CodeGenerator private constructor(
 
     override fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {
         codeBuilder.append("(")
+        codeBuilder.append("(")
         rewriteExpression(node.left)
-        codeBuilder.append(" ")
+        codeBuilder.append(") ")
         codeBuilder.append(node.operator.operator.literal)
-        codeBuilder.append(" ")
+        codeBuilder.append(" (")
         rewriteExpression(node.right)
+        codeBuilder.append(")")
         codeBuilder.append(")")
         return node
     }
@@ -116,14 +119,26 @@ internal class CodeGenerator private constructor(
         return statement
     }
 
+    override fun rewriteNopStatement(statement: BoundNopStatement): BoundStatement {
+        codeBuilder.append("nop;")
+        return statement
+    }
+
     override fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
-        codeBuilder.append(expression.value)
+        val value =
+        when (expression.type) {
+            is TypeSymbol.String -> "\"${expression.value}\""
+            else -> expression.value
+        }
+        codeBuilder.append(value)
         return expression
     }
 
     override fun rewriteUnaryExpression(node: BoundUnaryExpression): BoundExpression {
         codeBuilder.append(node.operator.operator.literal)
+        codeBuilder.append("(")
         rewriteExpression(node.operand)
+        codeBuilder.append(")")
         return node
     }
 
@@ -152,4 +167,5 @@ internal class CodeGenerator private constructor(
         codeBuilder.append(";")
         return statement
     }
+
 }

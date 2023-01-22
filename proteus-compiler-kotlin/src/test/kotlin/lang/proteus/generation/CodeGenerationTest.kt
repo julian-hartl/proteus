@@ -1,6 +1,6 @@
 package lang.proteus.generation
 
-import lang.proteus.api.Compilation
+import lang.proteus.binding.Binder
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -11,9 +11,9 @@ import kotlin.test.assertEquals
 class CodeGenerationTest {
     private fun useProgram(input: String): String {
         val parsed = SyntaxTree.parse(input)
-        val compilation = Compilation(parsed)
-        val code = compilation.evaluate(mutableMapOf()).generatedCode
-        return code!!
+        val globalScope = Binder.bindGlobalScope(null, parsed.root)
+        val program = Binder.bindProgram(globalScope, optimize = false)
+        return CodeGenerator.generate(program.globalScope.statement, program.functionBodies)
     }
 
     @ParameterizedTest
@@ -59,10 +59,25 @@ class CodeGenerationTest {
                         fn main() -> Unit {
                             var a = 1;
                             var b = 2;
-                            var c = (a + b);
+                            var c = ((a) + (b));
                         }
                         {
                             main();
+                        }
+                        
+                    """.trimIndent()
+                ),
+                Arguments.of(
+                    """
+                        fn main() {
+                            val test = "test";
+                        }
+                    """.trimIndent(),
+                    """
+                        fn main() -> Unit {
+                            var test = "test";
+                        }
+                        {
                         }
                         
                     """.trimIndent()
@@ -82,14 +97,14 @@ class CodeGenerationTest {
                     """.trimIndent(),
                     """
                         fn main() -> Unit {
-                            gotoIfFalse label0 true;
+                            gotoIfFalse else_0 true;
                             var a = 1;
                             var b = 2;
-                            var c = (a + b);
-                            goto label1;
-                            label0:
+                            var c = ((a) + (b));
+                            goto if_0_end;
+                            else_0:
                             var a = 1;
-                            label1:
+                            if_0_end:
                         }
                         {
                         }

@@ -240,6 +240,9 @@ internal class LexerTest {
                 Arguments.of(Token.Arrow, "->"),
                 Arguments.of(Keyword.Fn, "fn"),
 
+                Arguments.of(Keyword.Break, "break"),
+                Arguments.of(Keyword.Continue, "continue"),
+
                 )
         }
 
