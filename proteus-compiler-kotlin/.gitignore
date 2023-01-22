@@ -126,3 +126,5 @@ gradle-app.setting
 hs_err_pid*
 replay_pid*
 
+/generated
+

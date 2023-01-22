@@ -7,6 +7,7 @@ import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
+import lang.proteus.generation.CodeGenerator
 import lang.proteus.lowering.Lowerer
 import lang.proteus.syntax.parser.SyntaxTree
 
@@ -52,6 +53,7 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         diagnostics.concat(program.diagnostics)
         computationTimeStopper.start()
         val statement = getStatement()
+        CodeGenerator.emitGeneratedCode(statement, program.functionBodies)
         val evaluator = Evaluator(statement, variables, program.functionBodies)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
