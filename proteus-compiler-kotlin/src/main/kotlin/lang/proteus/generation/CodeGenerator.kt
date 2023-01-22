@@ -45,7 +45,7 @@ internal class CodeGenerator private constructor(
                 codeBuilder.delete(codeBuilder.length - 2, codeBuilder.length)
             }
             codeBuilder.append(") ")
-            codeBuilder.append("-> ${declaration.returnTypeClause?.type ?: "Unit"} ")
+            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"} ")
             rewriteBlockStatement(body)
         }
     }
@@ -110,6 +110,16 @@ internal class CodeGenerator private constructor(
         codeBuilder.append(expression.type)
 
         return expression
+    }
+
+    override fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
+        codeBuilder.append("return")
+        if(statement.expression != null) {
+            codeBuilder.append(" ")
+            rewriteExpression(statement.expression)
+        }
+        codeBuilder.append(";")
+        return statement
     }
 
     override fun rewriteGotoStatement(statement: BoundGotoStatement): BoundStatement {

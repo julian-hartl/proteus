@@ -396,7 +396,8 @@ class EvaluationTest {
                     """.trimIndent(), "Hello 2"
                 ),
 
-                Arguments.of("""
+                Arguments.of(
+                    """
                     var a = 1;
                     while true {
                         if a == 10 {
@@ -404,9 +405,11 @@ class EvaluationTest {
                         }
                         a += 1;
                     }
-                """.trimIndent(), 10),
+                """.trimIndent(), 10
+                ),
 
-                Arguments.of("""
+                Arguments.of(
+                    """
                     var a = 0;
                     var b = 0;
                     while true {
@@ -417,7 +420,8 @@ class EvaluationTest {
                         }
                         b += a;
                     }
-                """.trimIndent(), 53),
+                """.trimIndent(), 53
+                ),
 
                 Arguments.of(
                     """
@@ -428,6 +432,30 @@ class EvaluationTest {
                         }
                         i;
                     """.trimIndent(), 5
+                ),
+
+                Arguments.of(
+                    """
+                        fn test() {
+                            return 10;
+                        }
+                        test();
+                    """.trimIndent(), 10, false
+                ),
+
+                Arguments.of(
+                    """
+                        var a = 0;
+                        fn test() {
+                            if a == 0
+                            return
+                            else {
+                                a = 10;
+                            }
+                            
+                        }
+                        test();
+                    """.trimIndent(), 0, false
                 )
             )
         }

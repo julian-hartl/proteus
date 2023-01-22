@@ -175,7 +175,31 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             is ForStatementSyntax -> bindForStatement(syntax)
             is BreakStatementSyntax -> bindBreakStatement(syntax)
             is ContinueStatementSyntax -> bindContinueStatement(syntax)
+            is ReturnStatementSyntax -> bindReturnStatement(syntax)
         }
+    }
+
+    private fun bindReturnStatement(syntax: ReturnStatementSyntax): BoundStatement {
+        val expression = if (syntax.expression == null) null else bindExpression(syntax.expression)
+        if (!isInsideFunction()) {
+            diagnosticsBag.reportReturnNotAllowed(syntax.returnKeyword.span())
+        } else {
+            val functionReturnType = function!!.returnType
+            val actualReturnType = expression?.type ?: TypeSymbol.Unit
+            val conversion = Conversion.classify(actualReturnType, functionReturnType)
+            if (conversion.isNone) {
+                diagnosticsBag.reportInvalidReturnType(
+                    syntax.expression?.span() ?: syntax.returnKeyword.span(),
+                    functionReturnType,
+                    actualReturnType
+                )
+            }
+        }
+        return BoundReturnStatement(expression)
+    }
+
+    private fun isInsideFunction(): Boolean {
+        return function != null
     }
 
     private fun bindContinueStatement(syntax: ContinueStatementSyntax): BoundStatement {

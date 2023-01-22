@@ -172,8 +172,21 @@ class Parser private constructor(
                 return parseBreakStatement()
             }
 
+            is Keyword.Return -> {
+                return parseReturnStatement()
+            }
+
+
             else -> return parseExpressionStatement()
         }
+    }
+
+    private fun parseReturnStatement(): StatementSyntax {
+
+        val returnKeyword = matchToken(Keyword.Return)
+
+        val expression = if (current.token is Token.SemiColon) null else parseExpression()
+        return ReturnStatementSyntax(returnKeyword, expression)
     }
 
     private fun parseBreakStatement(): StatementSyntax {

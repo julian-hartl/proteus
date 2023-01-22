@@ -140,4 +140,12 @@ internal class DiagnosticsBag {
         report("Break statement must be inside a loop", span)
     }
 
+    fun reportInvalidReturnType(textSpan: TextSpan, functionReturnType: TypeSymbol, actualReturnType: TypeSymbol) {
+        report("Invalid return type. Expected '${functionReturnType}', got '${actualReturnType}'", textSpan)
+    }
+
+    fun reportReturnNotAllowed(span: TextSpan) {
+        report("Return statement not allowed here", span)
+    }
+
 }
