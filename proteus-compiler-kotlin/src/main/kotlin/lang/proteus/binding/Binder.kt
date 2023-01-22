@@ -31,7 +31,6 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             val binder = Binder(parentScope ?: BoundScope(null), null)
             val statements = mutableListOf<BoundStatement>()
             val diagnostics = DiagnosticsBag()
-            diagnostics.addAll(binder.diagnostics)
             for (member in syntax.members) {
                 when (member) {
                     is FunctionDeclarationSyntax -> {
@@ -44,6 +43,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                     }
                 }
             }
+            diagnostics.addAll(binder.diagnostics)
             val statement = BoundBlockStatement(statements)
             val variables = binder.scope.getDeclaredVariables()
             val functions = binder.scope.getDeclaredFunctions()
@@ -187,7 +187,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     }
 
     private fun bindBreakStatement(syntax: BreakStatementSyntax): BoundStatement {
-        if(!isInsideLoop()) {
+        if (!isInsideLoop()) {
             diagnosticsBag.reportBreakOutsideLoop(syntax.span())
         }
         return BoundBreakStatement()
@@ -274,9 +274,6 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return boundExpression
         }
         if (conversion.isNone || (conversion.isExplicit && !isCastExplicit)) {
-            if (boundExpression.type == TypeSymbol.Error || expectedType == TypeSymbol.Error) {
-                return BoundErrorExpression
-            }
             diagnosticsBag.reportCannotConvert(textSpan, expectedType, boundExpression.type)
             return BoundErrorExpression
         }
@@ -415,6 +412,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
             val argument: ExpressionSyntax = syntax.arguments.get(index)
             val boundArgument = bindExpression(argument)
+            if (boundArgument.type == TypeSymbol.Error) return BoundErrorExpression
             if (!boundArgument.type.isAssignableTo(parameter.type)) {
                 diagnosticsBag.reportCannotConvert(argument.span(), parameter.type, boundArgument.type)
                 return BoundErrorExpression
@@ -440,7 +438,12 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return BoundErrorExpression
         }
         val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.span())
-        return BoundAssignmentExpression(declaredVariable, convertedExpression, assignmentOperator, returnAssignment = true)
+        return BoundAssignmentExpression(
+            declaredVariable,
+            convertedExpression,
+            assignmentOperator,
+            returnAssignment = true
+        )
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {

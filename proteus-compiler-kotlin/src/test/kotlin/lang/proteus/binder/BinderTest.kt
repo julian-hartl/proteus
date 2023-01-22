@@ -420,4 +420,10 @@ class BinderTest {
         assertTrue(binder.hasErrors())
     }
 
+    @Test
+    fun shouldReportErrorWhenUsingFunctionWithWrongNumberOfArguments() {
+        useExpression("print();")
+        assertTrue(binder.hasErrors())
+    }
+
 }
