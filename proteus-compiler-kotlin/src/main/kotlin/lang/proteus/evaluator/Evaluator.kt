@@ -69,6 +69,10 @@ internal class Evaluator(
                 currentIndex + 1
             }
 
+            is BoundNopStatement -> {
+                currentIndex + 1
+            }
+
             else -> {
                 throwUnsupportedOperation(statement::class.simpleName!!)
             }

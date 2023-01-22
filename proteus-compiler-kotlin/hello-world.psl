@@ -1,19 +1,17 @@
-val count = 1 * 900 ;
-
-fn recursive(n: Int) {
-    println(n);
-    if n == 0
-        println("Done")
-    else
-        recursive(n - 1);
+fn main() {
+    for x in 1 until 10 {
+        var i = -1;
+        if x == 5 {
+            continue;
+        }
+        while(i < 10) {
+            i = i + 1;
+            if i == 5 {
+                continue;
+            }
+            println(i);
+        }
+    }
 }
 
-fn test() {
-    if 1 == (2 - 1)
-        print("Hi")
-    else
-        val x = false and true;
-}
-
-test();
-recursive(count);
+main();

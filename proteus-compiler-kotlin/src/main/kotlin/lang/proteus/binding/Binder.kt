@@ -22,6 +22,9 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
     }
 
+    private val controlStructureStack: Stack<Keyword> = Stack()
+
+
     companion object {
         fun bindGlobalScope(previous: BoundGlobalScope?, syntax: CompilationUnitSyntax): BoundGlobalScope {
             val parentScope = createParentScopes(previous)
@@ -170,7 +173,35 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             is IfStatementSyntax -> bindIfStatement(syntax)
             is WhileStatementSyntax -> bindWhileStatement(syntax)
             is ForStatementSyntax -> bindForStatement(syntax)
+            is BreakStatementSyntax -> bindBreakStatement(syntax)
+            is ContinueStatementSyntax -> bindContinueStatement(syntax)
         }
+    }
+
+    private fun bindContinueStatement(syntax: ContinueStatementSyntax): BoundStatement {
+        val isInsideLoop = isInsideLoop()
+        if (!isInsideLoop) {
+            diagnosticsBag.reportContinueOutsideLoop(syntax.span())
+        }
+        return BoundContinueStatement()
+    }
+
+    private fun bindBreakStatement(syntax: BreakStatementSyntax): BoundStatement {
+        if(!isInsideLoop()) {
+            diagnosticsBag.reportBreakOutsideLoop(syntax.span())
+        }
+        return BoundBreakStatement()
+    }
+
+    private fun isInsideLoop(): Boolean {
+        var isInsideLoop = false
+        for (keyword in controlStructureStack) {
+            if (keyword == Keyword.While || keyword == Keyword.For) {
+                isInsideLoop = true
+                break
+            }
+        }
+        return isInsideLoop
     }
 
     private fun bindForStatement(syntax: ForStatementSyntax): BoundStatement {
@@ -195,6 +226,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
 
         scope.tryDeclareVariable(variable)
+        controlStructureStack.push(Keyword.For)
         val body = bindStatement(syntax.body)
         scope = scope.parent!!
         return BoundForStatement(variable, boundLower, syntax.rangeOperator.token, boundUpper, body)
@@ -202,9 +234,12 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
     private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
         val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
+        controlStructureStack.push(Keyword.While)
         val body = bindStatement(syntax.body)
+
         return BoundWhileStatement(condition, body)
     }
+
 
     private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
         val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)

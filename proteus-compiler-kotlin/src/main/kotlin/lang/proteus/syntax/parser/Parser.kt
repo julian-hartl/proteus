@@ -45,7 +45,7 @@ class Parser private constructor(
 
     internal fun parseCompilationUnit(): CompilationUnitSyntax {
         val members = parseMembers()
-        if(members.isEmpty()){
+        if (members.isEmpty()) {
             diagnosticsBag.reportExpectedGlobalStatement()
         }
         val endOfFileToken = matchToken(Token.EndOfFile)
@@ -164,8 +164,26 @@ class Parser private constructor(
                 return parseForStatement()
             }
 
+            is Keyword.Continue -> {
+                return parseContinueStatement()
+            }
+
+            is Keyword.Break -> {
+                return parseBreakStatement()
+            }
+
             else -> return parseExpressionStatement()
         }
+    }
+
+    private fun parseBreakStatement(): StatementSyntax {
+        val breakKeyword = matchToken(Keyword.Break)
+        return BreakStatementSyntax(breakKeyword)
+    }
+
+    private fun parseContinueStatement(): StatementSyntax {
+        val continueKeyword = matchToken(Keyword.Continue)
+        return ContinueStatementSyntax(continueKeyword)
     }
 
     private fun parseForStatement(): StatementSyntax {

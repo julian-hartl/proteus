@@ -132,4 +132,12 @@ internal class DiagnosticsBag {
         report("Expected a global statement", TextSpan(0, 0))
     }
 
+    fun reportContinueOutsideLoop(span: TextSpan) {
+        report("Continue statement must be inside a loop", span)
+    }
+
+    fun reportBreakOutsideLoop(span: TextSpan) {
+        report("Break statement must be inside a loop", span)
+    }
+
 }
