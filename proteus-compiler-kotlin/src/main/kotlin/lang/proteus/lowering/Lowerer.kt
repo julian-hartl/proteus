@@ -189,8 +189,8 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     ): BoundExpression {
         val left = BoundVariableExpression(node.variable)
         val right = node.expression
-        val operator = BoundBinaryOperator.bind(operator, node.variable.type, node.variable.type)!!
-        val binaryExpression = BoundBinaryExpression(left, right, operator)
+        val operator = BoundBinaryOperator.bind(operator, node.variable.type, node.variable.type)
+        val binaryExpression = BoundBinaryExpression(left, right, operator!!)
         return BoundAssignmentExpression(node.variable, binaryExpression, Operator.Equals)
     }
 }

@@ -33,6 +33,10 @@ internal class LexerTest {
                 Token.Statement,
                 Token.ElseClause,
                 Token.TypeClause,
+                Token.FunctionDeclaration,
+                Token.FunctionReturnType,
+                Token.Parameter,
+                Token.GlobalStatement,
             )
         )
 
@@ -44,10 +48,15 @@ internal class LexerTest {
 
     @Test
     fun `lexer lexes unterminated string`() {
-        val input = "\"hello"
+        val input = """
+            fn main() {
+                let x = "hello;
+            }
+        """.trimIndent()
         val actual = SyntaxTree.parse(input)
         val diagnostics = actual.diagnostics.diagnostics
-        assertEquals(1, diagnostics.size)
+        println(diagnostics)
+        assertEquals(3, diagnostics.size)
         assertEquals("Unterminated string literal", diagnostics[0].message)
     }
 
@@ -228,6 +237,9 @@ internal class LexerTest {
                 Arguments.of(Token.Comma, ","),
                 Arguments.of(Token.Colon, ":"),
 
+                Arguments.of(Token.Arrow, "->"),
+                Arguments.of(Keyword.Fn, "fn"),
+
                 )
         }
 
@@ -282,6 +294,9 @@ internal class LexerTest {
             if (t1Token is Operator.Minus && t2Token is Operator.Equals) return true
             if (t1Token is Operator.Plus && t2Token is Operator.DoubleEquals) return true
             if (t1Token is Operator.Minus && t2Token is Operator.DoubleEquals) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.DoubleGreaterThan) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.GreaterThan) return true
+            if(t1Token is Operator.Minus && t2Token is Operator.GreaterThanEquals) return true
 
             return false
         }

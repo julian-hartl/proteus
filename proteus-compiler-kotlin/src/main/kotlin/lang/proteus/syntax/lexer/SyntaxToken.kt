@@ -1,7 +1,7 @@
 package lang.proteus.syntax.lexer
 
-import lang.proteus.symbols.TypeSymbol
 import lang.proteus.diagnostics.TextSpan
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.token.Token
@@ -12,13 +12,9 @@ class SyntaxToken<T : Token>(
     var position: Int,
     val literal: String,
     val value: Any?,
-    private val usePositionBasedSpan: Boolean = false,
 ) : SyntaxNode() {
     override fun span(): TextSpan {
-        if (usePositionBasedSpan) {
-            return TextSpan(position, literal.length)
-        }
-        return super.span()
+        return TextSpan(position, literal.length)
     }
 
 
@@ -26,7 +22,7 @@ class SyntaxToken<T : Token>(
 
 
         fun endOfFile(position: Int): SyntaxToken<Token.EndOfFile> {
-            return SyntaxToken(Token.EndOfFile, position, "", null, usePositionBasedSpan = true)
+            return SyntaxToken(Token.EndOfFile, position, "", null)
         }
 
         fun typeToken(position: Int, literal: String, type: TypeSymbol): SyntaxToken<Token> {
@@ -54,7 +50,6 @@ class SyntaxToken<T : Token>(
             return Token.Bad.toSyntaxToken(position, literal) as SyntaxToken<Token.Bad>
         }
     }
-
 
 
 }

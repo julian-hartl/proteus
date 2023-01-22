@@ -1,0 +1,9 @@
+fn sayHello() {
+    println("Hello, world!");
+}
+
+fn main() {
+    sayHello();
+}
+
+main();

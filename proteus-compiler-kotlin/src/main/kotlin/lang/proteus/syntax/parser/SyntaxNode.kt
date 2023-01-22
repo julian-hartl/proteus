@@ -13,10 +13,16 @@ abstract class SyntaxNode {
     // Note: This needs to be a method to prevent it from being called when `this::class.memberProperties` is called in the getChildren method,
     // because that would cause an infinite loop.
     open fun span(): TextSpan {
-        val first = getChildren().firstOrNull()
-        val last = getChildren().lastOrNull()
+        val children = getChildren()
+        val first = children.firstOrNull()
+        val last = children.lastOrNull()
         return if (first != null && last != null) {
-            TextSpan.fromBounds(first.span().start, last.span().end)
+            val firstSpan = first.span()
+            val lastSpan = last.span()
+            if(lastSpan.end< firstSpan.start )  {
+                val test = 0;
+            }
+            TextSpan.fromBounds(firstSpan.start, lastSpan.end)
         } else {
             TextSpan(0, token.literal?.length ?: 0)
         }

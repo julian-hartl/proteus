@@ -26,6 +26,8 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             val parentScope = createParentScopes(previous)
             val binder = Binder(parentScope ?: BoundScope(null), null)
             val statements = mutableListOf<BoundStatement>()
+            val diagnostics = DiagnosticsBag()
+            diagnostics.addAll(binder.diagnostics)
             for (member in syntax.members) {
                 when (member) {
                     is FunctionDeclarationSyntax -> {
@@ -41,11 +43,10 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             val statement = BoundBlockStatement(statements)
             val variables = binder.scope.getDeclaredVariables()
             val functions = binder.scope.getDeclaredFunctions()
-            val diagnostics = binder.diagnostics
             if (previous != null) {
-                diagnostics.concat(previous.diagnostics)
+                diagnostics.addAll(previous.diagnostics)
             }
-            return BoundGlobalScope(previous, diagnostics, functions, variables, statement)
+            return BoundGlobalScope(previous, diagnostics.diagnostics, functions, variables, statement)
         }
 
         private fun createParentScopes(scope: BoundGlobalScope?): BoundScope? {
@@ -87,9 +88,10 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
                 val binder = Binder(parentScope ?: BoundScope(null), function)
                 val body = binder.bindStatement(function.declaration!!.body)
-                val loweredBody = Lowerer.lower(body)
-                functionBodies[function] = loweredBody
-
+                if (!binder.hasErrors()) {
+                    val loweredBody = Lowerer.lower(body)
+                    functionBodies[function] = loweredBody
+                }
                 diagnostics.addAll(binder.diagnostics)
             }
 

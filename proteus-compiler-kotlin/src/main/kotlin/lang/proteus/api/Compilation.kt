@@ -49,6 +49,7 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         if (program.diagnostics.hasErrors()) {
             return EvaluationResult(program.diagnostics, null, parseTime, ComputationTime(0))
         }
+        diagnostics.concat(program.diagnostics)
         computationTimeStopper.start()
         val statement = getStatement()
         val evaluator = Evaluator(statement, variables, program.functionBodies)
@@ -60,4 +61,6 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
     private fun getStatement(): BoundBlockStatement {
         return Lowerer.lower(globalScope.statement)
     }
+
+
 }

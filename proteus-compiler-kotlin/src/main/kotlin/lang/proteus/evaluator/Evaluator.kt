@@ -162,6 +162,7 @@ internal class Evaluator(
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
         if (expression.variable.isLocal) {
+            if(locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.name}")
             return locals.peek()[expression.variable.name]!!
         }
         return globals[expression.variable.name]!!

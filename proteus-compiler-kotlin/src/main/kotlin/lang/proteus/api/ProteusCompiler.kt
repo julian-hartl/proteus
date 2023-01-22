@@ -80,8 +80,10 @@ internal class ProteusCompiler() {
         for (diagnostic in diagnostics.diagnostics) {
 
             val lineIndex = sourceText.getLineIndex(diagnostic.span.start)
+            val endLineIndex  = sourceText.getLineIndex(diagnostic.span.end)
             val lineNumber = lineIndex + 1
             val line = sourceText.lines[lineIndex]
+            val endLine = sourceText.lines[endLineIndex]
             val character = diagnostic.span.start - line.start + 1
 
             printer.println()
@@ -89,7 +91,7 @@ internal class ProteusCompiler() {
             val prefixSpan = TextSpan.fromBounds(line.start, diagnostic.span.start)
             val prefix = sourceText.toString(prefixSpan)
             val error = text.substring(diagnostic.span.start, diagnostic.span.end)
-            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, line.endIncludingLineBreak)
+            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, endLine.endIncludingLineBreak)
             val suffix = sourceText.toString(suffixSpan)
 
 

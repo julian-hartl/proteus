@@ -45,6 +45,9 @@ class Parser private constructor(
 
     internal fun parseCompilationUnit(): CompilationUnitSyntax {
         val members = parseMembers()
+        if(members.isEmpty()){
+            diagnosticsBag.reportExpectedGlobalStatement()
+        }
         val endOfFileToken = matchToken(Token.EndOfFile)
         return CompilationUnitSyntax(members, endOfFileToken)
     }
@@ -126,7 +129,15 @@ class Parser private constructor(
 
     private fun parseGlobalStatement(): GlobalStatementSyntax {
         val statement = parseStatement()
-        val semiColon = matchToken(Token.SemiColon)
+        if (statement !is VariableDeclarationSyntax) {
+            if (statement !is ExpressionStatementSyntax || statement.expression !is CallExpressionSyntax) {
+                diagnosticsBag.reportInvalidTopLevelStatement(statement.span())
+            }
+        }
+        val semiColon = if (peek(-1).token !is Token.CloseBrace) {
+            matchToken(Token.SemiColon)
+        } else null
+
         return GlobalStatementSyntax(statement, semiColon)
     }
 
@@ -256,9 +267,6 @@ class Parser private constructor(
             val expression = parseAssigmentExpression()
             return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
         }
-        if (peek(1).token is Keyword.As) {
-            return parseTypeCastExpression()
-        }
         return parseBinaryExpression()
     }
 
@@ -286,7 +294,7 @@ class Parser private constructor(
         while (true) {
             val precedence = currentOperator?.precedence ?: 0
 
-            if(current.token is Keyword.As){
+            if (current.token is Keyword.As) {
                 return parseTypeCastExpression(left)
             }
 

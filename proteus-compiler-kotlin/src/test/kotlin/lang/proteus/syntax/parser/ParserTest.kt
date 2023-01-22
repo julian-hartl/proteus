@@ -4,6 +4,7 @@ import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -25,13 +26,13 @@ internal class ParserTest {
     fun `should parse function call`() {
         val text = """
             
-                foo(x, y)
+                foo(x, y);
             
         """.trimIndent()
         val expression = SyntaxTree.parse(text)
         val errorAsserter = ErrorAsserter(expression.diagnostics)
         errorAsserter.assertNoErrors()
-        val e = AssertingEnumerator.fromExpression(expression.root.statement)
+        val e = AssertingEnumerator.fromExpression(expression.root.members[0])
         val classExpression = e.assertExpression(CallExpressionSyntax::class)
         val argumentsIterator = classExpression.arguments.iterator()
         val firstArgument = argumentsIterator.next()
@@ -42,6 +43,7 @@ internal class ParserTest {
         e.assertToken(Token.Identifier, "foo")
         e.assertToken(Operator.OpenParenthesis, "(")
         e.assertToken(Operator.CloseParenthesis, ")")
+        e.assertToken(Token.SemiColon, ";")
         e.dispose()
     }
 
@@ -54,7 +56,7 @@ internal class ParserTest {
         val expression = SyntaxTree.parse(text)
         if (expression.hasErrors()) return;
 
-        val e = AssertingEnumerator.fromExpression(expression.root.statement)
+        val e = AssertingEnumerator.fromExpression(expression.root.members[0])
         if (precedence1 >= precedence2) {
             e.assertExpression(BinaryExpressionSyntax::class)
             e.assertExpression(BinaryExpressionSyntax::class)

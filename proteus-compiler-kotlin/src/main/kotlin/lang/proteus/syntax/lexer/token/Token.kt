@@ -36,7 +36,7 @@ sealed class Token(open val literal: kotlin.String? = null) {
     object Parameter : Token()
 
     fun toSyntaxToken(position: Int, literal: kotlin.String, value: Any? = null): SyntaxToken<Token> {
-        return SyntaxToken(this, position, literal, value, usePositionBasedSpan = true)
+        return SyntaxToken(this, position, literal, value)
     }
 
     override fun toString(): kotlin.String {

@@ -2,8 +2,9 @@ package lang.proteus.binder
 
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
+import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
-import lang.proteus.symbols.VariableSymbol
+import lang.proteus.syntax.parser.GlobalStatementSyntax
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText
@@ -21,19 +22,16 @@ class BinderTest {
 
     private fun useExpression(input: String) {
         val expression = parseExpression(input)
-        val variables: MutableMap<String, Any> = mutableMapOf(
-            TEST_VARIABLE_NAME to TEST_VARIABLE_VALUE
-        )
         val scope = BoundScope(null)
-        scope.tryDeclareVariable(VariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
-        binder = Binder(scope)
+        scope.tryDeclareVariable(GlobalVariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
+        binder = Binder(scope, null)
         binder.bindStatement(expression)
     }
 
     private fun parseExpression(input: String): StatementSyntax {
         val parser = Parser(SourceText.from(input))
         val compilationUnitSyntax = parser.parseCompilationUnit()
-        return compilationUnitSyntax.statement
+        return (compilationUnitSyntax.members[0] as GlobalStatementSyntax).statement
     }
 
     @Test
@@ -369,7 +367,8 @@ class BinderTest {
 
     @Test
     fun `should not allow duplicate declaration`() {
-        useExpression("""
+        useExpression(
+            """
             {
                 val a = 1
                 {
@@ -377,7 +376,8 @@ class BinderTest {
                     val x = 2
                 }
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
         assertTrue(binder.hasErrors())
     }
 
@@ -396,23 +396,28 @@ class BinderTest {
 
     @Test
     fun shouldNotAllowPlusEqualsAssignmentWithWrongType() {
-        useExpression("""
+        useExpression(
+            """
             {
                 var a = 1
                 a += true
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
         assertTrue(binder.hasErrors())
     }
 
     @Test
     fun shouldNotAllowMinusEqualsAssignmentWithWrongType() {
-        useExpression("""
+        useExpression(
+            """
             {
                 var a = 1
                 a -= true
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
         assertTrue(binder.hasErrors())
     }
+
 }

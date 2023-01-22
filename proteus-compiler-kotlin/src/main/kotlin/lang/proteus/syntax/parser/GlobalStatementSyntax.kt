@@ -6,7 +6,7 @@ import lang.proteus.syntax.parser.statements.StatementSyntax
 
 internal class GlobalStatementSyntax(
     val statement: StatementSyntax,
-    val semicolonToken: SyntaxToken<Token.SemiColon>,
+    val semicolonToken: SyntaxToken<Token.SemiColon>?,
 ) : MemberSyntax() {
     override val token: Token
         get() = Token.GlobalStatement

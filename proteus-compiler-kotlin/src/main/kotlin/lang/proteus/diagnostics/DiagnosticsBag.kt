@@ -124,4 +124,12 @@ internal class DiagnosticsBag {
         report("Main function must have no parameters", mainFunction.declaration!!.span())
     }
 
+    fun reportInvalidTopLevelStatement(span: TextSpan) {
+        report("Invalid top-level statement", span)
+    }
+
+    fun reportExpectedGlobalStatement() {
+        report("Expected a global statement", TextSpan(0, 0))
+    }
+
 }
