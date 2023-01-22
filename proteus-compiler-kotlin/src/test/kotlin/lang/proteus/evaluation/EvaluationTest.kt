@@ -354,7 +354,47 @@ class EvaluationTest {
                             random(random as Int, 1);
                         }
                     """.trimIndent(), 1
-                )
+                ),
+
+                Arguments.of(
+                    """
+                        "test" == "test";
+                    """.trimIndent(), true
+                ),
+                Arguments.of(
+                    """
+                        "test" == "tewest";
+                    """.trimIndent(), false
+                ),
+                Arguments.of(
+                    """
+                        "test" != "test";
+                    """.trimIndent(), false
+                ),
+                Arguments.of(
+                    """
+                        "test" != "teest";
+                    """.trimIndent(), true
+                ),
+                Arguments.of(
+                    """
+                        "test" + "test";
+                    """.trimIndent(), "testtest"
+                ),
+                Arguments.of(
+                    """
+                        val hello = "Hello";
+                        val name = "World";
+                        hello + " " + name;
+                    """.trimIndent(), "Hello World"
+                ),
+                Arguments.of(
+                    """
+                        val hello = "Hello";
+                        val number = 2;
+                        hello + " " + number as String;
+                    """.trimIndent(), "Hello 2"
+                ),
             )
         }
     }
