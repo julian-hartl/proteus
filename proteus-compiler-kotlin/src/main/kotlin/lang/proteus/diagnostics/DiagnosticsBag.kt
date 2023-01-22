@@ -3,6 +3,7 @@ package lang.proteus.diagnostics
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
@@ -143,5 +144,10 @@ internal class DiagnosticsBag {
     fun reportReturnNotAllowed(span: TextSpan) {
         report("Return statement not allowed here", span)
     }
+
+    fun reportAllCodePathsMustReturn(span: TextSpan) {
+        report("Not all code paths return a value. Hint: To fix this, you could add a return statement.", span)
+    }
+
 
 }

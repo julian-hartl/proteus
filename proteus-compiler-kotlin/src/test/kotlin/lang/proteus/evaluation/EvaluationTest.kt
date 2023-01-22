@@ -485,6 +485,22 @@ class EvaluationTest {
                         val x = a;
                     """.trimIndent(),
                 0,
+            ),
+
+            Arguments.of(
+                """
+                    fn sum(n: Int) -> Int {
+                        var i = n;
+                        var result = 0;
+                        while true {
+                            if i == 0 return result;
+                            result += result + i;
+                            i -= 1;
+                        }
+                    }
+
+                    val sum = sum(90);
+                """.trimIndent(), 4050
             )
         )
 

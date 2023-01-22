@@ -426,4 +426,43 @@ class BinderTest {
         assertTrue(binder.hasErrors())
     }
 
+    @Test
+    fun shouldHaveErrorWhenFunctionDoesNotReturnAValue() {
+        useExpression("""
+            fn test() -> Int {
+            }
+        """.trimIndent());
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldHaveErrorWhenFunctionsNeverReturns() {
+        useExpression("""
+            fn test() -> Int {
+                while(true) {
+                }
+            }
+        """.trimIndent());
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotHaveErrorWhenFunctionsReturns() {
+        useExpression("""
+            fn sum(n: Int) -> Int {
+                var i = n;
+                var sum = 0;
+                while true {
+                    if i == 0 {
+                        break;
+                    }
+                    sum += i;
+                    i -= 1;
+                }
+                return sum;
+           }
+        """.trimIndent());
+        assertTrue(!binder.hasErrors())
+    }
+
 }

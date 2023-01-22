@@ -1,11 +1,12 @@
-fn fibonacci(n: Int) -> Int {
-    if n == 0 {
-        return 0;
-    } else if n == 1 {
-        return 1;
-    } else {
-        return fibonacci(n - 1) + fibonacci(n - 2);
+val a = 10;
+fn main() {
+    var a = 5;
+    while (a > 0) {
+        println(a);
+        a = a - 1;
+        var a = 10;
     }
+    return;
 }
 
-print(fibonacci(30));
+main();

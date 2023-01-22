@@ -1,10 +1,10 @@
 package lang.proteus.api
 
-import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
+import lang.proteus.binding.ControlFlowGraph
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
@@ -45,9 +45,10 @@ internal class Compilation internal constructor(val previous: Compilation?, val 
         val diagnostics = globalScope.diagnostics
         val parseTime = computationTimeStopper.stop()
         if (diagnostics.hasErrors()) {
-            return EvaluationResult(diagnostics, null, parseTime )
+            return EvaluationResult(diagnostics, null, parseTime)
         }
         val program = Binder.bindProgram(globalScope)
+
         if (program.diagnostics.hasErrors()) {
             return EvaluationResult(program.diagnostics, null, parseTime)
         }

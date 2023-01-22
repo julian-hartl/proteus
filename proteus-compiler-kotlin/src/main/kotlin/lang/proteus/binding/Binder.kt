@@ -95,6 +95,9 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
                     val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
+                    if (!ControlFlowGraph.allPathsReturn(optimizedBody)) {
+                        diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.span())
+                    }
                     functionBodies[function] = optimizedBody
                 }
                 diagnostics.addAll(binder.diagnostics)

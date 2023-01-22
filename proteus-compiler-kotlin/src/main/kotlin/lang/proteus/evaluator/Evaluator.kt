@@ -128,7 +128,7 @@ internal class Evaluator(
 
     }
 
-    private fun evaluateConversionExpression(expression: BoundConversionExpression): Any? {
+    private fun evaluateConversionExpression(expression: BoundConversionExpression): Any {
         val value = evaluateExpression(expression.expression)
         return convert(value!!, expression.type)
     }

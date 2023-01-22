@@ -13,7 +13,10 @@ internal class CodeGenerator private constructor(
     BoundTreeRewriter() {
 
     companion object {
-        fun generate(statement: BoundStatement, functionBodies: Map<FunctionSymbol, BoundBlockStatement>): String {
+        fun generate(
+            statement: BoundStatement,
+            functionBodies: Map<FunctionSymbol, BoundBlockStatement> = mapOf(),
+        ): String {
             val generator = CodeGenerator(functionBodies = functionBodies)
             return generator.generateCode(statement)
         }
@@ -114,7 +117,7 @@ internal class CodeGenerator private constructor(
 
     override fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
         codeBuilder.append("return")
-        if(statement.expression != null) {
+        if (statement.expression != null) {
             codeBuilder.append(" ")
             rewriteExpression(statement.expression)
         }
@@ -136,10 +139,10 @@ internal class CodeGenerator private constructor(
 
     override fun rewriteLiteralExpression(expression: BoundLiteralExpression<*>): BoundExpression {
         val value =
-        when (expression.type) {
-            is TypeSymbol.String -> "\"${expression.value}\""
-            else -> expression.value
-        }
+            when (expression.type) {
+                is TypeSymbol.String -> "\"${expression.value}\""
+                else -> expression.value
+            }
         codeBuilder.append(value)
         return expression
     }
