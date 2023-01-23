@@ -7,6 +7,7 @@ import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.*
 import lang.proteus.syntax.parser.statements.*
+import java.io.File
 
 internal class Parser(
     private val syntaxTree: SyntaxTree,
@@ -51,9 +52,23 @@ internal class Parser(
 
     private fun parseMembers(): List<MemberSyntax> {
         val members = mutableListOf<MemberSyntax>()
+        var hasParsedOtherThanImport = false
         while (current.token != Token.EndOfFile) {
             val start = current
             val member = parseMember()
+            if (member is ImportStatementSyntax) {
+                if (hasParsedOtherThanImport) {
+                    diagnosticsBag.reportImportMustBeFirstStatement(member)
+                } else {
+                    val importedFile = File(member.absolutePath)
+                    if (!importedFile.exists()) {
+                        diagnosticsBag.reportImportedFileNotFound(member.absolutePath, member.location)
+                    }
+
+                }
+            } else {
+                hasParsedOtherThanImport = true
+            }
             members.add(member)
             if (current == start) {
                 nextToken()
@@ -64,10 +79,18 @@ internal class Parser(
 
     private fun parseMember(): MemberSyntax {
         return when (current.token) {
-
+            is Keyword.Import -> parseImportStatement()
             is Keyword.Fn -> parseFunctionDeclaration()
             else -> parseGlobalStatement()
         }
+    }
+
+    private fun parseImportStatement(): MemberSyntax {
+        val importKeyword = matchToken(Keyword.Import)
+        val filePath = matchToken(Token.String)
+        val semicolon = matchToken(Token.SemiColon)
+        val absolutePath = File(syntaxTree.sourceText.fileName).parent + File.separator + filePath.literal
+        return ImportStatementSyntax(importKeyword, filePath, semicolon, absolutePath, syntaxTree)
     }
 
     private fun parseFunctionDeclaration(): MemberSyntax {
@@ -114,7 +137,7 @@ internal class Parser(
                 if (current.token is Token.Comma) {
                     parameters.add(matchToken(Token.Comma))
                 }
-            } while (current.token == Token.Comma)
+            } while (current.token != Operator.CloseParenthesis)
         }
         return SeparatedSyntaxList(parameters)
     }
@@ -205,7 +228,16 @@ internal class Parser(
         val rangeOperator = matchToken(Keyword.Until)
         val upperBound = parseExpression()
         val body = parseStatement()
-        return ForStatementSyntax(forToken, identifier, inKeyword, lowerBound, rangeOperator, upperBound, body, syntaxTree)
+        return ForStatementSyntax(
+            forToken,
+            identifier,
+            inKeyword,
+            lowerBound,
+            rangeOperator,
+            upperBound,
+            body,
+            syntaxTree
+        )
     }
 
     private fun parseWhileStatement(): StatementSyntax {

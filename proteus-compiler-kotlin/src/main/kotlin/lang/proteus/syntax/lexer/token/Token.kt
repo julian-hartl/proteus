@@ -35,6 +35,7 @@ internal sealed class Token(open val literal: kotlin.String? = null) {
     object FunctionDeclaration : Token()
     object FunctionReturnType : Token()
     object Parameter : Token()
+    object ImportStatement : Token()
 
     fun toSyntaxToken(
         position: Int,

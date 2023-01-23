@@ -37,6 +37,7 @@ internal class LexerTest {
                 Token.FunctionReturnType,
                 Token.Parameter,
                 Token.GlobalStatement,
+                Token.ImportStatement,
             )
         )
 
@@ -244,6 +245,7 @@ internal class LexerTest {
                 Arguments.of(Keyword.Break, "break"),
                 Arguments.of(Keyword.Continue, "continue"),
                 Arguments.of(Keyword.Return, "return"),
+                Arguments.of(Keyword.Import, "import"),
 
                 )
         }

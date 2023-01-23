@@ -1,0 +1,9 @@
+import "sum.psl";
+
+fn multiply(x: Int, y: Int) -> Int {
+    var result = 0;
+    for i in 0 until y {
+        result = sum(result, x);
+    }
+    return result;
+}

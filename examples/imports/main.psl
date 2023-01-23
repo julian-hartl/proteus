@@ -1,0 +1,8 @@
+import "multiply.psl";
+fn main() {
+    const a = 2;
+    const b = 3;
+    val summed = sum(a, b);
+}
+
+main();

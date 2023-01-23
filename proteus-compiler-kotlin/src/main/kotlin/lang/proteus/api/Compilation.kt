@@ -12,29 +12,23 @@ import lang.proteus.generation.Lowerer
 import lang.proteus.generation.Optimizer
 import lang.proteus.syntax.parser.SyntaxTree
 
-internal class Compilation internal constructor(val previous: Compilation?, val syntaxTree: SyntaxTree) {
+internal class Compilation(val syntaxTree: SyntaxTree) {
 
     private var _globalScope: BoundGlobalScope? = null
 
-    constructor(syntaxTree: SyntaxTree) : this(null, syntaxTree) {
-
-    }
 
     val globalScope: BoundGlobalScope
         get() {
             if (_globalScope == null) {
                 synchronized(this) {
                     if (_globalScope == null) {
-                        _globalScope = Binder.bindGlobalScope(previous?.globalScope, syntaxTree.root)
+                        _globalScope = Binder.bindGlobalScope(null, syntaxTree.root)
                     }
                 }
             }
             return _globalScope!!
         }
 
-    fun continueWith(syntaxTree: SyntaxTree): Compilation {
-        return Compilation(this, syntaxTree)
-    }
 
     fun evaluate(
         variables: MutableMap<String, Any>,

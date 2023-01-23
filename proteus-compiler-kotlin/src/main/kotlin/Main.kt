@@ -6,7 +6,6 @@ import lang.proteus.printing.PrinterColor
 
 fun main(args: Array<String>) {
     Functions;
-    val verbose = args.contains("-v")
     val filePath = args.getOrNull(0)
     val consolePrinter = ConsolePrinter()
     if (filePath == null) {

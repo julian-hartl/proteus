@@ -1,8 +1,10 @@
 package lang.proteus.diagnostics
 
+import lang.proteus.binding.ImportGraphNode
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.parser.ImportStatementSyntax
 
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
@@ -163,6 +165,19 @@ internal class DiagnosticsBag {
 
     fun reportUnreachableCode(textLocation: TextLocation) {
         report("Unreachable code detected", textLocation, diagnosticType = DiagnosticType.Warning)
+    }
+
+    fun reportImportMustBeFirstStatement(member: ImportStatementSyntax) {
+        report("Import statement must be first statement in file", member.location)
+    }
+
+    fun reportImportedFileNotFound(filePath: String, textLocation: TextLocation) {
+        report("Imported file '$filePath' not found", textLocation)
+    }
+
+    fun reportCircularDependency(location: TextLocation, cycle: List<ImportGraphNode>) {
+        val cycleString = cycle.joinToString(" -> ") { it.fileName }
+        report("Circular dependency detected: $cycleString", location)
     }
 
 

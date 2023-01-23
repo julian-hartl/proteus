@@ -26,20 +26,52 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
 
     companion object {
+
+        private fun createImportGraph(graph: ImportGraph, fileName: String): ImportGraph {
+            val importSyntaxTree = SyntaxTree.load(fileName)
+            val members = importSyntaxTree.root.members
+            val importStatements = members.filterIsInstance<ImportStatementSyntax>()
+            for (importStatement in importStatements) {
+                val importPath = importStatement.absolutePath
+                val hasAddedEdge = graph.addEdge(fileName, importPath)
+                if (hasAddedEdge)
+                    createImportGraph(graph, importPath)
+            }
+            return graph
+        }
+
         fun bindGlobalScope(previous: BoundGlobalScope?, syntax: CompilationUnitSyntax): BoundGlobalScope {
             val parentScope = createParentScopes(previous)
             val binder = Binder(parentScope ?: BoundScope(null), null)
             val statements = mutableListOf<BoundStatement>()
             val diagnostics = DiagnosticsBag()
-            for (member in syntax.members) {
-                when (member) {
-                    is FunctionDeclarationSyntax -> {
-                        binder.bindFunctionDeclaration(member)
-                    }
+            val importGraph = createImportGraph(ImportGraph(), syntax.location.fileName)
+            val cycles = importGraph.findCycles()
+            for (cycle in cycles) {
+                val location = syntax.members.first().location
+                diagnostics.reportCircularDependency(location, cycle)
+            }
+            if (!diagnostics.diagnostics.hasErrors()) {
+                for (member in syntax.members) {
+                    when (member) {
+                        is FunctionDeclarationSyntax -> {
+                            binder.bindFunctionDeclaration(member)
+                        }
 
-                    is GlobalStatementSyntax -> {
-                        val statement = binder.bindStatement(member.statement)
-                        statements.add(statement)
+                        is GlobalStatementSyntax -> {
+                            val statement = binder.bindStatement(member.statement)
+                            statements.add(statement)
+                        }
+
+                        is ImportStatementSyntax -> {
+                            val importResult = ImportReplacer.replaceImport(member)
+                            diagnostics.addAll(importResult.diagnostics)
+                            statements.addAll(importResult.statements)
+                            for (variable in importResult.globalScope.variables)
+                                binder.scope.tryDeclareVariable(variable)
+                            for (function in importResult.globalScope.functions)
+                                binder.scope.tryDeclareFunction(function)
+                        }
                     }
                 }
             }

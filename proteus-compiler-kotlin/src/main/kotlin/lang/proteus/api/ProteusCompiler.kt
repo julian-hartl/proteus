@@ -15,14 +15,13 @@ import java.lang.management.MemoryUsage
 
 internal class ProteusCompiler() {
 
-    private var previous: Compilation? = null
 
     private val variables = mutableMapOf<String, Any>()
 
     private val computationTimeStopper = ComputationTimeStopper()
     fun compile(fileName: String): CompilationResult {
         val tree = SyntaxTree.load(fileName)
-        return compileTree(tree, tree.sourceText, generateCode = false)
+        return compileTree(tree, tree.sourceText, generateCode = true)
     }
 
     fun compileText(text: String, generateCode: Boolean = false): CompilationResult {
@@ -48,7 +47,7 @@ internal class ProteusCompiler() {
         val lexerTime = computationTimeStopper.stop()
 
 
-        val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
+        val compilation = Compilation(tree)
         val compilationResult = compilation.evaluate(variables, generateCode = generateCode) {
             DiagnosticsPrinter.printDiagnostics(it, sourceText)
         }
@@ -57,7 +56,6 @@ internal class ProteusCompiler() {
             DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics, sourceText)
         } else {
             printResult(compilationResult)
-            previous = compilation
         }
         val performance = CompilationPerformance(
             lexerTime,

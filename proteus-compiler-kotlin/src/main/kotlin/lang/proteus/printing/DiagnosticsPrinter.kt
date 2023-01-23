@@ -17,6 +17,7 @@ object DiagnosticsPrinter {
         }
         for (diagnostic in orderedDiagnostics) {
 
+            val fileName = diagnostic.location.fileName
             val span = diagnostic.span
             val lineIndex = sourceText.getLineIndex(span.start)
             val endLineIndex = sourceText.getLineIndex(span.end)
@@ -36,7 +37,7 @@ object DiagnosticsPrinter {
 
             val color = if (diagnostic.isError) PrinterColor.RED else PrinterColor.YELLOW
             printer.setColor(color)
-            printer.print("(${lineNumber}:${character}) ")
+            printer.print("$fileName(${lineNumber}:${character}) ")
             printer.println(diagnostic.message)
             printer.reset()
 

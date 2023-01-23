@@ -6,6 +6,7 @@ import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.GlobalStatementSyntax
+import lang.proteus.syntax.parser.ImportStatementSyntax
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.syntax.parser.statements.StatementSyntax
 import lang.proteus.text.SourceText
@@ -48,6 +49,7 @@ class BinderTest {
         return when (member) {
             is GlobalStatementSyntax -> member.statement
             is FunctionDeclarationSyntax -> member.body
+            is ImportStatementSyntax -> TODO()
         }
     }
 
