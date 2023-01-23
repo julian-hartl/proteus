@@ -1,8 +1,9 @@
 package lang.proteus.syntax.lexer.token
 
 import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.parser.SyntaxTree
 
-sealed class Token(open val literal: kotlin.String? = null) {
+internal sealed class Token(open val literal: kotlin.String? = null) {
 
     object EndOfFile : Token()
     object Identifier : Token()
@@ -35,8 +36,13 @@ sealed class Token(open val literal: kotlin.String? = null) {
     object FunctionReturnType : Token()
     object Parameter : Token()
 
-    fun toSyntaxToken(position: Int, literal: kotlin.String, value: Any? = null): SyntaxToken<Token> {
-        return SyntaxToken(this, position, literal, value)
+    fun toSyntaxToken(
+        position: Int,
+        literal: kotlin.String,
+        value: Any? = null,
+        syntaxTree: SyntaxTree,
+    ): SyntaxToken<Token> {
+        return SyntaxToken(this, position, literal, value, syntaxTree)
     }
 
     override fun toString(): kotlin.String {

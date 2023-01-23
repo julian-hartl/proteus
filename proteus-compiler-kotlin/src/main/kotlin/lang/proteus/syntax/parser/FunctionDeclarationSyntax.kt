@@ -13,8 +13,8 @@ internal class FunctionDeclarationSyntax(
     val parameters: SeparatedSyntaxList<ParameterSyntax>,
     val closeParenthesisToken: SyntaxToken<Operator.CloseParenthesis>,
     val returnTypeClause: FunctionReturnTypeSyntax?,
-    val body: BlockStatementSyntax,
-) : MemberSyntax() {
+    val body: BlockStatementSyntax, syntaxTree: SyntaxTree,
+) : MemberSyntax(syntaxTree) {
     override val token: Token
         get() = Token.FunctionDeclaration
 }

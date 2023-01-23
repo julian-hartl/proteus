@@ -2,7 +2,7 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
-import lang.proteus.diagnostics.TextSpan
+import lang.proteus.diagnostics.TextLocation
 import lang.proteus.generation.Lowerer
 import lang.proteus.generation.Optimizer
 import lang.proteus.symbols.*
@@ -97,12 +97,12 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                     val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
                     val graph = ControlFlowGraph.createAndOutput(optimizedBody)
                     if (!graph.allPathsReturn()) {
-                        diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.span())
+                        diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
                     } else {
                         if (function.returnType !is TypeSymbol.Unit) {
                             for (incoming in graph.end.incoming) {
                                 if (incoming.statements.lastOrNull() !is BoundReturnStatement) {
-                                    diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.span())
+                                    diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
                                 }
                             }
                         }
@@ -110,7 +110,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                     for (block in graph.blocks) {
                         if (block.isEnd != true && block.isStart != true && block.incoming.size == 0) {
                             // todo: better error message
-                            diagnostics.reportUnreachableCode(function.declaration.identifier.span());
+                            diagnostics.reportUnreachableCode(function.declaration.identifier.location);
                         }
                     }
                     functionBodies[function] = optimizedBody
@@ -143,7 +143,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         for (parameterSyntax in function.parameters) {
             val name = parameterSyntax.identifier.literal
             if (!seenParameters.add(name)) {
-                diagnosticsBag.reportParameterAlreadyDeclared(parameterSyntax.identifier.span(), name)
+                diagnosticsBag.reportParameterAlreadyDeclared(parameterSyntax.identifier.location, name)
                 continue
             }
             val type = bindTypeClause(parameterSyntax.typeClause)
@@ -154,7 +154,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val returnType = bindOptionalReturnTypeClause(function.returnTypeClause) ?: TypeSymbol.Unit
         val functionSymbol = FunctionSymbol(function.identifier.literal, parameters, returnType, function)
         if (scope.tryDeclareFunction(functionSymbol) == null) {
-            diagnosticsBag.reportFunctionAlreadyDeclared(function.identifier.span(), function.identifier.literal)
+            diagnosticsBag.reportFunctionAlreadyDeclared(function.identifier.location, function.identifier.literal)
         }
     }
 
@@ -168,7 +168,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindReturnTypeClause(returnTypeClause: FunctionReturnTypeSyntax): TypeSymbol {
         val type = TypeSymbol.fromName(returnTypeClause.type.literal)
         if (type == null) {
-            diagnosticsBag.reportUndefinedType(returnTypeClause.type.span(), returnTypeClause.type.literal)
+            diagnosticsBag.reportUndefinedType(returnTypeClause.type.location, returnTypeClause.type.literal)
             return TypeSymbol.Error
         }
         return type
@@ -195,14 +195,14 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindReturnStatement(syntax: ReturnStatementSyntax): BoundStatement {
         val statement = if (syntax.expression == null) null else bindExpression(syntax.expression)
         if (!isInsideFunction()) {
-            diagnosticsBag.reportReturnNotAllowed(syntax.returnKeyword.span())
+            diagnosticsBag.reportReturnNotAllowed(syntax.returnKeyword.location)
         } else {
             val functionReturnType = function!!.returnType
             val actualReturnType = statement?.type ?: TypeSymbol.Unit
             val conversion = Conversion.classify(actualReturnType, functionReturnType)
             if (conversion.isNone) {
                 diagnosticsBag.reportInvalidReturnType(
-                    syntax.expression?.span() ?: syntax.returnKeyword.span(),
+                    syntax.expression?.location ?: syntax.returnKeyword.location,
                     functionReturnType,
                     actualReturnType
                 )
@@ -218,14 +218,14 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindContinueStatement(syntax: ContinueStatementSyntax): BoundStatement {
         val isInsideLoop = isInsideLoop()
         if (!isInsideLoop) {
-            diagnosticsBag.reportContinueOutsideLoop(syntax.span())
+            diagnosticsBag.reportContinueOutsideLoop(syntax.location)
         }
         return BoundContinueStatement()
     }
 
     private fun bindBreakStatement(syntax: BreakStatementSyntax): BoundStatement {
         if (!isInsideLoop()) {
-            diagnosticsBag.reportBreakOutsideLoop(syntax.span())
+            diagnosticsBag.reportBreakOutsideLoop(syntax.location)
         }
         return BoundBreakStatement()
     }
@@ -246,11 +246,11 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val boundUpper = bindExpression(syntax.upperBound)
 
         if (boundLower.type != TypeSymbol.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.lowerBound.span(), TypeSymbol.Int, boundLower.type)
+            diagnosticsBag.reportCannotConvert(syntax.lowerBound.location, TypeSymbol.Int, boundLower.type)
         }
 
         if (boundUpper.type != TypeSymbol.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.upperBound.span(), TypeSymbol.Int, boundUpper.type)
+            diagnosticsBag.reportCannotConvert(syntax.upperBound.location, TypeSymbol.Int, boundUpper.type)
         }
 
         scope = BoundScope(scope)
@@ -259,7 +259,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val variable = LocalVariableSymbol(name, TypeSymbol.Int, isFinal = true)
         val declaredVariable = scope.tryLookupVariable(name)
         if (declaredVariable != null) {
-            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), name)
+            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.location, name)
         }
 
         scope.tryDeclareVariable(variable)
@@ -296,14 +296,14 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         isCastExplicit: Boolean = false,
     ): BoundExpression {
         val boundExpression = bindExpression(syntax)
-        val textSpan = syntax.span()
+        val textSpan = syntax.location
         return bindConversion(boundExpression, expectedType, textSpan, isCastExplicit)
     }
 
     private fun bindConversion(
         boundExpression: BoundExpression,
         expectedType: TypeSymbol,
-        textSpan: TextSpan,
+        textLocation: TextLocation,
         isCastExplicit: Boolean = false,
     ): BoundExpression {
         val conversion = Conversion.classify(boundExpression.type, expectedType)
@@ -311,7 +311,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return boundExpression
         }
         if (conversion.isNone || (conversion.isExplicit && !isCastExplicit)) {
-            diagnosticsBag.reportCannotConvert(textSpan, expectedType, boundExpression.type)
+            diagnosticsBag.reportCannotConvert(textLocation, expectedType, boundExpression.type)
             return BoundErrorExpression
         }
 
@@ -324,7 +324,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val isFinal = isConst || syntax.keyword is Keyword.Val
         val typeClause = bindOptionalTypeClause(syntax.typeClauseSyntax)
         val type = typeClause ?: initializer.type
-        val convertedInitializer = bindConversion(initializer, type, syntax.initializer.span())
+        val convertedInitializer = bindConversion(initializer, type, syntax.initializer.location)
         val symbol = if (function == null) GlobalVariableSymbol(
             syntax.identifier.literal,
             type,
@@ -335,12 +335,12 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 symbol.constantValue = convertedInitializer
             }
             if (symbol.constantValue == null) {
-                diagnosticsBag.reportExpectedConstantExpression(syntax.initializer.span())
+                diagnosticsBag.reportExpectedConstantExpression(syntax.initializer.location)
             }
         }
         val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol) == null
         if (isVariableAlreadyDeclared) {
-            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
+            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.location, syntax.identifier.literal)
         }
         return BoundVariableDeclaration(symbol, convertedInitializer)
     }
@@ -363,7 +363,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindTypeClause(syntax: TypeClauseSyntax): TypeSymbol {
         val type = TypeSymbol.fromName(syntax.type.literal)
         if (type == null) {
-            diagnosticsBag.reportUndefinedType(syntax.type.span(), syntax.type.literal)
+            diagnosticsBag.reportUndefinedType(syntax.type.location, syntax.type.literal)
             return TypeSymbol.Error
         }
         return type
@@ -414,7 +414,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindCastExpression(syntax: CastExpressionSyntax): BoundExpression {
         val type = TypeSymbol.fromName(syntax.typeToken.literal)
         if (type == null) {
-            diagnosticsBag.reportUndefinedType(syntax.typeToken.span(), syntax.typeToken.literal)
+            diagnosticsBag.reportUndefinedType(syntax.typeToken.location, syntax.typeToken.literal)
             return BoundErrorExpression
         }
 
@@ -425,7 +425,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindExpression(syntax: ExpressionSyntax, canBeVoid: Boolean = false): BoundExpression {
         val result = bindExpressionInternal(syntax)
         if (!canBeVoid && result.type == TypeSymbol.Unit) {
-            val span = syntax.span()
+            val span = syntax.location
             diagnosticsBag.reportExpressionMustHaveValue(span)
             return BoundErrorExpression
         }
@@ -438,12 +438,13 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val functionSymbol =
             declaredFunction ?: ProteusExternalFunction.lookup(functionName)?.symbol
         if (functionSymbol == null) {
-            diagnosticsBag.reportUndefinedFunction(syntax.functionIdentifier.span(), functionName)
+            diagnosticsBag.reportUndefinedFunction(syntax.functionIdentifier.location, functionName)
             return BoundErrorExpression
         }
         if (syntax.arguments.count < functionSymbol.parameters.size) {
+            val location = syntax.closeParenthesis.location.copy(span = syntax.functionIdentifier.span())
             diagnosticsBag.reportTooFewArguments(
-                TextSpan(syntax.closeParenthesis.span().start - 1, 1),
+                location,
                 functionName,
                 functionSymbol.parameters.size,
                 syntax.arguments.count
@@ -452,11 +453,9 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
         if (syntax.arguments.count > functionSymbol.parameters.size) {
             val count = syntax.arguments.count - functionSymbol.parameters.size
-            val start = syntax.arguments.get(syntax.arguments.count - count).span().start
-            val end = syntax.arguments.get(syntax.arguments.count - 1).span().end
-            val span = TextSpan(start, end - start)
+            val location = syntax.arguments.get(syntax.arguments.count - count).location
             diagnosticsBag.reportTooManyArguments(
-                span,
+                location,
                 functionName,
                 functionSymbol.parameters.size,
                 syntax.arguments.count
@@ -470,7 +469,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             val boundArgument = bindExpression(argument)
             if (boundArgument.type == TypeSymbol.Error) return BoundErrorExpression
             if (!boundArgument.type.isAssignableTo(parameter.type)) {
-                diagnosticsBag.reportCannotConvert(argument.span(), parameter.type, boundArgument.type)
+                diagnosticsBag.reportCannotConvert(argument.location, parameter.type, boundArgument.type)
                 return BoundErrorExpression
             }
             boundParameters.add(boundArgument)
@@ -486,14 +485,14 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         val variableName = syntax.identifierToken.literal
         val declaredVariable = scope.tryLookupVariable(variableName)
         if (declaredVariable == null) {
-            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), variableName)
+            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, variableName)
             return boundExpression
         }
         if (declaredVariable.isReadOnly) {
-            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.span(), variableName)
+            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.location, variableName)
             return BoundErrorExpression
         }
-        val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.span())
+        val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.location)
         return BoundAssignmentExpression(
             declaredVariable,
             convertedExpression,
@@ -509,7 +508,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
         val variable = scope.tryLookupVariable(name)
         if (variable == null) {
-            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.span(), name)
+            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, name)
             return BoundErrorExpression
         }
         return BoundVariableExpression(variable)
@@ -528,7 +527,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         if (binaryOperator == null) {
             diagnosticsBag.reportBinaryOperatorMismatch(
                 binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.span(),
+                binaryExpression.operatorToken.location,
                 boundLeft.type,
                 boundRight.type
             )
@@ -548,7 +547,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         if (boundOperator == null) {
             diagnosticsBag.reportUnaryOperatorMismatch(
                 unaryExpression.operatorSyntaxToken.literal,
-                unaryExpression.operatorSyntaxToken.span(),
+                unaryExpression.operatorSyntaxToken.location,
                 boundOperand.type
             )
             return BoundErrorExpression

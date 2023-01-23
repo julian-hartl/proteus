@@ -23,7 +23,7 @@ class EvaluationTest {
             {([]
         """
 
-        ProteusCompiler().compile(text)
+        ProteusCompiler().compileText(text)
     }
 
     @ParameterizedTest
@@ -93,7 +93,7 @@ class EvaluationTest {
 
     private fun assertValue(input: String, expectedValue: Any) {
         val compiler = ProteusCompiler()
-        val result = compiler.compile(input, generateCode = false)
+        val result = compiler.compileText(input, generateCode = false)
         assertEquals(
             expectedValue,
             result.evaluationResult?.value,

@@ -42,7 +42,7 @@ class BinderTest {
     }
 
     private fun parseExpression(input: String): StatementSyntax {
-        val parser = Parser(SourceText.from(input))
+        val parser = Parser(input)
         val compilationUnitSyntax = parser.parseCompilationUnit()
         val member = compilationUnitSyntax.members[0]
         return when (member) {

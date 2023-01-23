@@ -1,6 +1,7 @@
 package lang.proteus.syntax.lexer.token
 
 import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.parser.SyntaxTree
 
 internal sealed class Keyword(override val literal: kotlin.String) : Token() {
 
@@ -16,8 +17,8 @@ internal sealed class Keyword(override val literal: kotlin.String) : Token() {
 
     }
 
-    fun toSyntaxToken(position: Int): SyntaxToken<Keyword> {
-        return super.toSyntaxToken(position, literal, null) as SyntaxToken<Keyword>
+    fun toSyntaxToken(position: Int, syntaxTree: SyntaxTree): SyntaxToken<Keyword> {
+        return super.toSyntaxToken(position, literal, null, syntaxTree) as SyntaxToken<Keyword>
     }
 
 

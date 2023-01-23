@@ -1,23 +1,19 @@
 package lang.proteus.syntax.parser
 
 import lang.proteus.binding.types.KotlinBinaryString
-import lang.proteus.diagnostics.Diagnosable
-import lang.proteus.diagnostics.Diagnostics
-import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.diagnostics.*
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.*
 import lang.proteus.syntax.parser.statements.*
-import lang.proteus.text.SourceText
 
-class Parser private constructor(
-    private val input: SourceText,
-    private var tokens: Array<SyntaxToken<*>>,
-    private var position: Int,
-    private val diagnosticsBag: DiagnosticsBag,
+internal class Parser(
+    private val syntaxTree: SyntaxTree,
 ) : Diagnosable {
-
+    private var tokens: Array<SyntaxToken<*>> = arrayOf()
+    private var position: Int = 0
+    private val diagnosticsBag: DiagnosticsBag = DiagnosticsBag()
 
     companion object {
         private fun parseInput(lexer: Lexer): Array<SyntaxToken<*>> {
@@ -35,10 +31,10 @@ class Parser private constructor(
 
     }
 
-    constructor(input: String) : this(SourceText.from(input))
+    constructor(input: String) : this(SyntaxTree.parse(input))
 
-    constructor(sourceText: SourceText) : this(sourceText, arrayOf(), 0, DiagnosticsBag()) {
-        val lexer = Lexer(sourceText)
+    init {
+        val lexer = Lexer(syntaxTree)
         this.tokens = parseInput(lexer)
         diagnosticsBag.concat(lexer.diagnosticsBag)
     }
@@ -46,10 +42,11 @@ class Parser private constructor(
     internal fun parseCompilationUnit(): CompilationUnitSyntax {
         val members = parseMembers()
         if (members.isEmpty()) {
-            diagnosticsBag.reportExpectedGlobalStatement()
+            val location = TextLocation(syntaxTree.sourceText, TextSpan(0, 0))
+            diagnosticsBag.reportExpectedGlobalStatement(location)
         }
         val endOfFileToken = matchToken(Token.EndOfFile)
-        return CompilationUnitSyntax(members, endOfFileToken)
+        return CompilationUnitSyntax(members, endOfFileToken, syntaxTree)
     }
 
     private fun parseMembers(): List<MemberSyntax> {
@@ -88,7 +85,8 @@ class Parser private constructor(
             parameterList,
             closeParenthesis,
             returnTypeSyntax,
-            body
+            body,
+            syntaxTree
         )
     }
 
@@ -103,7 +101,7 @@ class Parser private constructor(
     private fun parseFunctionReturnType(): FunctionReturnTypeSyntax {
         val arrow = matchToken(Token.Arrow)
         val type = matchToken(Token.Type)
-        return FunctionReturnTypeSyntax(arrow, type)
+        return FunctionReturnTypeSyntax(arrow, type, syntaxTree)
     }
 
 
@@ -124,21 +122,21 @@ class Parser private constructor(
     private fun parseParameter(): ParameterSyntax {
         val identifier = matchToken(Token.Identifier)
         val typeClauseSyntax = parseTypeClause()
-        return ParameterSyntax(identifier, typeClauseSyntax)
+        return ParameterSyntax(identifier, typeClauseSyntax, syntaxTree)
     }
 
     private fun parseGlobalStatement(): GlobalStatementSyntax {
         val statement = parseStatement()
         if (statement !is VariableDeclarationSyntax) {
             if (statement !is ExpressionStatementSyntax || statement.expression !is CallExpressionSyntax) {
-                diagnosticsBag.reportInvalidTopLevelStatement(statement.span())
+                diagnosticsBag.reportInvalidTopLevelStatement(statement.location)
             }
         }
         val semiColon = if (peek(-1).token !is Token.CloseBrace) {
             matchToken(Token.SemiColon)
         } else null
 
-        return GlobalStatementSyntax(statement, semiColon)
+        return GlobalStatementSyntax(statement, semiColon, syntaxTree)
     }
 
 
@@ -186,17 +184,17 @@ class Parser private constructor(
         val returnKeyword = matchToken(Keyword.Return)
 
         val statement = if (current.token is Token.SemiColon) null else parseExpression()
-        return ReturnStatementSyntax(returnKeyword, statement)
+        return ReturnStatementSyntax(returnKeyword, statement, syntaxTree)
     }
 
     private fun parseBreakStatement(): StatementSyntax {
         val breakKeyword = matchToken(Keyword.Break)
-        return BreakStatementSyntax(breakKeyword)
+        return BreakStatementSyntax(breakKeyword, syntaxTree)
     }
 
     private fun parseContinueStatement(): StatementSyntax {
         val continueKeyword = matchToken(Keyword.Continue)
-        return ContinueStatementSyntax(continueKeyword)
+        return ContinueStatementSyntax(continueKeyword, syntaxTree)
     }
 
     private fun parseForStatement(): StatementSyntax {
@@ -207,14 +205,14 @@ class Parser private constructor(
         val rangeOperator = matchToken(Keyword.Until)
         val upperBound = parseExpression()
         val body = parseStatement()
-        return ForStatementSyntax(forToken, identifier, inKeyword, lowerBound, rangeOperator, upperBound, body)
+        return ForStatementSyntax(forToken, identifier, inKeyword, lowerBound, rangeOperator, upperBound, body, syntaxTree)
     }
 
     private fun parseWhileStatement(): StatementSyntax {
         val whileKeyword = matchToken(Keyword.While)
         val condition = parseExpression()
         val body = parseStatement()
-        return WhileStatementSyntax(whileKeyword, condition, body)
+        return WhileStatementSyntax(whileKeyword, condition, body, syntaxTree)
     }
 
     private fun parseIfStatement(): StatementSyntax {
@@ -222,13 +220,13 @@ class Parser private constructor(
         val condition = parseExpression()
         val thenStatement = parseStatement()
         val elseClause = parseElseClause()
-        return IfStatementSyntax(ifKeyword, condition, thenStatement, elseClause)
+        return IfStatementSyntax(ifKeyword, condition, thenStatement, elseClause, syntaxTree)
     }
 
     private fun parseElseClause() = if (current.token == Keyword.Else) {
         val elseKeyword = matchToken(Keyword.Else)
         val elseStatement = parseStatement()
-        ElseClauseSyntax(elseKeyword, elseStatement)
+        ElseClauseSyntax(elseKeyword, elseStatement, syntaxTree)
     } else {
         null
     }
@@ -239,7 +237,7 @@ class Parser private constructor(
         val typeClause = parseOptionalTypeClause()
         val equals = matchToken(Operator.Equals)
         val expression = parseExpression()
-        return VariableDeclarationSyntax(keyword, identifier, typeClause, equals, expression)
+        return VariableDeclarationSyntax(keyword, identifier, typeClause, equals, expression, syntaxTree)
     }
 
     private fun parseOptionalTypeClause(): TypeClauseSyntax? {
@@ -254,7 +252,7 @@ class Parser private constructor(
     private fun parseTypeClause(): TypeClauseSyntax {
         val colonToken = matchToken(Token.Colon)
         val type = matchToken(Token.Type)
-        return TypeClauseSyntax(colonToken, type)
+        return TypeClauseSyntax(colonToken, type, syntaxTree)
     }
 
     private fun parseBlockStatement(): BlockStatementSyntax {
@@ -278,12 +276,12 @@ class Parser private constructor(
             }
         }
         val closeBrace = matchToken(Token.CloseBrace)
-        return BlockStatementSyntax(openBrace, statements, closeBrace)
+        return BlockStatementSyntax(openBrace, statements, closeBrace, syntaxTree)
     }
 
     private fun parseExpressionStatement(): StatementSyntax {
         val expression = parseExpression()
-        return ExpressionStatementSyntax(expression)
+        return ExpressionStatementSyntax(expression, syntaxTree)
     }
 
 
@@ -296,7 +294,12 @@ class Parser private constructor(
             val identifierToken = matchToken(Token.Identifier)
             val assignmentOperator = matchOneToken(Operators.assignmentOperators, expect = Operator.Equals)
             val expression = parseAssigmentExpression()
-            return AssignmentExpressionSyntax(identifierToken, assignmentOperator, expression)
+            return AssignmentExpressionSyntax(
+                identifierToken,
+                assignmentOperator,
+                expression,
+                syntaxTree
+            )
         }
         return parseBinaryExpression()
     }
@@ -306,7 +309,8 @@ class Parser private constructor(
         return CastExpressionSyntax(
             castExpression,
             matchToken(Keyword.As),
-            matchToken(Token.Type)
+            matchToken(Token.Type),
+            syntaxTree
         )
     }
 
@@ -317,7 +321,7 @@ class Parser private constructor(
             if (unaryOperatorPrecedence != 0 && unaryOperatorPrecedence >= parentPrecedence) {
                 val operatorToken = nextToken()
                 val operand = parseBinaryExpression(unaryOperatorPrecedence)
-                UnaryExpressionSyntax(operatorToken as SyntaxToken<Operator>, operand)
+                UnaryExpressionSyntax(operatorToken as SyntaxToken<Operator>, operand, syntaxTree)
             } else {
                 parsePrimaryExpression()
             }
@@ -339,7 +343,12 @@ class Parser private constructor(
 
             val operatorToken = nextToken()
             val right = parseBinaryExpression(precedence)
-            left = BinaryExpressionSyntax(left, operatorToken as SyntaxToken<Operator>, right)
+            left = BinaryExpressionSyntax(
+                left,
+                operatorToken as SyntaxToken<Operator>,
+                right,
+                syntaxTree
+            )
         }
 
         return left
@@ -381,7 +390,7 @@ class Parser private constructor(
 
 
             else -> {
-                diagnosticsBag.reportUnexpectedToken(current.span(), current.token, Token.Expression)
+                diagnosticsBag.reportUnexpectedToken(current.location, current.token, Token.Expression)
                 return parseNameOrCallExpression()
             }
         }
@@ -390,7 +399,11 @@ class Parser private constructor(
 
     private fun parseStringExpression(): ExpressionSyntax {
         val token = matchToken(Token.String)
-        return LiteralExpressionSyntax(token, token.literal)
+        return LiteralExpressionSyntax(
+            token,
+            token.literal,
+            syntaxTree
+        )
     }
 
     private fun parseBitStringLiteral(): ExpressionSyntax {
@@ -398,14 +411,18 @@ class Parser private constructor(
             val numberToken = matchToken(Token.Number)
             val bToken = matchToken(Token.Identifier)
             if (bToken.literal.length != 1) {
-                diagnosticsBag.reportInvalidNumberStringIdentifier(bToken.span(), bToken.literal)
+                diagnosticsBag.reportInvalidNumberStringIdentifier(bToken.location, bToken.literal)
             } else {
                 val binaryToken = matchToken(Token.Number)
                 val binaryString = binaryToken.literal
                 if (!isValidBinaryString(binaryString)) {
-                    diagnosticsBag.reportInvalidBinaryString(binaryToken.span(), binaryString)
+                    diagnosticsBag.reportInvalidBinaryString(binaryToken.location, binaryString)
                 }
-                return LiteralExpressionSyntax(numberToken, KotlinBinaryString(binaryString))
+                return LiteralExpressionSyntax(
+                    numberToken,
+                    KotlinBinaryString(binaryString),
+                    syntaxTree
+                )
             }
         }
         return parseNumberExpression()
@@ -425,16 +442,16 @@ class Parser private constructor(
         val literalToken = nextToken()
         val chars = literalToken.literal.toCharArray()
         if (chars.size != 1) {
-            diagnosticsBag.reportInvalidCharLiteral(literalToken.literal, literalToken.span())
+            diagnosticsBag.reportInvalidCharLiteral(literalToken.literal, literalToken.location)
         }
         matchToken(Token.SingleQuote)
-        return LiteralExpressionSyntax(token, chars[0])
+        return LiteralExpressionSyntax(token, chars[0], syntaxTree)
     }
 
     private fun parseTypeExpression(): LiteralExpressionSyntax {
         val token = current
         nextToken()
-        return LiteralExpressionSyntax(token, token.value as TypeSymbol)
+        return LiteralExpressionSyntax(token, token.value as TypeSymbol, syntaxTree)
     }
 
     private fun parseNumberExpression(): LiteralExpressionSyntax {
@@ -443,25 +460,25 @@ class Parser private constructor(
         if (numberToken.value !is Int) {
             diagnosticsBag.reportInvalidNumber(
                 numberToken.value.toString(),
-                numberToken.span(),
+                numberToken.location,
                 TypeSymbol.Int
             )
         }
-        return LiteralExpressionSyntax(numberToken, numberToken.value as Int)
+        return LiteralExpressionSyntax(numberToken, numberToken.value as Int, syntaxTree)
     }
 
     private fun parseParenthesizedExpression(): ParenthesizedExpressionSyntax {
         val left = nextToken()
         val expression = parseExpression()
         val right = matchToken(Operator.CloseParenthesis)
-        return ParenthesizedExpressionSyntax(left, expression, right)
+        return ParenthesizedExpressionSyntax(left, expression, right, syntaxTree)
     }
 
     private fun parseBooleanLiteral(): LiteralExpressionSyntax {
         val value = current.token == Keyword.True
         val token = current
         nextToken()
-        return LiteralExpressionSyntax(token, value)
+        return LiteralExpressionSyntax(token, value, syntaxTree)
     }
 
     private fun parseNameOrCallExpression(): ExpressionSyntax {
@@ -478,7 +495,7 @@ class Parser private constructor(
         val openParenthesis = matchToken(Operator.OpenParenthesis)
         val arguments = parseArguments()
         val closeParenthesis = matchToken(Operator.CloseParenthesis)
-        return CallExpressionSyntax(token, openParenthesis, arguments, closeParenthesis)
+        return CallExpressionSyntax(token, openParenthesis, arguments, closeParenthesis, syntaxTree)
     }
 
     private fun parseArguments(): SeparatedSyntaxList<ExpressionSyntax> {
@@ -497,7 +514,7 @@ class Parser private constructor(
     }
 
     private fun parseNameExpression(token: SyntaxToken<Token.Identifier>) =
-        NameExpressionSyntax(token)
+        NameExpressionSyntax(token, syntaxTree)
 
     private fun <T : Token> matchOneToken(tokens: List<T>, expect: T? = null): SyntaxToken<T> {
         for (token in tokens) {
@@ -514,11 +531,11 @@ class Parser private constructor(
         }
         diagnosticsBag.reportUnexpectedToken(
 
-            current.span(),
+            current.location,
             actual = current.token,
             expected = token,
         )
-        return SyntaxToken(token, current.position, current.literal, null)
+        return SyntaxToken(token, current.position, current.literal, null, syntaxTree)
     }
 
     private fun nextToken(): SyntaxToken<*> {

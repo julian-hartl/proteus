@@ -2,10 +2,9 @@ package lang.proteus.text
 
 import lang.proteus.diagnostics.TextSpan
 
-class SourceText private constructor(private val text: String) {
+class SourceText(private val text: String, val fileName: String) {
 
     val lines: List<TextLine> = parseLines(this, text)
-
 
     val length get() = text.length
 
@@ -44,7 +43,7 @@ class SourceText private constructor(private val text: String) {
 
     companion object {
         fun from(text: String): SourceText {
-            return SourceText(text)
+            return SourceText(text, "<none>")
         }
 
         fun parseLines(sourceText: SourceText, text: String): List<TextLine> {

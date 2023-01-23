@@ -7,71 +7,76 @@ import lang.proteus.syntax.lexer.token.Token
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
 
-    fun reportInvalidNumber(literal: String, span: TextSpan, type: TypeSymbol) {
-        report("Invalid literal for type $type: '${literal}'", span)
+    fun reportInvalidNumber(literal: String, textLocation: TextLocation, type: TypeSymbol) {
+        report("Invalid literal for type $type: '${literal}'", textLocation)
     }
 
-    fun reportBadCharacter(character: Char, position: Int) {
-        report("Bad character '${character}'", TextSpan.fromLiteral(position, character.toString()))
+    fun reportBadCharacter(character: Char, textLocation: TextLocation) {
+        report("Bad character '${character}'", textLocation)
     }
 
-    fun reportUnexpectedToken(span: TextSpan, actual: Token, expected: Token) {
-        report("Unexpected token <${actual}>, expected <${expected}>", span)
+    fun reportUnexpectedToken(textLocation: TextLocation, actual: Token, expected: Token) {
+        report("Unexpected token <${actual}>, expected <${expected}>", textLocation)
     }
 
-    fun reportBinaryOperatorMismatch(literal: String, span: TextSpan, leftType: TypeSymbol, rightType: TypeSymbol) {
+    fun reportBinaryOperatorMismatch(
+        literal: String,
+        textLocation: TextLocation,
+        leftType: TypeSymbol,
+        rightType: TypeSymbol,
+    ) {
         report(
             "Operator '${literal}' is not defined for types '${leftType}' and '${rightType}'",
-            span
+            textLocation
         )
     }
 
-    fun reportUnaryOperatorMismatch(literal: String, span: TextSpan, type: TypeSymbol) {
-        report("Operator '${literal}' is not defined for type '${type}'", span)
+    fun reportUnaryOperatorMismatch(literal: String, textLocation: TextLocation, type: TypeSymbol) {
+        report("Operator '${literal}' is not defined for type '${type}'", textLocation)
     }
 
-    fun reportUnresolvedReference(span: TextSpan, name: String) {
-        report("Unresolved reference: $name", span)
+    fun reportUnresolvedReference(textLocation: TextLocation, name: String) {
+        report("Unresolved reference: $name", textLocation)
     }
 
-    private fun report(message: String, span: TextSpan, diagnosticType: DiagnosticType = DiagnosticType.Error) {
-        mutableDiagnostics.add(Diagnostic(message, span, diagnosticType))
+    private fun report(message: String, location: TextLocation, diagnosticType: DiagnosticType = DiagnosticType.Error) {
+        mutableDiagnostics.add(Diagnostic(message, location, diagnosticType))
     }
 
     fun concat(other: DiagnosticsBag) {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
-    fun reportCannotConvert(span: TextSpan, expectedType: TypeSymbol, actualType: TypeSymbol) {
-        report("Cannot convert type '${actualType}' to '${expectedType}'", span)
+    fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol) {
+        report("Cannot convert type '${actualType}' to '${expectedType}'", textLocation)
     }
 
-    fun reportVariableAlreadyDeclared(span: TextSpan, variableName: String) {
-        report("Variable '$variableName' already declared", span)
+    fun reportVariableAlreadyDeclared(textLocation: TextLocation, variableName: String) {
+        report("Variable '$variableName' already declared", textLocation)
     }
 
-    fun reportFinalVariableCannotBeReassigned(span: TextSpan, variableName: String) {
-        report("Val cannot be reassigned", span)
+    fun reportFinalVariableCannotBeReassigned(textLocation: TextLocation, variableName: String) {
+        report("Val cannot be reassigned", textLocation)
     }
 
-    fun reportInvalidCharLiteral(literal: String, span: TextSpan) {
-        report("Invalid character literal '$literal'", span)
+    fun reportInvalidCharLiteral(literal: String, textLocation: TextLocation) {
+        report("Invalid character literal '$literal'", textLocation)
     }
 
-    fun reportInvalidBinaryString(span: TextSpan, binaryString: String) {
-        report("Invalid binary string '$binaryString'", span)
+    fun reportInvalidBinaryString(textLocation: TextLocation, binaryString: String) {
+        report("Invalid binary string '$binaryString'", textLocation)
     }
 
-    fun reportInvalidNumberStringIdentifier(span: TextSpan, literal: String) {
-        report("Invalid number string identifier '$literal'", span)
+    fun reportInvalidNumberStringIdentifier(textLocation: TextLocation, literal: String) {
+        report("Invalid number string identifier '$literal'", textLocation)
     }
 
-    fun reportUnterminatedString(start: Int) {
-        report("Unterminated string literal", TextSpan(start, 1))
+    fun reportUnterminatedString(textLocation: TextLocation) {
+        report("Unterminated string literal", location = textLocation)
     }
 
-    fun reportIllegalEscape(current: Char, position: Int) {
-        report("Illegal escape sequence '$current'", TextSpan.fromLiteral(position, current.toString()))
+    fun reportIllegalEscape(current: Char, textLocation: TextLocation) {
+        report("Illegal escape sequence '$current'", textLocation)
     }
 
 
@@ -88,72 +93,76 @@ internal class DiagnosticsBag {
         }
     }
 
-    fun reportUndefinedFunction(span: TextSpan, literal: String) {
-        report("Undefined function '$literal'", span)
+    fun reportUndefinedFunction(textLocation: TextLocation, literal: String) {
+        report("Undefined function '$literal'", textLocation)
     }
 
-    fun reportTooFewArguments(span: TextSpan, literal: String, size: Int, count: Int) {
-        report("Too few arguments for function '$literal'. Expected $size, got $count", span)
+    fun reportTooFewArguments(textLocation: TextLocation, literal: String, size: Int, count: Int) {
+        report("Too few arguments for function '$literal'. Expected $size, got $count", textLocation)
     }
 
-    fun reportTooManyArguments(span: TextSpan, literal: String, size: Int, count: Int) {
-        report("Too many arguments for function '$literal'. Expected $size, got $count", span)
+    fun reportTooManyArguments(textLocation: TextLocation, literal: String, size: Int, count: Int) {
+        report("Too many arguments for function '$literal'. Expected $size, got $count", textLocation)
     }
 
-    fun reportExpressionMustHaveValue(span: TextSpan) {
-        report("Expression must have a value", span)
+    fun reportExpressionMustHaveValue(textLocation: TextLocation) {
+        report("Expression must have a value", textLocation)
     }
 
-    fun reportUndefinedType(span: TextSpan, literal: String) {
-        report("Undefined type '$literal'", span)
+    fun reportUndefinedType(textLocation: TextLocation, literal: String) {
+        report("Undefined type '$literal'", textLocation)
     }
 
-    fun reportParameterAlreadyDeclared(span: TextSpan, name: String) {
-        report("Parameter '$name' already declared", span)
+    fun reportParameterAlreadyDeclared(textLocation: TextLocation, name: String) {
+        report("Parameter '$name' already declared", textLocation)
     }
 
-    fun reportFunctionAlreadyDeclared(span: TextSpan, literal: String) {
-        report("Function '$literal' already declared", span)
+    fun reportFunctionAlreadyDeclared(textLocation: TextLocation, literal: String) {
+        report("Function '$literal' already declared", textLocation)
     }
 
     fun reportMainMustHaveNoParameters(mainFunction: FunctionSymbol) {
-        report("Main function must have no parameters", mainFunction.declaration!!.span())
+        report("Main function must have no parameters", mainFunction.declaration!!.location)
     }
 
-    fun reportInvalidTopLevelStatement(span: TextSpan) {
-        report("Invalid top-level statement", span)
+    fun reportInvalidTopLevelStatement(textLocation: TextLocation) {
+        report("Invalid top-level statement", textLocation)
     }
 
-    fun reportExpectedGlobalStatement() {
-        report("Expected a global statement", TextSpan(0, 0))
+    fun reportExpectedGlobalStatement(textLocation: TextLocation) {
+        report("Expected a global statement", textLocation)
     }
 
-    fun reportContinueOutsideLoop(span: TextSpan) {
-        report("Continue statement must be inside a loop", span)
+    fun reportContinueOutsideLoop(textLocation: TextLocation) {
+        report("Continue statement must be inside a loop", textLocation)
     }
 
-    fun reportBreakOutsideLoop(span: TextSpan) {
-        report("Break statement must be inside a loop", span)
+    fun reportBreakOutsideLoop(textLocation: TextLocation) {
+        report("Break statement must be inside a loop", textLocation)
     }
 
-    fun reportInvalidReturnType(textSpan: TextSpan, functionReturnType: TypeSymbol, actualReturnType: TypeSymbol) {
-        report("Invalid return type. Expected '${functionReturnType}', got '${actualReturnType}'", textSpan)
+    fun reportInvalidReturnType(
+        textLocation: TextLocation,
+        functionReturnType: TypeSymbol,
+        actualReturnType: TypeSymbol,
+    ) {
+        report("Invalid return type. Expected '${functionReturnType}', got '${actualReturnType}'", textLocation)
     }
 
-    fun reportReturnNotAllowed(span: TextSpan) {
-        report("Return statement not allowed here", span)
+    fun reportReturnNotAllowed(textLocation: TextLocation) {
+        report("Return statement not allowed here", textLocation)
     }
 
-    fun reportAllCodePathsMustReturn(span: TextSpan) {
-        report("Not all code paths return a value. Hint: To fix this, you could add a return statement.", span)
+    fun reportAllCodePathsMustReturn(textLocation: TextLocation) {
+        report("Not all code paths return a value. Hint: To fix this, you could add a return statement.", textLocation)
     }
 
-    fun reportExpectedConstantExpression(span: TextSpan) {
-        report("Expected a constant expression", span)
+    fun reportExpectedConstantExpression(textLocation: TextLocation) {
+        report("Expected a constant expression", textLocation)
     }
 
-    fun reportUnreachableCode(span: TextSpan) {
-        report("Unreachable code detected", span, diagnosticType = DiagnosticType.Warning)
+    fun reportUnreachableCode(textLocation: TextLocation) {
+        report("Unreachable code detected", textLocation, diagnosticType = DiagnosticType.Warning)
     }
 
 

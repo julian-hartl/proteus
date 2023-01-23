@@ -5,9 +5,9 @@ import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Token
 
 
-internal data class CallExpressionSyntax(
+internal  class CallExpressionSyntax(
     val functionIdentifier: SyntaxToken<Token.Identifier>,
     val openParenthesis: SyntaxToken<Operator.OpenParenthesis>,
     val arguments: SeparatedSyntaxList<ExpressionSyntax>,
-    val closeParenthesis: SyntaxToken<Operator.CloseParenthesis>
-) : ExpressionSyntax()
+    val closeParenthesis: SyntaxToken<Operator.CloseParenthesis>, syntaxTree: SyntaxTree
+) : ExpressionSyntax(syntaxTree)

@@ -19,11 +19,24 @@ internal class ProteusCompiler() {
 
     private val variables = mutableMapOf<String, Any>()
 
-    fun compile(text: String, verbose: Boolean = false, generateCode: Boolean = false): CompilationResult {
+    private val computationTimeStopper = ComputationTimeStopper()
+    fun compile(fileName: String): CompilationResult {
+        val tree = SyntaxTree.load(fileName)
+        return compileTree(tree, tree.sourceText, generateCode = false)
+    }
+
+    fun compileText(text: String, generateCode: Boolean = false): CompilationResult {
         val sourceText = SourceText.from(text)
-        val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
+        return compileTree(tree, sourceText, generateCode)
+    }
+
+    private fun compileTree(
+        tree: SyntaxTree,
+        sourceText: SourceText,
+        generateCode: Boolean,
+    ): CompilationResult {
         if (tree.hasErrors()) {
             DiagnosticsPrinter.printDiagnostics(tree.diagnostics, sourceText)
             return CompilationResult(

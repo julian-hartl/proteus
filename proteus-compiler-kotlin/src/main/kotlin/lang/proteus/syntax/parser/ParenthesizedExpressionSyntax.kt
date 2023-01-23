@@ -5,5 +5,5 @@ import lang.proteus.syntax.lexer.SyntaxToken
 internal class ParenthesizedExpressionSyntax(
     val openParenthesesToken: SyntaxToken<*>,
     val expressionSyntax: ExpressionSyntax,
-    val closeParenthesisToken: SyntaxToken<*>
-) : ExpressionSyntax()
+    val closeParenthesisToken: SyntaxToken<*>, syntaxTree: SyntaxTree
+) : ExpressionSyntax(syntaxTree)

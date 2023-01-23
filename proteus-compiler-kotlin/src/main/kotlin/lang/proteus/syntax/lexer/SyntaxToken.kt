@@ -6,13 +6,15 @@ import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.SyntaxNode
+import lang.proteus.syntax.parser.SyntaxTree
 
-class SyntaxToken<T : Token>(
+internal class SyntaxToken<T : Token>(
     override val token: T,
     var position: Int,
     val literal: String,
     val value: Any?,
-) : SyntaxNode() {
+    syntaxTree: SyntaxTree,
+) : SyntaxNode(syntaxTree) {
     override fun span(): TextSpan {
         return TextSpan(position, literal.length)
     }
@@ -21,33 +23,42 @@ class SyntaxToken<T : Token>(
     companion object {
 
 
-        fun endOfFile(position: Int): SyntaxToken<Token.EndOfFile> {
-            return SyntaxToken(Token.EndOfFile, position, "", null)
+        fun endOfFile(position: Int, syntaxTree: SyntaxTree): SyntaxToken<Token.EndOfFile> {
+            return SyntaxToken(Token.EndOfFile, position, "", null, syntaxTree)
         }
 
-        fun typeToken(position: Int, literal: String, type: TypeSymbol): SyntaxToken<Token> {
-            return Token.Type.toSyntaxToken(position, literal, value = type)
+        fun typeToken(position: Int, literal: String, type: TypeSymbol, syntaxTree: SyntaxTree): SyntaxToken<Token> {
+            return Token.Type.toSyntaxToken(position, literal, value = type, syntaxTree = syntaxTree)
         }
 
-        fun identifierToken(position: Int, literal: String): SyntaxToken<Token.Identifier> {
-            return Token.Identifier.toSyntaxToken(position, literal) as SyntaxToken<Token.Identifier>
+        fun identifierToken(position: Int, literal: String, syntaxTree: SyntaxTree): SyntaxToken<Token.Identifier> {
+            return Token.Identifier.toSyntaxToken(
+                position,
+                literal,
+                syntaxTree = syntaxTree
+            ) as SyntaxToken<Token.Identifier>
         }
 
-        fun numberToken(position: Int, literal: String): SyntaxToken<Token.Number> {
-            return Token.Number.toSyntaxToken(position, literal, literal.toIntOrNull()) as SyntaxToken<Token.Number>
+        fun numberToken(position: Int, literal: String, syntaxTree: SyntaxTree): SyntaxToken<Token.Number> {
+            return Token.Number.toSyntaxToken(
+                position,
+                literal,
+                literal.toIntOrNull(),
+                syntaxTree
+            ) as SyntaxToken<Token.Number>
         }
 
-        fun whiteSpaceToken(position: Int, literal: String): SyntaxToken<Token.Whitespace> {
-            return Token.Whitespace.toSyntaxToken(position, literal, null) as SyntaxToken<Token.Whitespace>
+        fun whiteSpaceToken(position: Int, literal: String, syntaxTree: SyntaxTree): SyntaxToken<Token.Whitespace> {
+            return Token.Whitespace.toSyntaxToken(position, literal, null, syntaxTree) as SyntaxToken<Token.Whitespace>
         }
 
-        fun operator(position: Int, operatorLiteral: String): SyntaxToken<Operator>? {
+        fun operator(position: Int, operatorLiteral: String, syntaxTree: SyntaxTree): SyntaxToken<Operator>? {
             val operator = Operators.fromLiteral(operatorLiteral) ?: return null
-            return operator.toSyntaxToken(position)
+            return operator.toSyntaxToken(position, syntaxTree)
         }
 
-        fun badToken(position: Int, literal: String): SyntaxToken<Token.Bad> {
-            return Token.Bad.toSyntaxToken(position, literal) as SyntaxToken<Token.Bad>
+        fun badToken(position: Int, literal: String, syntaxTree: SyntaxTree): SyntaxToken<Token.Bad> {
+            return Token.Bad.toSyntaxToken(position, literal, syntaxTree = syntaxTree) as SyntaxToken<Token.Bad>
         }
     }
 

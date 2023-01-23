@@ -5,6 +5,7 @@ import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.ExpressionSyntax
+import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.syntax.parser.TypeClauseSyntax
 
 internal class VariableDeclarationSyntax(
@@ -12,5 +13,5 @@ internal class VariableDeclarationSyntax(
     val identifier: SyntaxToken<Token.Identifier>,
     val typeClauseSyntax: TypeClauseSyntax?,
     val equalsToken: SyntaxToken<Operator.Equals>,
-    val initializer: ExpressionSyntax,
-) : StatementSyntax()
+    val initializer: ExpressionSyntax, syntaxTree: SyntaxTree,
+) : StatementSyntax(syntaxTree)

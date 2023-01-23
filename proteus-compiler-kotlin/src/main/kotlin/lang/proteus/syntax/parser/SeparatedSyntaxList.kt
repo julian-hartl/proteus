@@ -4,7 +4,7 @@ import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
 import kotlin.math.min
 
-data class SeparatedSyntaxList<T : SyntaxNode>(val separatorsAndNodes: List<SyntaxNode>) : Iterable<T> {
+internal data class SeparatedSyntaxList<T : SyntaxNode>(val separatorsAndNodes: List<SyntaxNode>) : Iterable<T> {
     val count: Int = min(separatorsAndNodes.size, separatorsAndNodes.count() / 2 + 1)
 
     fun get(index: Int): T {
