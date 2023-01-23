@@ -21,10 +21,22 @@ class BinderTest {
         private const val TEST_VARIABLE_VALUE = 1
     }
 
-    private fun useExpression(input: String) {
-        val expression = parseExpression(input)
+    private fun useExpression(input: String, inMain: Boolean = false) {
+        val expression = parseExpression(
+            if (inMain) {
+                "fn main() { $input }"
+            } else {
+                input
+            }
+        )
         val scope = BoundScope(null)
-        scope.tryDeclareVariable(GlobalVariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false))
+        scope.tryDeclareVariable(
+            GlobalVariableSymbol(
+                TEST_VARIABLE_NAME,
+                TypeSymbol.Int,
+                isFinal = false,
+            )
+        )
         binder = Binder(scope, null)
         binder.bindStatement(expression)
     }
@@ -428,6 +440,44 @@ class BinderTest {
     @Test
     fun shouldReportErrorWhenUsingFunctionWithWrongNumberOfArguments() {
         useExpression("print();")
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldReportErrorWhenNonConstantIsUsedInConstantDeclaration() {
+        useExpression(
+            """
+            var b = 20;
+            const a = 2 * b;
+        """.trimIndent(),
+            inMain = true
+        )
+        assertTrue(binder.hasErrors())
+    }
+
+    @Test
+    fun shouldNotReportErrorWhenConstantIsUsedInConstantDeclaration() {
+        useExpression(
+            """
+            const a = 20;
+            const b = 2 * a;
+        """.trimIndent(),
+            inMain = true
+        )
+        assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldDetectDeadCode() {
+        useExpression(
+            """
+            fn main() -> Int {
+                return 1;
+                val a = 2;
+            }
+            
+        """.trimIndent()
+        )
         assertTrue(binder.hasErrors())
     }
 

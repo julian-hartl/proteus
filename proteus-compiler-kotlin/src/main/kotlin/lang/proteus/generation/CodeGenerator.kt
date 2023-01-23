@@ -110,16 +110,16 @@ internal class CodeGenerator private constructor(
     override fun rewriteConversionExpression(expression: BoundConversionExpression): BoundExpression {
         rewriteExpression(expression.expression)
         codeBuilder.append(" as ")
-        codeBuilder.append(expression.type)
+        codeBuilder.append(expression.type.name)
 
         return expression
     }
 
     override fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
         codeBuilder.append("return")
-        if (statement.expression != null) {
+        if (statement.boundExpression != null) {
             codeBuilder.append(" ")
-            rewriteExpression(statement.expression)
+            rewriteExpression(statement.boundExpression)
         }
         codeBuilder.append(";")
         return statement

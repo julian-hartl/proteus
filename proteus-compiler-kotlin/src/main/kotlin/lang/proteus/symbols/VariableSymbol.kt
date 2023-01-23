@@ -1,9 +1,19 @@
 package lang.proteus.symbols
 
-sealed class VariableSymbol(override val name: String, val type: TypeSymbol, val isFinal: Boolean) : Symbol() {
+import lang.proteus.binding.BoundExpression
+import lang.proteus.binding.BoundLiteralExpression
+
+internal sealed class VariableSymbol(
+    override val name: String,
+    val type: TypeSymbol,
+    val isFinal: Boolean,
+    var constantValue: BoundExpression?,
+) : Symbol() {
     override fun toString(): String {
         return "$name: $type"
     }
+
+    val isReadOnly get() = isFinal || isConst
 
     val isLocal: Boolean
         get() = this is LocalVariableSymbol
@@ -13,15 +23,28 @@ sealed class VariableSymbol(override val name: String, val type: TypeSymbol, val
 
     val isGlobal: Boolean
         get() = this is GlobalVariableSymbol
+
+    val isConst: Boolean
+        get() = constantValue != null
 }
 
-public class GlobalVariableSymbol(name: String, type: TypeSymbol, isFinal: Boolean) : VariableSymbol(
+internal class GlobalVariableSymbol(
+    name: String,
+    type: TypeSymbol,
+    isFinal: Boolean,
+    constantValue: BoundLiteralExpression<*>? = null,
+) : VariableSymbol(
     name, type,
-    isFinal
+    isFinal, constantValue
 )
 
-public open class LocalVariableSymbol(name: String, type: TypeSymbol, isFinal: Boolean) : VariableSymbol(
-    name, type,
-    isFinal
-)
+internal open class LocalVariableSymbol(
+    name: String, type: TypeSymbol, isFinal: Boolean,
+    constantValue: BoundLiteralExpression<*>? = null,
+) :
+    VariableSymbol(
+        name, type,
+        isFinal, constantValue
+
+    )
 

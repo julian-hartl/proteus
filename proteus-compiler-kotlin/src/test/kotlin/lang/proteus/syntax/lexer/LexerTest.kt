@@ -221,6 +221,7 @@ internal class LexerTest {
 
                 Arguments.of(Keyword.Val, "val"),
                 Arguments.of(Keyword.Var, "var"),
+                Arguments.of(Keyword.Const, "const"),
 
                 Arguments.of(Keyword.If, "if"),
                 Arguments.of(Keyword.Else, "else"),

@@ -70,6 +70,17 @@ internal class ControlFlowGraph private constructor(
         return null
     }
 
+    fun allPathsReturn(): Boolean {
+        for (block in end.incoming) {
+            val path = findPath(start, block) ?: return false
+            if (path.any { it.isEnd == true }) {
+                return false
+            }
+        }
+
+        return end.incoming.isNotEmpty()
+    }
+
     fun outputAsGraphviz(): String {
         val sb = StringBuilder()
         sb.appendLine("digraph FlowGraph{")
@@ -109,20 +120,13 @@ internal class ControlFlowGraph private constructor(
 
         }
 
-        fun allPathsReturn(body: BoundBlockStatement): Boolean {
-            val graph = createAndOutput(body)
+        fun allPathsReturn(body: BoundBlockStatement, output: Boolean = false): Boolean {
+            val graph = if (output) createAndOutput(body) else create(body)
 
-            for (block in graph.end.incoming) {
-                val path = graph.findPath(graph.start, block) ?: return false
-                if (path.any { it.isEnd == true }) {
-                    return false
-                }
-            }
-
-            return graph.end.incoming.isNotEmpty()
+            return graph.allPathsReturn()
         }
 
-        private val path = "graphs/cfg_${Instant.now().toEpochMilli()}.dot"
+        private val path get() = "graphs/cfg_${Instant.now().toEpochMilli()}.dot"
 
         private fun output(cfg: ControlFlowGraph): String {
             val output = cfg.outputAsGraphviz()
