@@ -1,0 +1,8 @@
+const a = 10;
+
+fn main() {
+    const b = 20;
+    return a + b;
+}
+
+main();
