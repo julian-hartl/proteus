@@ -153,5 +153,9 @@ internal class DiagnosticsBag {
         report("Expected a constant expression", span)
     }
 
+    fun reportUnreachableCode(span: TextSpan) {
+        report("Unreachable code detected", span)
+    }
+
 
 }

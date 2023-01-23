@@ -107,6 +107,12 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                             }
                         }
                     }
+                    for (block in graph.blocks) {
+                        if (block.isEnd != true && block.isStart != true && block.incoming.size == 0) {
+                            // todo: better error message
+                            diagnostics.reportUnreachableCode(function.declaration.identifier.span());
+                        }
+                    }
                     functionBodies[function] = optimizedBody
                 }
                 diagnostics.addAll(binder.diagnostics)
@@ -325,11 +331,8 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             isFinal,
         ) else LocalVariableSymbol(syntax.identifier.literal, type, isFinal)
         if (isConst) {
-            val optimized = Optimizer.optimize(BoundExpressionStatement(convertedInitializer))
-            if (optimized is BoundExpressionStatement) {
-                if (optimized.expression is BoundLiteralExpression<*>) {
-                    symbol.constantValue = optimized.expression
-                }
+            if (isExpressionConst(convertedInitializer)) {
+                symbol.constantValue = convertedInitializer
             }
             if (symbol.constantValue == null) {
                 diagnosticsBag.reportExpectedConstantExpression(syntax.initializer.span())
@@ -340,6 +343,16 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.span(), syntax.identifier.literal)
         }
         return BoundVariableDeclaration(symbol, convertedInitializer)
+    }
+
+    private fun isExpressionConst(expression: BoundExpression): Boolean {
+        return when (expression) {
+            is BoundLiteralExpression<*> -> true
+            is BoundVariableExpression -> expression.variable.isConst
+            is BoundUnaryExpression -> isExpressionConst(expression.operand)
+            is BoundBinaryExpression -> isExpressionConst(expression.left) && isExpressionConst(expression.right)
+            else -> false
+        }
     }
 
     private fun bindOptionalTypeClause(syntax: TypeClauseSyntax?): TypeSymbol? {

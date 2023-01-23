@@ -24,7 +24,13 @@ class BinderTest {
     private fun useExpression(input: String) {
         val expression = parseExpression(input)
         val scope = BoundScope(null)
-        scope.tryDeclareVariable(GlobalVariableSymbol(TEST_VARIABLE_NAME, TypeSymbol.Int, isFinal = false, isConst = false))
+        scope.tryDeclareVariable(
+            GlobalVariableSymbol(
+                TEST_VARIABLE_NAME,
+                TypeSymbol.Int,
+                isFinal = false,
+            )
+        )
         binder = Binder(scope, null)
         binder.bindStatement(expression)
     }
@@ -433,20 +439,38 @@ class BinderTest {
 
     @Test
     fun shouldReportErrorWhenNonConstantIsUsedInConstantDeclaration() {
-        useExpression("""
+        useExpression(
+            """
             var a = 20;
             const a = 2 * a;
-        """.trimIndent())
+        """.trimIndent()
+        )
         assertTrue(binder.hasErrors())
     }
 
     @Test
     fun shouldNotReportErrorWhenConstantIsUsedInConstantDeclaration() {
-        useExpression("""
+        useExpression(
+            """
             const a = 20;
             const b = 2 * a;
-        """.trimIndent())
+        """.trimIndent()
+        )
         assertTrue(!binder.hasErrors())
+    }
+
+    @Test
+    fun shouldDetectDeadCode() {
+        useExpression(
+            """
+            fn main() -> Int {
+                return 1;
+                val a = 2;
+            }
+            
+        """.trimIndent()
+        )
+        assertTrue(binder.hasErrors())
     }
 
 

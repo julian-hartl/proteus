@@ -1,12 +1,13 @@
 package lang.proteus.symbols
 
+import lang.proteus.binding.BoundExpression
 import lang.proteus.binding.BoundLiteralExpression
 
 internal sealed class VariableSymbol(
     override val name: String,
     val type: TypeSymbol,
     val isFinal: Boolean,
-    var constantValue: BoundLiteralExpression<*>?,
+    var constantValue: BoundExpression?,
 ) : Symbol() {
     override fun toString(): String {
         return "$name: $type"

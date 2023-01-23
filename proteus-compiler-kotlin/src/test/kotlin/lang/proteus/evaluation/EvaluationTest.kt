@@ -38,8 +38,8 @@ class EvaluationTest {
         """.trimIndent()
         )
         val boundScope = BoundScope(null)
-        boundScope.tryDeclareVariable(GlobalVariableSymbol("a", TypeSymbol.Int, isFinal = false, isConst = false))
-        boundScope.tryDeclareVariable(GlobalVariableSymbol("b", TypeSymbol.Int, isFinal = false, isConst = false))
+        boundScope.tryDeclareVariable(GlobalVariableSymbol("a", TypeSymbol.Int, isFinal = false, ))
+        boundScope.tryDeclareVariable(GlobalVariableSymbol("b", TypeSymbol.Int, isFinal = false, ))
         val compilation = Compilation(expression)
 
         val evaluationResult = compilation.evaluate(mutableMapOf())

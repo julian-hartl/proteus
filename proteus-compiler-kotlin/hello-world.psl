@@ -1,15 +1,5 @@
-const a = 1;
-
-fn sum(n: Int) -> Int {
-  if (n == 0) {return 0; }
-  else {return n + sum(n - 1);}
+fn main() -> Int {
+    const x = 1;
+    const y = x;
+    return y;
 }
-
-fn main() {
-   val a = 10;
-   while a > 9 {
-
-   }
-}
-
-main();
