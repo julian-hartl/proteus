@@ -5,20 +5,20 @@ import lang.proteus.evaluator.BinaryExpressionEvaluator
 import lang.proteus.evaluator.UnaryExpressionEvaluator
 import lang.proteus.symbols.VariableSymbol
 
-internal class Optimizer private constructor() : BoundTreeRewriter() {
+internal class Optimizer private constructor() :
+    BoundTreeRewriter() {
     companion object {
-        fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
+        fun optimize(
+            statement: BoundBlockStatement,
+        ): BoundBlockStatement {
             val optimizer = Optimizer()
             return optimizer.optimize(statement)
         }
-
-        fun optimize(statement: BoundStatement): BoundStatement {
-            val optimizer = Optimizer()
-            return optimizer.rewriteStatement(statement)
-        }
     }
 
-    private val assignments = mutableMapOf<VariableSymbol, List<BoundExpression>>()
+    private val assignments: MutableMap<VariableSymbol, List<BoundExpression>> = mutableMapOf()
+
+    private val declarations: MutableMap<VariableSymbol, BoundVariableDeclaration> = mutableMapOf()
 
 
     private fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
@@ -27,7 +27,7 @@ internal class Optimizer private constructor() : BoundTreeRewriter() {
         var lastSize = -1
         while (true) {
             for ((variable, assignedExpressions) in assignments) {
-                if (assignedExpressions.size == 1) {
+                if (assignedExpressions.size == 1 && declarations[variable] != null) {
                     val assignedExpression = assignedExpressions.first()
                     if (assignedExpression is BoundLiteralExpression<*>) {
                         variable.constantValue = assignedExpression
@@ -70,15 +70,19 @@ internal class Optimizer private constructor() : BoundTreeRewriter() {
     }
 
     override fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
-        if (node.variable.isConst) {
-            return BoundNopStatement()
+        val boundStatement = kotlin.run {
+            if (node.variable.isConst) {
+                return@run BoundExpressionStatement(node.variable.constantValue!!);
+            }
+            val initializer = rewriteExpression(node.initializer)
+            assignments[node.variable] = listOf(initializer)
+            if (initializer == node.initializer) {
+                return@run node
+            }
+            return@run BoundVariableDeclaration(node.variable, initializer)
         }
-        val initializer = rewriteExpression(node.initializer)
-        assignments[node.variable] = listOf(initializer)
-        if (initializer == node.initializer) {
-            return node
-        }
-        return BoundVariableDeclaration(node.variable, initializer)
+        declarations[node.variable] = node
+        return boundStatement
     }
 
     override fun rewriteCallExpression(expression: BoundCallExpression): BoundExpression {
@@ -121,6 +125,10 @@ internal class Optimizer private constructor() : BoundTreeRewriter() {
 
     override fun rewriteConversionExpression(expression: BoundConversionExpression): BoundExpression {
         val rewrittenExpression = rewriteExpression(expression.expression)
+        if (rewrittenExpression is BoundLiteralExpression<*>) {
+            val value = TypeConverter.convert(rewrittenExpression.value, expression.type)
+            return BoundLiteralExpression(value)
+        }
         if (rewrittenExpression == expression) {
             return expression
         }

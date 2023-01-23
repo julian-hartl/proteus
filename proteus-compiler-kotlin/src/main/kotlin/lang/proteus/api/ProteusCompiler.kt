@@ -4,10 +4,9 @@ import lang.proteus.api.performance.CompilationPerformance
 import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
-import lang.proteus.diagnostics.Diagnostics
-import lang.proteus.diagnostics.TextSpan
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.printing.ConsolePrinter
+import lang.proteus.printing.DiagnosticsPrinter
 import lang.proteus.printing.PrinterColor
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
@@ -26,7 +25,7 @@ internal class ProteusCompiler() {
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
         if (tree.hasErrors()) {
-            printDiagnostics(tree.diagnostics, sourceText)
+            DiagnosticsPrinter.printDiagnostics(tree.diagnostics, sourceText)
             return CompilationResult(
                 tree,
                 null,
@@ -37,12 +36,13 @@ internal class ProteusCompiler() {
 
 
         val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
-        val compilationResult = compilation.evaluate(variables, generateCode = generateCode)
+        val compilationResult = compilation.evaluate(variables, generateCode = generateCode) {
+            DiagnosticsPrinter.printDiagnostics(it, sourceText)
+        }
         val memoryUsage = getMemoryUsage()
         if (compilationResult.diagnostics.hasErrors()) {
-            printDiagnostics(compilationResult.diagnostics, sourceText)
+            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics, sourceText)
         } else {
-
             printResult(compilationResult)
             previous = compilation
         }
@@ -75,45 +75,7 @@ internal class ProteusCompiler() {
         consolePrinter.println()
     }
 
-    private fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {
-        val printer = ConsolePrinter()
-        val text = sourceText.toString()
-        for (diagnostic in diagnostics.diagnostics) {
 
-            val lineIndex = sourceText.getLineIndex(diagnostic.span.start)
-            val endLineIndex  = sourceText.getLineIndex(diagnostic.span.end)
-            val lineNumber = lineIndex + 1
-            val line = sourceText.lines[lineIndex]
-            val endLine = sourceText.lines[endLineIndex]
-            val character = diagnostic.span.start - line.start + 1
-
-            printer.println()
-
-            val prefixSpan = TextSpan.fromBounds(line.start, diagnostic.span.start)
-            val prefix = sourceText.toString(prefixSpan)
-            val error = text.substring(diagnostic.span.start, diagnostic.span.end)
-            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, endLine.endIncludingLineBreak)
-            val suffix = sourceText.toString(suffixSpan)
-
-
-
-            printer.setColor(PrinterColor.RED)
-            printer.print("(${lineNumber}:${character}) ")
-            printer.println(diagnostic.message)
-            printer.reset()
-
-            printer.print("    ")
-            printer.print(prefix)
-            printer.setColor(PrinterColor.RED)
-
-
-            printer.print(error)
-            printer.reset()
-
-            printer.println(suffix)
-        }
-        printer.println()
-    }
 }
 
 private fun TypeSymbol.getOutputColor(): PrinterColor {

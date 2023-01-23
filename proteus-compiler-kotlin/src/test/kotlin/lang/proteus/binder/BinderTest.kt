@@ -21,8 +21,14 @@ class BinderTest {
         private const val TEST_VARIABLE_VALUE = 1
     }
 
-    private fun useExpression(input: String) {
-        val expression = parseExpression(input)
+    private fun useExpression(input: String, inMain: Boolean = false) {
+        val expression = parseExpression(
+            if (inMain) {
+                "fn main() { $input }"
+            } else {
+                input
+            }
+        )
         val scope = BoundScope(null)
         scope.tryDeclareVariable(
             GlobalVariableSymbol(
@@ -441,9 +447,10 @@ class BinderTest {
     fun shouldReportErrorWhenNonConstantIsUsedInConstantDeclaration() {
         useExpression(
             """
-            var a = 20;
-            const a = 2 * a;
-        """.trimIndent()
+            var b = 20;
+            const a = 2 * b;
+        """.trimIndent(),
+            inMain = true
         )
         assertTrue(binder.hasErrors())
     }
@@ -454,7 +461,8 @@ class BinderTest {
             """
             const a = 20;
             const b = 2 * a;
-        """.trimIndent()
+        """.trimIndent(),
+            inMain = true
         )
         assertTrue(!binder.hasErrors())
     }

@@ -110,7 +110,7 @@ internal class CodeGenerator private constructor(
     override fun rewriteConversionExpression(expression: BoundConversionExpression): BoundExpression {
         rewriteExpression(expression.expression)
         codeBuilder.append(" as ")
-        codeBuilder.append(expression.type)
+        codeBuilder.append(expression.type.name)
 
         return expression
     }

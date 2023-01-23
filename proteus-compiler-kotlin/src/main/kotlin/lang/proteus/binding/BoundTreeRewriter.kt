@@ -133,7 +133,7 @@ internal abstract class BoundTreeRewriter {
         if (expression.expression == rewritten) {
             return expression
         }
-        return BoundConversionExpression(expression.type, expression, expression.conversion)
+        return BoundConversionExpression(expression.type, rewritten, expression.conversion)
     }
 
     protected open fun rewriteCallExpression(expression: BoundCallExpression): BoundExpression {

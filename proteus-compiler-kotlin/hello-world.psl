@@ -1,5 +1,9 @@
-fn main() -> Int {
-    const x = 1;
-    const y = x;
-    return y;
+fn main() {
+    val hello = "Hello";
+    val number = 2;
+    var a = 20;
+    a = 2;
+    val numbere = 2 * number;
+    hello + " " + number as String;
 }
+main();

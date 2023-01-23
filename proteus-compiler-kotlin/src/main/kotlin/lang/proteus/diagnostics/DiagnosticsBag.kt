@@ -3,7 +3,6 @@ package lang.proteus.diagnostics
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Token
-import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
@@ -35,8 +34,8 @@ internal class DiagnosticsBag {
         report("Unresolved reference: $name", span)
     }
 
-    private fun report(message: String, span: TextSpan) {
-        mutableDiagnostics.add(Diagnostic(message, span))
+    private fun report(message: String, span: TextSpan, diagnosticType: DiagnosticType = DiagnosticType.Error) {
+        mutableDiagnostics.add(Diagnostic(message, span, diagnosticType))
     }
 
     fun concat(other: DiagnosticsBag) {
@@ -154,7 +153,7 @@ internal class DiagnosticsBag {
     }
 
     fun reportUnreachableCode(span: TextSpan) {
-        report("Unreachable code detected", span)
+        report("Unreachable code detected", span, diagnosticType = DiagnosticType.Warning)
     }
 
 

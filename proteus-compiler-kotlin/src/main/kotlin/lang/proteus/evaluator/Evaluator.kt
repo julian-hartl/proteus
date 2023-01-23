@@ -3,7 +3,6 @@ package lang.proteus.evaluator
 import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.ProteusExternalFunction
-import lang.proteus.symbols.TypeSymbol
 import java.util.*
 
 internal class Evaluator(
@@ -41,7 +40,12 @@ internal class Evaluator(
         return lastValue
     }
 
-    private fun evaluateFlattened(statement: BoundStatement, currentIndex: Int, labels: Map<BoundLabel, Int>, totalStatements: Int): Int {
+    private fun evaluateFlattened(
+        statement: BoundStatement,
+        currentIndex: Int,
+        labels: Map<BoundLabel, Int>,
+        totalStatements: Int,
+    ): Int {
         return when (statement) {
             is BoundExpressionStatement -> {
                 evaluateExpressionStatement(statement)
@@ -74,7 +78,8 @@ internal class Evaluator(
             }
 
             is BoundReturnStatement -> {
-                lastValue = if (statement.boundExpression == null) null else evaluateExpression(statement.boundExpression)
+                lastValue =
+                    if (statement.boundExpression == null) null else evaluateExpression(statement.boundExpression)
                 totalStatements
             }
 
@@ -130,24 +135,7 @@ internal class Evaluator(
 
     private fun evaluateConversionExpression(expression: BoundConversionExpression): Any {
         val value = evaluateExpression(expression.expression)
-        return convert(value!!, expression.type)
-    }
-
-    private fun convert(value: Any, type: TypeSymbol): Any {
-        return when (type) {
-            TypeSymbol.Int -> Integer.parseInt(value.toString())
-            TypeSymbol.Boolean -> parseBoolean(value.toString())
-            TypeSymbol.String -> value.toString()
-            else -> throwUnsupportedOperation(type.name)
-        }
-    }
-
-    private fun parseBoolean(toString: String): Any {
-        return when (toString) {
-            "true" -> true
-            "false" -> false
-            else -> throw IllegalStateException("Cannot parse $toString to boolean")
-        }
+        return TypeConverter.convert(value!!, expression.type)
     }
 
     private fun evaluateCallExpression(callExpression: BoundCallExpression): Any? {
@@ -171,16 +159,20 @@ internal class Evaluator(
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
         if (expression.variable.isLocal) {
             if (locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.name}")
-            return locals.peek()[expression.variable.name]!!
+            return locals.peek()[expression.variable.name]
+                ?: throw IllegalStateException("No locals found for ${expression.variable.name}")
         }
-        return globals[expression.variable.name]!!
+        return globals[expression.variable.name]
+            ?: throw IllegalStateException("No globals found for ${expression.variable.name}")
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
         val currentValue = if (expression.variable.isLocal) {
-            locals.peek()[expression.variable.name]!!
+            locals.peek()[expression.variable.name]
+                ?: throw IllegalStateException("No locals found for ${expression.variable.name}")
         } else {
-            globals[expression.variable.name]!!
+            globals[expression.variable.name]
+                ?: throw IllegalStateException("No globals found for ${expression.variable.name}")
         }
         val expressionValue = evaluateExpression(expression.expression)
         if (expression.variable.isGlobal) {

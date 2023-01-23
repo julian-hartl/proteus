@@ -42,7 +42,9 @@ class EvaluationTest {
         boundScope.tryDeclareVariable(GlobalVariableSymbol("b", TypeSymbol.Int, isFinal = false, ))
         val compilation = Compilation(expression)
 
-        val evaluationResult = compilation.evaluate(mutableMapOf())
+        val evaluationResult = compilation.evaluate(mutableMapOf()) {
+
+        }
         assertFalse(
             evaluationResult.diagnostics.hasErrors(),
             "Compilation should not have errors, but it has: ${evaluationResult.diagnostics}"
@@ -62,7 +64,9 @@ class EvaluationTest {
         )
         val compilation = Compilation(expression)
 
-        val evaluationResult = compilation.evaluate(mutableMapOf())
+        val evaluationResult = compilation.evaluate(mutableMapOf()){
+
+        }
         assertFalse(
             evaluationResult.diagnostics.hasErrors(),
             "Compilation should not have errors, but it has: ${evaluationResult.diagnostics}"
@@ -709,7 +713,7 @@ class EvaluationTest {
     }
 
     @Test
-    fun `should not be able to use while statment as top level statement`() {
+    fun `should not be able to use while statement as top level statement`() {
         val text = """
             [while true {
                 var a = 1;
@@ -731,7 +735,9 @@ class EvaluationTest {
         val annotatedText = AnnotatedText.parse(wrappedText)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
         val compilation = Compilation(syntaxTree)
-        val result = compilation.evaluate(mutableMapOf())
+        val result = compilation.evaluate(mutableMapOf()){
+
+        }
 
         val expectedDiagnostics = AnnotatedText.unindentLines(diagnosticText)
 
