@@ -8,8 +8,6 @@ class ProteusLanguageServer() : LanguageServer, LanguageClientAware {
 
     private lateinit var client: LanguageClient
 
-    private val proteusTextDocumentService = ProteusTextDocumentService()
-
     override fun initialize(params: InitializeParams?): CompletableFuture<InitializeResult> {
         val capabilities = ServerCapabilities()
         capabilities.setTextDocumentSync(TextDocumentSyncKind.Full)
@@ -28,7 +26,7 @@ class ProteusLanguageServer() : LanguageServer, LanguageClientAware {
     }
 
     override fun getTextDocumentService(): TextDocumentService {
-        return proteusTextDocumentService
+        return ProteusTextDocumentService(client)
     }
 
     override fun getWorkspaceService(): WorkspaceService {

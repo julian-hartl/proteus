@@ -1,13 +1,14 @@
 import lang.proteus.ProteusLanguageServer
 import org.eclipse.lsp4j.launch.LSPLauncher
-import java.net.Socket
+import java.net.ServerSocket
 
 fun main(args: Array<String>) {
-    val socket = Socket("localhost", 5007)
+    val serverSocket = ServerSocket(63456)
+    val socket = serverSocket.accept()
     socket.use {
         val languageServer = ProteusLanguageServer()
         val rpcServer =
-            LSPLauncher.createServerLauncher(languageServer, socket.getInputStream(), socket.getOutputStream())
+            LSPLauncher.createServerLauncher(languageServer, it.getInputStream(), it.getOutputStream())
         val client = rpcServer.remoteProxy
         languageServer.connect(client)
         rpcServer.startListening()
