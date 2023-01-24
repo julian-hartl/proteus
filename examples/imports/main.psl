@@ -1,8 +1,10 @@
-import "multiply.psl";
+import "./multiply";
+import "lib:core";
+import "lib:math";
 fn main() {
     const a = 2;
     const b = 3;
-    val summed = sum(a, b);
+    val summed = multiply(a, b);
+    println(summed);
+    println(PI);
 }
-
-main();

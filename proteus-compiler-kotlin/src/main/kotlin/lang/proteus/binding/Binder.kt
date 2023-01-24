@@ -32,7 +32,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             val members = importSyntaxTree.root.members
             val importStatements = members.filterIsInstance<ImportStatementSyntax>()
             for (importStatement in importStatements) {
-                val importPath = importStatement.absolutePath
+                val importPath = importStatement.resolvedFilePath
                 val hasAddedEdge = graph.addEdge(fileName, importPath)
                 if (hasAddedEdge)
                     createImportGraph(graph, importPath)
@@ -110,7 +110,11 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return parent;
         }
 
-        fun bindProgram(globalScope: BoundGlobalScope, optimize: Boolean = true): BoundProgram {
+        fun bindProgram(
+            globalScope: BoundGlobalScope,
+            isMainFile: Boolean = false,
+            optimize: Boolean = true,
+        ): BoundProgram {
 
             val parentScope = createParentScopes(globalScope)
 
@@ -123,7 +127,8 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             for (function in globalScope.functions) {
 
                 val binder = Binder(parentScope ?: BoundScope(null), function)
-                val body = binder.bindStatement(function.declaration!!.body)
+                val functionBody = function.declaration.body ?: continue
+                val body = binder.bindStatement(functionBody)
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
                     val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
@@ -150,19 +155,21 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                 diagnostics.addAll(binder.diagnostics)
             }
 
+            val mainFunction = if (isMainFile) validateMainFunction(globalScope.functions, diagnostics) else null
 
-            return BoundProgram(globalScope, diagnostics.diagnostics, functionBodies)
+            return BoundProgram(globalScope, diagnostics.diagnostics, functionBodies, mainFunction)
         }
 
-        private fun validateMainFunction(mainFunction: FunctionSymbol?, diagnostics: DiagnosticsBag) {
+        private fun validateMainFunction(functions: List<FunctionSymbol>, diagnostics: DiagnosticsBag): FunctionSymbol {
+            val mainFunction = functions.firstOrNull { it.name == "main" }
             if (mainFunction == null) {
-                throw IllegalStateException("No main function found")
+                throw IllegalStateException("No entry point found. Specify a main function.")
             } else if (mainFunction.parameters.isNotEmpty()) {
                 diagnostics.reportMainMustHaveNoParameters(mainFunction)
+            } else if (mainFunction.returnType != TypeSymbol.Unit) {
+                diagnostics.invalidMainFunctionReturnType(mainFunction, TypeSymbol.Unit)
             }
-//            else if (mainFunction.returnType != TypeSymbol.Int) {
-//                diagnostics.reportMainMustHaveIntReturnType(mainFunction)
-//            }
+            return mainFunction
         }
     }
 
@@ -467,35 +474,40 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
     private fun bindCallExpression(syntax: CallExpressionSyntax): BoundExpression {
         val functionName = syntax.functionIdentifier.literal
         val declaredFunction = scope.tryLookupFunction(functionName)
-        val functionSymbol =
-            declaredFunction ?: ProteusExternalFunction.lookup(functionName)?.symbol
-        if (functionSymbol == null) {
+        if (declaredFunction == null) {
             diagnosticsBag.reportUndefinedFunction(syntax.functionIdentifier.location, functionName)
             return BoundErrorExpression
         }
-        if (syntax.arguments.count < functionSymbol.parameters.size) {
+        if (declaredFunction.declaration.isExternal) {
+            val externalFunction = ProteusExternalFunction.lookup(declaredFunction.declaration)
+            if (externalFunction == null) {
+                diagnosticsBag.reportExternalFunctionNotFound(declaredFunction.declaration, syntax.location)
+                return BoundErrorExpression
+            }
+        }
+        if (syntax.arguments.count < declaredFunction.parameters.size) {
             val location = syntax.closeParenthesis.location.copy(span = syntax.functionIdentifier.span())
             diagnosticsBag.reportTooFewArguments(
                 location,
                 functionName,
-                functionSymbol.parameters.size,
+                declaredFunction.parameters.size,
                 syntax.arguments.count
             )
             return BoundErrorExpression
         }
-        if (syntax.arguments.count > functionSymbol.parameters.size) {
-            val count = syntax.arguments.count - functionSymbol.parameters.size
+        if (syntax.arguments.count > declaredFunction.parameters.size) {
+            val count = syntax.arguments.count - declaredFunction.parameters.size
             val location = syntax.arguments.get(syntax.arguments.count - count).location
             diagnosticsBag.reportTooManyArguments(
                 location,
                 functionName,
-                functionSymbol.parameters.size,
+                declaredFunction.parameters.size,
                 syntax.arguments.count
             )
             return BoundErrorExpression
         }
         val boundParameters: MutableList<BoundExpression> = mutableListOf()
-        for ((index, parameter) in functionSymbol.parameters.withIndex()) {
+        for ((index, parameter) in declaredFunction.parameters.withIndex()) {
 
             val argument: ExpressionSyntax = syntax.arguments.get(index)
             val boundArgument = bindExpression(argument)
@@ -508,7 +520,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
         }
 
 
-        return BoundCallExpression(functionSymbol, boundParameters, isExternal = declaredFunction == null)
+        return BoundCallExpression(declaredFunction, boundParameters)
     }
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
@@ -521,7 +533,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             return boundExpression
         }
         if (declaredVariable.isReadOnly) {
-            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.location, variableName)
+            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.location, declaredVariable)
             return BoundErrorExpression
         }
         val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.location)

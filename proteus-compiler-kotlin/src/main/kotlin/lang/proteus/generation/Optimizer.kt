@@ -72,7 +72,7 @@ internal class Optimizer private constructor() :
     override fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
         val boundStatement = kotlin.run {
             if (node.variable.isConst) {
-                return@run BoundExpressionStatement(node.variable.constantValue!!);
+                return@run BoundNopStatement()
             }
             val initializer = rewriteExpression(node.initializer)
             assignments[node.variable] = listOf(initializer)
@@ -90,7 +90,7 @@ internal class Optimizer private constructor() :
         if (arguments == expression.arguments) {
             return expression
         }
-        return BoundCallExpression(expression.functionSymbol, arguments, expression.isExternal)
+        return BoundCallExpression(expression.functionSymbol, arguments)
     }
 
     override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
@@ -116,7 +116,9 @@ internal class Optimizer private constructor() :
     }
 
     override fun rewriteBlockStatement(node: BoundBlockStatement): BoundBlockStatement {
-        val statements = node.statements.map { rewriteStatement(it) }
+        val statements = node.statements.map { rewriteStatement(it) }.filter {
+            it !is BoundNopStatement
+        }
         if (statements == node.statements) {
             return node
         }

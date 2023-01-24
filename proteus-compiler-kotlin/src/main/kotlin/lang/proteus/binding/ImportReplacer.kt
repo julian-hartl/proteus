@@ -29,13 +29,13 @@ internal class ImportReplacer private constructor(
     }
 
     private fun replaceImport(): List<BoundStatement> {
-        val importPath = importStatement.absolutePath
-        val importSyntaxTree = SyntaxTree.load(importPath)
+        val importSyntaxTree = SyntaxTree.load(importStatement.resolvedFilePath)
         val importCompilation = Compilation(importSyntaxTree)
         val importGlobalScope = importCompilation.globalScope
         val importDiagnostics = importGlobalScope.diagnostics
         globalScope = importGlobalScope
-        if (importDiagnostics.hasErrors()) {
+        if (importDiagnostics.hasErrors() || importSyntaxTree.hasErrors()) {
+            diagnostics.concat(importSyntaxTree.diagnostics)
             diagnostics.concat(importDiagnostics)
             return emptyList()
         }
@@ -43,5 +43,6 @@ internal class ImportReplacer private constructor(
         globalScope = importProgram.globalScope
         return importProgram.statement.statements
     }
+
 
 }

@@ -9,10 +9,11 @@ internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val func
 
     companion object {
 
-        fun lookup(name: String): ProteusExternalFunction? {
+        fun lookup(declaration: FunctionDeclarationSyntax): ProteusExternalFunction? {
             return try {
                 val className = "lang.proteus.external.Functions"
                 val clazz = Class.forName(className)
+                val name = declaration.identifier.literal
                 val method = clazz.methods.firstOrNull() { it.name == name } ?: return null
                 val function = { args: List<Any?> ->
                     method.invoke(null, *args.toTypedArray())
@@ -20,7 +21,7 @@ internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val func
                 val arguments: List<ParameterSymbol> =
                     method.parameterTypes.map { ParameterSymbol(it.name, TypeSymbol.fromJavaType(it)) }
                 ProteusExternalFunction(
-                    FunctionSymbol(name, arguments, TypeSymbol.fromJavaType(method.returnType)),
+                    FunctionSymbol(name, arguments, TypeSymbol.fromJavaType(method.returnType), declaration),
                     function
                 )
             } catch (e: Exception) {
@@ -31,22 +32,10 @@ internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val func
     }
 }
 
-internal object BuiltInFunctions {
-    public val Print = FunctionSymbol("print", listOf(ParameterSymbol("value", TypeSymbol.String)), TypeSymbol.Unit)
-    public val Input = FunctionSymbol("input", emptyList(), TypeSymbol.String)
-
-    val allFunctions = listOf(Print, Input)
-
-    fun fromName(name: String): FunctionSymbol? {
-        return allFunctions.firstOrNull { it.name == name }
-    }
-
-}
-
 internal data class FunctionSymbol(
     override val name: String,
     val parameters: List<ParameterSymbol>,
     val returnType: TypeSymbol,
-    val declaration: FunctionDeclarationSyntax? = null,
+    val declaration: FunctionDeclarationSyntax,
 ) : Symbol()
 

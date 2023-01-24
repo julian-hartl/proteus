@@ -6,16 +6,16 @@ import lang.proteus.symbols.ProteusExternalFunction
 import java.util.*
 
 internal class Evaluator(
-    private val root: BoundBlockStatement,
     private val globals: MutableMap<String, Any>,
     private val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
     private val locals: Stack<MutableMap<String, Any>> = Stack(),
+    private val mainFunction: FunctionSymbol,
 ) {
 
     private var lastValue: Any? = null
 
     fun evaluate(): Any? {
-        return evaluateStatement(root)
+        return evaluateCallExpression(BoundCallExpression(mainFunction, emptyList()))
     }
 
     private fun evaluateStatement(body: BoundBlockStatement): Any? {
@@ -141,8 +141,8 @@ internal class Evaluator(
     private fun evaluateCallExpression(callExpression: BoundCallExpression): Any? {
         val function = callExpression.functionSymbol
         val arguments = callExpression.arguments.map { evaluateExpression(it)!! }
-        if (callExpression.isExternal) {
-            val externalFunction = ProteusExternalFunction.lookup(function.name)!!
+        if (function.declaration.isExternal) {
+            val externalFunction = ProteusExternalFunction.lookup(function.declaration)!!
             return externalFunction.call(arguments)
         }
         val stackFrame = mutableMapOf<String, Any>()

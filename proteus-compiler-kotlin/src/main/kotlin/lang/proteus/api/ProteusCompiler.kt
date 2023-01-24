@@ -37,7 +37,7 @@ internal class ProteusCompiler() {
         generateCode: Boolean,
     ): CompilationResult {
         if (tree.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(tree.diagnostics, sourceText)
+            DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
             return CompilationResult(
                 tree,
                 null,
@@ -49,11 +49,11 @@ internal class ProteusCompiler() {
 
         val compilation = Compilation(tree)
         val compilationResult = compilation.evaluate(variables, generateCode = generateCode) {
-            DiagnosticsPrinter.printDiagnostics(it, sourceText)
+            DiagnosticsPrinter.printDiagnostics(it)
         }
         val memoryUsage = getMemoryUsage()
         if (compilationResult.diagnostics.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics, sourceText)
+            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics)
         } else {
             printResult(compilationResult)
         }

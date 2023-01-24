@@ -26,6 +26,8 @@ internal sealed class VariableSymbol(
 
     val isConst: Boolean
         get() = constantValue != null
+
+    val declarationLiteral: String get() = if (isConst) "const" else if (isFinal) "val" else "var"
 }
 
 internal class GlobalVariableSymbol(

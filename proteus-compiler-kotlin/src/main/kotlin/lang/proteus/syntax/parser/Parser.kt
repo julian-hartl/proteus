@@ -7,7 +7,6 @@ import lang.proteus.syntax.lexer.Lexer
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.*
 import lang.proteus.syntax.parser.statements.*
-import java.io.File
 
 internal class Parser(
     private val syntaxTree: SyntaxTree,
@@ -60,9 +59,8 @@ internal class Parser(
                 if (hasParsedOtherThanImport) {
                     diagnosticsBag.reportImportMustBeFirstStatement(member)
                 } else {
-                    val importedFile = File(member.absolutePath)
-                    if (!importedFile.exists()) {
-                        diagnosticsBag.reportImportedFileNotFound(member.absolutePath, member.location)
+                    if (!member.file.exists()) {
+                        diagnosticsBag.reportImportedFileNotFound(member.resolvedFilePath, member.location)
                     }
 
                 }
@@ -80,7 +78,7 @@ internal class Parser(
     private fun parseMember(): MemberSyntax {
         return when (current.token) {
             is Keyword.Import -> parseImportStatement()
-            is Keyword.Fn -> parseFunctionDeclaration()
+            is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
             else -> parseGlobalStatement()
         }
     }
@@ -89,19 +87,27 @@ internal class Parser(
         val importKeyword = matchToken(Keyword.Import)
         val filePath = matchToken(Token.String)
         val semicolon = matchToken(Token.SemiColon)
-        val absolutePath = File(syntaxTree.sourceText.fileName).parent + File.separator + filePath.literal
-        return ImportStatementSyntax(importKeyword, filePath, semicolon, absolutePath, syntaxTree)
+        val importStatement = ImportStatementSyntax(importKeyword, filePath, semicolon, syntaxTree)
+        if (!importStatement.isValidImport) {
+            diagnosticsBag.reportInvalidImport(importStatement)
+        }
+        return importStatement
     }
 
     private fun parseFunctionDeclaration(): MemberSyntax {
+        val functionModifiers = parseFunctionModifiers()
         val functionKeyword = matchToken(Keyword.Fn)
         val identifier = matchToken(Token.Identifier)
         val openParenthesis = matchToken(Operator.OpenParenthesis)
         val parameterList = parseParameterList()
         val closeParenthesis = matchToken(Operator.CloseParenthesis)
         val returnTypeSyntax = parseOptionalFunctionReturnType()
-        val body = parseBlockStatement()
+        val isExternal = functionModifiers.contains(Keyword.External)
+        val needsBody = !isExternal
+        val body = if (!needsBody) null else parseBlockStatement()
+        val semiColon = if (needsBody) null else matchToken(Token.SemiColon)
         return FunctionDeclarationSyntax(
+            functionModifiers,
             functionKeyword,
             identifier,
             openParenthesis,
@@ -109,8 +115,21 @@ internal class Parser(
             closeParenthesis,
             returnTypeSyntax,
             body,
+            semiColon,
             syntaxTree
         )
+    }
+
+    private fun parseFunctionModifiers(): Set<Keyword> {
+        val modifiers = mutableSetOf<Keyword>()
+        while (current.token is Keyword && current.token != Keyword.Fn) {
+            val wasAdded = modifiers.add(current.token as Keyword)
+            if(!wasAdded) {
+                diagnosticsBag.reportDuplicateModifier(current)
+            }
+            nextToken()
+        }
+        return modifiers
     }
 
     private fun parseOptionalFunctionReturnType(): FunctionReturnTypeSyntax? {
@@ -151,9 +170,7 @@ internal class Parser(
     private fun parseGlobalStatement(): GlobalStatementSyntax {
         val statement = parseStatement()
         if (statement !is VariableDeclarationSyntax) {
-            if (statement !is ExpressionStatementSyntax || statement.expression !is CallExpressionSyntax) {
-                diagnosticsBag.reportInvalidTopLevelStatement(statement.location)
-            }
+            diagnosticsBag.reportInvalidTopLevelStatement(statement.location)
         }
         val semiColon = if (peek(-1).token !is Token.CloseBrace) {
             matchToken(Token.SemiColon)

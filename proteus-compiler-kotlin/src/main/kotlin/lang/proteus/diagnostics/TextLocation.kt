@@ -7,7 +7,7 @@ data class TextLocation(val sourceText: SourceText, val span: TextSpan) {
     val endLine = sourceText.getLineIndex(span.end)
     val startCharacter = span.start - sourceText.lines[startLine].start
     val endCharacter = span.end - sourceText.lines[endLine].start
-    val fileName = sourceText.fileName
+    val fileName = sourceText.absolutePath
 
     override fun toString(): String {
         return if (startLine == endLine) {

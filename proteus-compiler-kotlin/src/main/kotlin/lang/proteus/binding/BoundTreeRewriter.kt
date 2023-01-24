@@ -141,7 +141,7 @@ internal abstract class BoundTreeRewriter {
         if (arguments == expression.arguments) {
             return expression
         }
-        return BoundCallExpression(expression.functionSymbol, arguments, expression.isExternal)
+        return BoundCallExpression(expression.functionSymbol, arguments)
     }
 
     private fun rewriteErrorExpression(expression: BoundExpression): BoundExpression {

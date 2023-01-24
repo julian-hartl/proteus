@@ -3,7 +3,10 @@ package lang.proteus.diagnostics
 import lang.proteus.binding.ImportGraphNode
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.TypeSymbol
+import lang.proteus.symbols.VariableSymbol
+import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
+import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.ImportStatementSyntax
 
 internal class DiagnosticsBag {
@@ -41,8 +44,14 @@ internal class DiagnosticsBag {
         report("Unresolved reference: $name", textLocation)
     }
 
-    private fun report(message: String, location: TextLocation, diagnosticType: DiagnosticType = DiagnosticType.Error) {
-        mutableDiagnostics.add(Diagnostic(message, location, diagnosticType))
+    private fun report(
+        message: String,
+        location: TextLocation,
+        diagnosticType: DiagnosticType = DiagnosticType.Error,
+        hint: String? = null,
+    ) {
+        val errorMessage = if (hint != null) "$message --- Hint: $hint" else message
+        mutableDiagnostics.add(Diagnostic(errorMessage, location, diagnosticType))
     }
 
     fun concat(other: DiagnosticsBag) {
@@ -57,8 +66,9 @@ internal class DiagnosticsBag {
         report("Variable '$variableName' already declared", textLocation)
     }
 
-    fun reportFinalVariableCannotBeReassigned(textLocation: TextLocation, variableName: String) {
-        report("Val cannot be reassigned", textLocation)
+    fun reportFinalVariableCannotBeReassigned(textLocation: TextLocation, variable: VariableSymbol) {
+        val variableDeclarationLiteral = variable.declarationLiteral
+        report("Readonly variables cannot be reassigned", textLocation, hint = "Variable '${variable.name}' is declared as '$variableDeclarationLiteral'")
     }
 
     fun reportInvalidCharLiteral(literal: String, textLocation: TextLocation) {
@@ -178,6 +188,33 @@ internal class DiagnosticsBag {
     fun reportCircularDependency(location: TextLocation, cycle: List<ImportGraphNode>) {
         val cycleString = cycle.joinToString(" -> ") { it.fileName }
         report("Circular dependency detected: $cycleString", location)
+    }
+
+    fun invalidMainFunctionReturnType(mainFunction: FunctionSymbol, unit: TypeSymbol.Unit) {
+        report(
+            "Invalid return type. Expected '${unit}', got '${mainFunction.returnType}'",
+            mainFunction.declaration.location
+        )
+    }
+
+    fun reportInvalidImport(importStatement: ImportStatementSyntax) {
+        report(
+            "Invalid import",
+            importStatement.location,
+            hint = "Import should be a relative import or a library import"
+        )
+    }
+
+    fun reportDuplicateModifier(current: SyntaxToken<*>) {
+        report("Duplicate modifier '${current.literal}'", current.location)
+    }
+
+    fun reportExternalFunctionNotFound(declaration: FunctionDeclarationSyntax, location: TextLocation) {
+        report(
+            "External function ${declaration.identifier.literal} not found",
+            location,
+            hint = "Install the required library."
+        )
     }
 
 

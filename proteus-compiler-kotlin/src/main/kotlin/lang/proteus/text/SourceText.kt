@@ -1,12 +1,15 @@
 package lang.proteus.text
 
 import lang.proteus.diagnostics.TextSpan
+import java.nio.file.Paths
 
-class SourceText(private val text: String, val fileName: String) {
+class SourceText(private val text: String, private val path: String) {
 
     val lines: List<TextLine> = parseLines(this, text)
 
     val length get() = text.length
+
+    val absolutePath get() = Paths.get("./").resolve(path).toAbsolutePath().toString()
 
     operator fun get(index: Int): Char = text[index]
 

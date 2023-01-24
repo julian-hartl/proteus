@@ -9,6 +9,7 @@ import java.time.Instant
 internal class CodeGenerator private constructor(
     private val codeBuilder: StringBuilder = StringBuilder(),
     private val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
+    private val functions: Set<FunctionSymbol>,
 ) :
     BoundTreeRewriter() {
 
@@ -16,8 +17,9 @@ internal class CodeGenerator private constructor(
         fun generate(
             statement: BoundStatement,
             functionBodies: Map<FunctionSymbol, BoundBlockStatement> = mapOf(),
+            functions: Set<FunctionSymbol>,
         ): String {
-            val generator = CodeGenerator(functionBodies = functionBodies)
+            val generator = CodeGenerator(functionBodies = functionBodies, functions = functions)
             return generator.generateCode(statement)
         }
 
@@ -31,14 +33,17 @@ internal class CodeGenerator private constructor(
     }
 
     private fun generateCode(node: BoundStatement): String {
-        generateFunctionDeclarations(functionBodies)
+        generateFunctionDeclarations(functions)
         rewriteStatement(node)
         return codeBuilder.toString()
     }
 
-    private fun generateFunctionDeclarations(functions: Map<FunctionSymbol, BoundBlockStatement>) {
-        for ((symbol, body) in functions) {
-            val declaration = symbol.declaration!!;
+    private fun generateFunctionDeclarations(functions: Set<FunctionSymbol>) {
+        for (symbol in functions) {
+            val declaration = symbol.declaration
+            for (modifier in declaration.modifiers) {
+                codeBuilder.append("${modifier.literal} ")
+            }
             codeBuilder.append("fn ${symbol.name}(")
             for (parameter in declaration.parameters) {
                 codeBuilder.append("${parameter.identifier.literal}: ${parameter.typeClause.type.literal}, ")
@@ -48,15 +53,23 @@ internal class CodeGenerator private constructor(
                 codeBuilder.delete(codeBuilder.length - 2, codeBuilder.length)
             }
             codeBuilder.append(") ")
-            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"} ")
-            rewriteBlockStatement(body)
+            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"}")
+            val body = functionBodies[symbol]
+            if (body != null) {
+                codeBuilder.append(" ")
+                rewriteBlockStatement(body)
+            } else {
+                codeBuilder.appendLine(";")
+            }
         }
     }
 
 
     override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
         codeBuilder.append(node.variable.name)
+        codeBuilder.append(" ")
         codeBuilder.append(node.assignmentOperator.literal)
+        codeBuilder.append(" ")
         rewriteExpression(node.expression)
         return node
     }
@@ -169,6 +182,8 @@ internal class CodeGenerator private constructor(
     override fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
         codeBuilder.append("var ")
         codeBuilder.append(node.variable.name)
+        codeBuilder.append(": ")
+        codeBuilder.append(node.variable.type.name)
         codeBuilder.append(" = ")
         rewriteExpression(node.initializer)
         codeBuilder.append(";")

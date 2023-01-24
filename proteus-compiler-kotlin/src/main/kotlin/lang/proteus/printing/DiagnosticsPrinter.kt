@@ -2,14 +2,12 @@ package lang.proteus.printing
 
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.TextSpan
-import lang.proteus.text.SourceText
 
 object DiagnosticsPrinter {
-    fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {
+    fun printDiagnostics(diagnostics: Diagnostics) {
         val printer = ConsolePrinter()
-        val text = sourceText.toString()
         val orderedDiagnostics = diagnostics.diagnostics.sortedBy {
-            it.location.sourceText.fileName
+            it.location.sourceText.absolutePath
         }.sortedBy {
             it.span.start
         }.sortedBy {
@@ -17,6 +15,8 @@ object DiagnosticsPrinter {
         }
         for (diagnostic in orderedDiagnostics) {
 
+            val sourceText = diagnostic.location.sourceText
+            val text = sourceText.toString()
             val fileName = diagnostic.location.fileName
             val span = diagnostic.span
             val lineIndex = sourceText.getLineIndex(span.start)
