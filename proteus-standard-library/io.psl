@@ -1,3 +1,2 @@
 external fn println(s: Any) -> Unit;
-external fn random(lowerBound: Int, upperBound: Int) -> Int;
 external fn print(s: Any) -> Unit;

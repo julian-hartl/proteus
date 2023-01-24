@@ -68,7 +68,11 @@ internal class DiagnosticsBag {
 
     fun reportFinalVariableCannotBeReassigned(textLocation: TextLocation, variable: VariableSymbol) {
         val variableDeclarationLiteral = variable.declarationLiteral
-        report("Readonly variables cannot be reassigned", textLocation, hint = "Variable '${variable.name}' is declared as '$variableDeclarationLiteral'")
+        report(
+            "Readonly variables cannot be reassigned",
+            textLocation,
+            hint = "Variable '${variable.name}' is declared as '$variableDeclarationLiteral'"
+        )
     }
 
     fun reportInvalidCharLiteral(literal: String, textLocation: TextLocation) {
@@ -186,7 +190,7 @@ internal class DiagnosticsBag {
     }
 
     fun reportCircularDependency(location: TextLocation, cycle: List<ImportGraphNode>) {
-        val cycleString = cycle.joinToString(" -> ") { it.fileName }
+        val cycleString = cycle.joinToString(" -> ") { it.tree.sourceText.absolutePath }
         report("Circular dependency detected: $cycleString", location)
     }
 

@@ -1,6 +1,6 @@
 import "./multiply";
-import "lib:core";
-import "lib:math";
+import "std/io";
+import "std/math";
 fn main() {
     const a = 2;
     const b = 3;

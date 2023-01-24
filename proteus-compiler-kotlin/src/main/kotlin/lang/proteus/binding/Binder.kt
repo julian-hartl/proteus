@@ -27,15 +27,17 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
 
     companion object {
 
-        private fun createImportGraph(graph: ImportGraph, fileName: String): ImportGraph {
-            val importSyntaxTree = SyntaxTree.load(fileName)
-            val members = importSyntaxTree.root.members
+        private fun createImportGraph(graph: ImportGraph, tree: SyntaxTree): ImportGraph {
+            if (tree.hasErrors())
+                return graph
+            val members = tree.root.members
             val importStatements = members.filterIsInstance<ImportStatementSyntax>()
             for (importStatement in importStatements) {
                 val importPath = importStatement.resolvedFilePath
-                val hasAddedEdge = graph.addEdge(fileName, importPath)
+                val importedTree = SyntaxTree.load(importPath)
+                val hasAddedEdge = graph.addEdge(tree, importedTree, importPath)
                 if (hasAddedEdge)
-                    createImportGraph(graph, importPath)
+                    createImportGraph(graph, importedTree)
             }
             return graph
         }
@@ -45,13 +47,18 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
             val binder = Binder(parentScope ?: BoundScope(null), null)
             val statements = mutableListOf<BoundStatement>()
             val diagnostics = DiagnosticsBag()
-            val importGraph = createImportGraph(ImportGraph(), syntax.location.fileName)
+            val importGraph = createImportGraph(ImportGraph(), syntax.syntaxTree)
             val cycles = importGraph.findCycles()
             for (cycle in cycles) {
                 val location = syntax.members.first().location
                 diagnostics.reportCircularDependency(location, cycle)
             }
+            val trees = importGraph.getTrees()
+            for (tree in trees) {
+                diagnostics.addAll(tree.diagnostics)
+            }
             if (!diagnostics.diagnostics.hasErrors()) {
+                val pathToSyntaxTreeMap = importGraph.getPathToTreeMap()
                 for (member in syntax.members) {
                     when (member) {
                         is FunctionDeclarationSyntax -> {
@@ -64,8 +71,7 @@ internal class Binder(private var scope: BoundScope, private val function: Funct
                         }
 
                         is ImportStatementSyntax -> {
-                            val importResult = ImportReplacer.replaceImport(member)
-                            diagnostics.addAll(importResult.diagnostics)
+                            val importResult = ImportReplacer.replaceImport(member, pathToSyntaxTreeMap)
                             statements.addAll(importResult.statements)
                             for (variable in importResult.globalScope.variables)
                                 binder.scope.tryDeclareVariable(variable)

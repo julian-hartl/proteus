@@ -1,7 +1,9 @@
 package lang.proteus.binding
 
+import lang.proteus.syntax.parser.SyntaxTree
+
 internal data class ImportGraphNode(
-    val fileName: String,
+    val tree: SyntaxTree,
 )
 
 internal data class ImportGraphEdge(
@@ -10,28 +12,28 @@ internal data class ImportGraphEdge(
 )
 
 internal class ImportGraph {
-    private val nodes = mutableMapOf<String, ImportGraphNode>()
+    private val nodes = mutableMapOf<SyntaxTree, ImportGraphNode>()
     private val edges = mutableSetOf<ImportGraphEdge>()
 
-    fun addEdges(from: String, to: List<String>) {
-        for (toFile in to) {
-            addEdge(from, toFile)
-        }
-    }
+    private val pathToNodeMap = mutableMapOf<String, ImportGraphNode>()
 
-    fun addEdge(from: String, to: String): Boolean {
+
+    fun addEdge(from: SyntaxTree, to: SyntaxTree, importPath: String): Boolean {
         val fromNode = nodes.getOrPut(from) { ImportGraphNode(from) }
         val toNode = nodes.getOrPut(to) { ImportGraphNode(to) }
+        pathToNodeMap[importPath] = toNode
         return edges.add(ImportGraphEdge(fromNode, toNode))
     }
 
-    fun getNodes(): List<ImportGraphNode> {
-        return nodes.values.toList()
+
+    fun getPathToTreeMap(): Map<String, SyntaxTree> {
+        return pathToNodeMap.mapValues { it.value.tree }
     }
 
-    fun getEdges(): List<ImportGraphEdge> {
-        return edges.toList()
+    fun getTrees(): List<SyntaxTree> {
+        return nodes.values.map { it.tree }
     }
+
 
     fun findCycles(): List<List<ImportGraphNode>> {
         val cycles = mutableListOf<List<ImportGraphNode>>()

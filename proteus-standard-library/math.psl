@@ -1,1 +1,2 @@
 const PI: Int = 3;
+external fn random(lowerBound: Int, upperBound: Int) -> Int;

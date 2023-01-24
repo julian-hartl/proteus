@@ -17,6 +17,9 @@ internal class ImportStatementSyntax(
     companion object {
         private val librariesPath =
             Paths.get(System.getenv("HOME") + File.separator + ".proteus" + File.separator + "libraries")
+
+        // Library imports are of the form "libName/path/to/file"
+        private val libraryImportRegex = Regex("^[a-zA-Z][^.][^/]*[/]?[^./]+\$")
     }
 
     override val token: Token
@@ -28,11 +31,10 @@ internal class ImportStatementSyntax(
         get() {
             val filePath = filePathToken.literal
             val filePathBuilder = StringBuilder()
+            val importPath = Paths.get(filePath)
             if (isLibraryImport) {
-                val importPath = Paths.get(filePath.substring(4))
                 filePathBuilder.append(librariesPath.resolve(importPath))
             } else {
-                val importPath = Paths.get(filePath)
                 val parentPath = Paths.get(syntaxTree.sourceText.absolutePath).parent
                 filePathBuilder.append(parentPath.resolve(importPath))
             }
@@ -43,7 +45,7 @@ internal class ImportStatementSyntax(
         }
 
     val isLibraryImport: Boolean
-        get() = rawFilePath.startsWith("lib:")
+        get() = libraryImportRegex.matches(rawFilePath)
 
     val isRelativeImport: Boolean
         get() = rawFilePath.startsWith("./") || rawFilePath.startsWith("../")

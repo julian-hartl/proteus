@@ -14,13 +14,17 @@ internal data class ReplaceImportResult(
 internal class ImportReplacer private constructor(
     private val importStatement: ImportStatementSyntax,
     private val diagnostics: MutableDiagnostics = MutableDiagnostics(),
+    private val syntaxTrees: Map<String, SyntaxTree>,
 ) {
     private lateinit var globalScope: BoundGlobalScope
 
     companion object {
 
-        fun replaceImport(importStatement: ImportStatementSyntax): ReplaceImportResult {
-            val importReplacer = ImportReplacer(importStatement)
+        fun replaceImport(
+            importStatement: ImportStatementSyntax,
+            syntaxTrees: Map<String, SyntaxTree>,
+        ): ReplaceImportResult {
+            val importReplacer = ImportReplacer(importStatement, syntaxTrees = syntaxTrees)
             val statements = importReplacer.replaceImport()
             val diagnostics = importReplacer.diagnostics
             return ReplaceImportResult(statements, diagnostics, importReplacer.globalScope)
@@ -29,7 +33,7 @@ internal class ImportReplacer private constructor(
     }
 
     private fun replaceImport(): List<BoundStatement> {
-        val importSyntaxTree = SyntaxTree.load(importStatement.resolvedFilePath)
+        val importSyntaxTree = syntaxTrees[importStatement.resolvedFilePath]!!
         val importCompilation = Compilation(importSyntaxTree)
         val importGlobalScope = importCompilation.globalScope
         val importDiagnostics = importGlobalScope.diagnostics

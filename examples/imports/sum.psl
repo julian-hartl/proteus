@@ -1,4 +1,3 @@
-import "lib:core";
 fn sum(a: Int, b: Int) -> Int {
     return random(0, a) + random(0, b);
 }
