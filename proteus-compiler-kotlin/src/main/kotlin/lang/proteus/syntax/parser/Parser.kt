@@ -55,6 +55,7 @@ internal class Parser(
         while (current.token != Token.EndOfFile) {
             val start = current
             val member = parseMember()
+
             if (member is ImportStatementSyntax) {
                 if (hasParsedOtherThanImport) {
                     diagnosticsBag.reportImportMustBeFirstStatement(member)
@@ -67,7 +68,11 @@ internal class Parser(
             } else {
                 hasParsedOtherThanImport = true
             }
-            members.add(member)
+            if (member !is MemberSyntax) {
+                diagnosticsBag.reportInvalidTopLevelStatement(member.location)
+            } else {
+                members.add(member)
+            }
             if (current == start) {
                 nextToken()
             }
@@ -75,15 +80,13 @@ internal class Parser(
         return members
     }
 
-    private fun parseMember(): MemberSyntax {
+    private fun parseMember(): SyntaxNode {
         return when (current.token) {
             is Keyword.Import -> parseImportStatement()
             is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
             is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
             else -> {
-                diagnosticsBag.reportInvalidTopLevelStatement(current.location)
-                nextToken()
-                parseMember()
+                parseStatement()
             }
         }
     }
@@ -156,11 +159,11 @@ internal class Parser(
         val parameters = mutableListOf<SyntaxNode>()
         if (current.token != Operator.CloseParenthesis) {
             do {
-                val parameter = parseParameter()
-                parameters.add(parameter)
-                if (current.token is Token.Comma) {
+                if (parameters.isNotEmpty()) {
                     parameters.add(matchToken(Token.Comma))
                 }
+                val parameter = parseParameter()
+                parameters.add(parameter)
             } while (current.token != Operator.CloseParenthesis)
         }
         return SeparatedSyntaxList(parameters)
@@ -544,18 +547,29 @@ internal class Parser(
         val openParenthesis = matchToken(Operator.OpenParenthesis)
         val arguments = parseArguments()
         val closeParenthesis = matchToken(Operator.CloseParenthesis)
+        if(syntaxTree.id == 0 && token.literal == "main" ) {
+            diagnosticsBag.reportCannotCallMain(token.location)
+        }
         return CallExpressionSyntax(token, openParenthesis, arguments, closeParenthesis, syntaxTree)
     }
 
     private fun parseArguments(): SeparatedSyntaxList<ExpressionSyntax> {
         val nodesAndSeparators = mutableListOf<SyntaxNode>()
 
-        while (current.token !is Operator.CloseParenthesis && current.token !is Token.EndOfFile) {
+        var lastToken: SyntaxNode? = null
+
+        while ((lastToken == null && current.token !is Operator.CloseParenthesis) || lastToken?.token is Token.Comma && current.token !is Token.EndOfFile) {
             val expression = parseExpression()
             nodesAndSeparators.add(expression)
+            lastToken = expression
             if (current.token !is Operator.CloseParenthesis) {
+                val diagnosticSize = diagnosticsBag.diagnostics.diagnostics.size
                 val comma = matchToken(Token.Comma)
-                nodesAndSeparators.add(comma)
+                val newDiagnosticSize = diagnosticsBag.diagnostics.diagnostics.size
+                if (diagnosticSize == newDiagnosticSize) {
+                    nodesAndSeparators.add(comma)
+                    lastToken = comma
+                }
             }
         }
 

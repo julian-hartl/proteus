@@ -52,6 +52,7 @@ internal class Binder(
                 symbols.addAll(importGraph.gatherImportedSymbols(binder, tree))
                 symbolMap[tree] = symbols
             }
+            diagnostics.concat(importGraph.diagnosticsBag)
 
             for ((tree, symbols) in symbolMap) {
                 for (symbol in symbols) {
@@ -84,11 +85,11 @@ internal class Binder(
             while (stack.size > 0) {
                 previous = stack.pop()
                 val scope = BoundScope(parent)
-                for ((syntaxTree, variables) in previous.variables) {
+                for ((syntaxTree, variables) in previous.mappedVariables) {
                     for (variable in variables)
                         scope.tryDeclareVariable(variable, syntaxTree)
                 }
-                for ((syntaxTree, functions) in previous.functions) {
+                for ((syntaxTree, functions) in previous.mappedFunctions) {
                     for (function in functions)
                         scope.tryDeclareFunction(function, syntaxTree)
                 }
@@ -112,45 +113,63 @@ internal class Binder(
             diagnostics.addAll(globalScope.diagnostics)
 
 
-            for ((syntaxTree, functions) in globalScope.functions) {
-                for (function in functions) {
-                    val binder = Binder(parentScope ?: BoundScope(null), function)
-                    val functionBody = function.declaration.body ?: continue
-                    val body = binder.bindStatement(functionBody)
-                    if (!binder.hasErrors()) {
-                        val loweredBody = Lowerer.lower(body)
-                        val optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
-                        val graph = ControlFlowGraph.createAndOutput(optimizedBody)
-                        if (!graph.allPathsReturn()) {
-                            diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
-                        } else {
-                            if (function.returnType !is TypeSymbol.Unit) {
-                                for (incoming in graph.end.incoming) {
-                                    if (incoming.statements.lastOrNull() !is BoundReturnStatement) {
-                                        diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
-                                    }
+            for (function in globalScope.functions) {
+                val binder = Binder(parentScope ?: BoundScope(null), function)
+                val functionBody = function.declaration.body ?: continue
+                val body = binder.bindStatement(functionBody)
+                var optimizedBody: BoundBlockStatement = BoundBlockStatement(listOf())
+                if (!binder.hasErrors()) {
+                    val loweredBody = Lowerer.lower(body)
+                    optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
+                    val graph = ControlFlowGraph.createAndOutput(optimizedBody)
+                    if (!graph.allPathsReturn()) {
+                        diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
+                    } else {
+                        if (function.returnType !is TypeSymbol.Unit) {
+                            for (incoming in graph.end.incoming) {
+                                if (incoming.statements.lastOrNull() !is BoundReturnStatement) {
+                                    diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
                                 }
                             }
                         }
-                        for (block in graph.blocks) {
-                            if (block.isEnd != true && block.isStart != true && block.incoming.size == 0) {
-                                // todo: better error message
-                                diagnostics.reportUnreachableCode(function.declaration.identifier.location);
-                            }
-                        }
-                        functionBodies[function] = optimizedBody
                     }
+                    for (block in graph.blocks) {
+                        if (block.isEnd != true && block.isStart != true && block.incoming.size == 0) {
+                            // todo: better error message
+                            diagnostics.reportUnreachableCode(function.declaration.body.location);
+                        }
+                    }
+                }
+                functionBodies[function] = optimizedBody
+                diagnostics.addAll(binder.diagnostics)
+            }
+
+            val variableInitializers = mutableMapOf<GlobalVariableSymbol, BoundExpression>()
+            for (variable in globalScope.variables) {
+                if (variable is GlobalVariableSymbol) {
+                    val binder = Binder(parentScope ?: BoundScope(null), null)
+                    val initializer = variable.declarationSyntax.initializer
+                    val boundInitializer = binder.bindExpression(initializer)
+                    val optimized = Optimizer.optimize(boundInitializer)
+                    variableInitializers[variable] = optimized
                     diagnostics.addAll(binder.diagnostics)
                 }
             }
-            val mainFunction = validateMainFunction(globalScope.functions[mainTree]!!, diagnostics)
+
+            val mainFunction = validateMainFunction(globalScope.mappedFunctions[mainTree] ?: emptySet(), diagnostics)
 
 
-            return BoundProgram(globalScope, diagnostics.diagnostics, functionBodies, mainFunction)
+            return BoundProgram(
+                globalScope,
+                diagnostics.diagnostics,
+                functionBodies,
+                variableInitializers,
+                mainFunction
+            )
         }
 
         private fun validateMainFunction(functions: Set<FunctionSymbol>, diagnostics: DiagnosticsBag): FunctionSymbol {
-            val mainFunction = functions.firstOrNull { it.name == "main" }
+            val mainFunction = functions.firstOrNull { it.simpleName == "main" }
             if (mainFunction == null) {
                 throw IllegalStateException("No entry point found. Specify a main function.")
             } else if (mainFunction.parameters.isNotEmpty()) {
@@ -162,13 +181,17 @@ internal class Binder(
         }
     }
 
+    private data class ParameterInfo(
+        val name: String,
+        val type: TypeSymbol,
+    )
 
     internal fun bindFunctionDeclaration(
         function: FunctionDeclarationSyntax,
         tree: SyntaxTree,
         defineSymbol: Boolean = true,
     ): FunctionSymbol {
-        val parameters = mutableListOf<ParameterSymbol>()
+        val parameterInfos = mutableListOf<ParameterInfo>()
 
         val seenParameters = mutableSetOf<String>()
 
@@ -179,12 +202,15 @@ internal class Binder(
                 continue
             }
             val type = bindTypeClause(parameterSyntax.typeClause)
-            val parameter = ParameterSymbol(name, type)
-            parameters.add(parameter)
+            val parameter =
+                ParameterInfo(name, type)
+            parameterInfos.add(parameter)
         }
 
         val returnType = bindOptionalReturnTypeClause(function.returnTypeClause) ?: TypeSymbol.Unit
-        val functionSymbol = FunctionSymbol(function.identifier.literal, parameters, returnType, function)
+        val functionSymbol = FunctionSymbol(null, returnType, function, tree)
+        val parameters = parameterInfos.map { ParameterSymbol(it.name, it.type, tree, functionSymbol) }
+        functionSymbol.parameters = parameters
         if (defineSymbol) {
             if (scope.tryDeclareFunction(functionSymbol, tree) == null) {
                 diagnosticsBag.reportFunctionAlreadyDeclared(function.identifier.location, function.identifier.literal)
@@ -291,7 +317,10 @@ internal class Binder(
         scope = BoundScope(scope)
 
         val name = syntax.identifier.literal
-        val variable = LocalVariableSymbol(name, TypeSymbol.Int, isFinal = true)
+        val variable = LocalVariableSymbol(
+            name, TypeSymbol.Int, isFinal = true, syntaxTree = syntax.syntaxTree,
+            enclosingFunction = this.function!!
+        )
         val declaredVariable = scope.tryLookupVariable(name, syntax.syntaxTree)
         if (declaredVariable != null) {
             diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.location, name)
@@ -357,7 +386,10 @@ internal class Binder(
         return BoundConversionExpression(expectedType, boundExpression, conversion)
     }
 
-    internal fun bindVariableDeclaration(syntax: VariableDeclarationSyntax, defineSymbol: Boolean = true): BoundVariableDeclaration {
+    internal fun bindVariableDeclaration(
+        syntax: VariableDeclarationSyntax,
+        defineSymbol: Boolean = true,
+    ): BoundVariableDeclaration {
         val initializer = bindExpression(syntax.initializer)
         val isConst = syntax.keyword is Keyword.Const
         val isFinal = isConst || syntax.keyword is Keyword.Val
@@ -368,7 +400,15 @@ internal class Binder(
             syntax.identifier.literal,
             type,
             isFinal,
-        ) else LocalVariableSymbol(syntax.identifier.literal, type, isFinal)
+            syntaxTree = syntax.syntaxTree,
+            declarationSyntax = syntax
+        ) else LocalVariableSymbol(
+            syntax.identifier.literal,
+            type,
+            isFinal,
+            syntaxTree = syntax.syntaxTree,
+            enclosingFunction = function
+        )
         if (isConst) {
             if (isExpressionConst(convertedInitializer)) {
                 symbol.constantValue = convertedInitializer
@@ -377,7 +417,7 @@ internal class Binder(
                 diagnosticsBag.reportExpectedConstantExpression(syntax.initializer.location)
             }
         }
-        if(defineSymbol) {
+        if (defineSymbol) {
             val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol, syntax.syntaxTree) == null
             if (isVariableAlreadyDeclared) {
                 diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.location, syntax.identifier.literal)

@@ -4,7 +4,7 @@ fn multiply(x: Int, y: Int) -> Int {
     var result = 0;
 
     for i in 0 until y {
-        result = sum(result, x);
+        result = sum(result, i);
     }
     return result;
 }

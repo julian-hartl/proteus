@@ -49,12 +49,12 @@ internal class SymbolScope<T : Symbol>(val parent: SymbolScope<T>?) {
 
 
     fun tryDeclare(variable: T, syntaxTree: SyntaxTree): T? {
-        val declaredVariable = getSymbols(syntaxTree)[variable.name]
+        val declaredVariable = getSymbols(syntaxTree)[variable.simpleName]
         if (declaredVariable != null) {
             return null
         }
 
-        symbols[syntaxTree]!![variable.name] = variable
+        symbols[syntaxTree]!![variable.simpleName] = variable
         return variable
     }
 

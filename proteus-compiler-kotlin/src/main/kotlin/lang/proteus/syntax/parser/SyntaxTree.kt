@@ -26,6 +26,8 @@ internal class SyntaxTree(
 
     override lateinit var diagnostics: Diagnostics;
 
+    val id: Int = currentId++
+
     init {
         val parseResult = parseHandler(this)
         root = parseResult.root
@@ -34,6 +36,12 @@ internal class SyntaxTree(
 
 
     companion object {
+
+        private var currentId = 0
+
+        fun reset() {
+            currentId = 0
+        }
 
         fun load(fileName: String): SyntaxTree {
             val content = File(fileName).readText()

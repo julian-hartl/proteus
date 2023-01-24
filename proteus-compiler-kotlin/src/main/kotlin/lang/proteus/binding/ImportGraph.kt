@@ -1,5 +1,6 @@
 package lang.proteus.binding
 
+import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.symbols.Symbol
 import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.GlobalVariableDeclarationSyntax
@@ -13,9 +14,12 @@ internal data class ImportGraphNode(
 internal data class ImportGraphEdge(
     val from: ImportGraphNode,
     val to: ImportGraphNode,
+    val importStatementSyntax: ImportStatementSyntax,
 )
 
 internal class ImportGraph {
+
+    val diagnosticsBag = DiagnosticsBag()
 
     companion object {
 
@@ -24,15 +28,19 @@ internal class ImportGraph {
             return create(graph, mainTree)
         }
 
+        private val syntaxTreeCache = mutableMapOf<String, SyntaxTree>()
+
         private fun create(graph: ImportGraph, tree: SyntaxTree): ImportGraph {
             if (tree.hasErrors())
                 return graph
+            graph.addNode(tree)
             val members = tree.root.members
             val importStatements = members.filterIsInstance<ImportStatementSyntax>()
             for (importStatement in importStatements) {
                 val importPath = importStatement.resolvedFilePath
-                val importedTree = SyntaxTree.load(importPath)
-                val hasAddedEdge = graph.addEdge(tree, importedTree, importPath)
+                val importedTree = syntaxTreeCache[importPath] ?: SyntaxTree.load(importPath)
+                syntaxTreeCache[importPath] = importedTree
+                val hasAddedEdge = graph.addEdge(tree, importedTree, importStatement)
                 if (hasAddedEdge)
                     create(graph, importedTree)
             }
@@ -44,14 +52,14 @@ internal class ImportGraph {
     private val nodes = mutableMapOf<SyntaxTree, ImportGraphNode>()
     private val edges = mutableSetOf<ImportGraphEdge>()
 
-    private val pathToNodeMap = mutableMapOf<String, ImportGraphNode>()
+    fun addNode(tree: SyntaxTree): Boolean {
+        return nodes.put(tree, ImportGraphNode(tree)) == null
+    }
 
-
-    fun addEdge(from: SyntaxTree, to: SyntaxTree, importPath: String): Boolean {
+    fun addEdge(from: SyntaxTree, to: SyntaxTree, importStatement: ImportStatementSyntax): Boolean {
         val fromNode = nodes.getOrPut(from) { ImportGraphNode(from) }
         val toNode = nodes.getOrPut(to) { ImportGraphNode(to) }
-        pathToNodeMap[importPath] = toNode
-        return edges.add(ImportGraphEdge(fromNode, toNode))
+        return edges.add(ImportGraphEdge(fromNode, toNode, importStatement))
     }
 
     fun getTrees(): List<SyntaxTree> {
@@ -60,13 +68,37 @@ internal class ImportGraph {
 
     private val cachedExportedSymbols = mutableMapOf<SyntaxTree, List<Symbol>>()
 
-    fun gatherImportedSymbols(binder: Binder, tree: SyntaxTree): List<Symbol> {
-        val importedSymbols = mutableListOf<Symbol>()
+    fun gatherImportedSymbols(binder: Binder, tree: SyntaxTree): Set<Symbol> {
+        val importedSymbols = mutableSetOf<Symbol>()
+        val symbolToTreeMap = mutableMapOf<Symbol, SyntaxTree>()
+        val treeToImportStatement = mutableMapOf<SyntaxTree, ImportStatementSyntax>()
         val outgoingEdges = getOutgoingEdges(tree)
         for (edge in outgoingEdges) {
             val importedTree = edge.to.tree
             val exportedSymbols = gatherExportedSymbols(binder, importedTree)
+            for (symbol in exportedSymbols) {
+                symbolToTreeMap[symbol] = importedTree
+            }
+            val importStatement = edge.importStatementSyntax
+            treeToImportStatement[importedTree] = importStatement
             importedSymbols.addAll(exportedSymbols)
+        }
+        for (importedSymbol1 in importedSymbols) {
+            for (importedSymbol2 in importedSymbols) {
+                if (importedSymbol1 === importedSymbol2) continue
+                if (importedSymbol1.conflictsWith(importedSymbol2)) {
+                    val tree1 = symbolToTreeMap[importedSymbol1]!!
+                    val tree2 = symbolToTreeMap[importedSymbol2]!!
+                    val importStatementSyntax = treeToImportStatement[tree1]!!
+                    diagnosticsBag.reportConflictingImport(
+                        importedSymbol1,
+                        tree1,
+                        importedSymbol2,
+                        tree2,
+                        importStatementSyntax
+                    )
+                }
+            }
         }
         return importedSymbols
     }

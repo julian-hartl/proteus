@@ -42,28 +42,33 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
         if (diagnostics.hasErrors()) {
             return EvaluationResult(diagnostics, null, parseTime)
         }
+        computationTimeStopper.start()
         val program = Binder.bindProgram(globalScope, mainTree = syntaxTree)
 
         _globalScope = program.globalScope
-        computationTimeStopper.start()
-        val codeGenerationTime = computationTimeStopper.stop()
-        val functions = _globalScope!!.functions.flatMap {
-            it.value.map { it }
-        }.toSet()
-        val functionBodies = program.functionBodies.filter { functions.contains(it.key) }
+        val functions = _globalScope!!.functions
+
+        val functionBodies = program.functionBodies
+        val variableDeclarations = program.variableInitializers
         if (generateCode) {
             val generatedCode =
-                CodeGenerator.generate(functionBodies, functions)
+                CodeGenerator.generate(
+                    functionBodies,
+                    functions,
+                    program.globalScope.globalVariables,
+                    variableDeclarations
+                )
             CodeGenerator.emitGeneratedCode(generatedCode)
         }
         if (program.diagnostics.hasErrors()) {
             return EvaluationResult(program.diagnostics, null, parseTime)
         }
+        val codeGenerationTime = computationTimeStopper.stop()
         onWarning(program.diagnostics)
         diagnostics.concat(program.diagnostics)
 
         computationTimeStopper.start()
-        val evaluator = Evaluator(variables, functionBodies, mainFunction = program.mainFunction!!)
+        val evaluator = Evaluator(functionBodies, mainFunction = program.mainFunction!!, variableDeclarations)
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime, codeGenerationTime)

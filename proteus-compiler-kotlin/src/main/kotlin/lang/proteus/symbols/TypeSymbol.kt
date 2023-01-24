@@ -1,6 +1,6 @@
 package lang.proteus.symbols
 
-sealed class TypeSymbol(override val name: kotlin.String) : Symbol() {
+sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) {
 
     object Int : TypeSymbol("Int")
 
@@ -29,7 +29,7 @@ sealed class TypeSymbol(override val name: kotlin.String) : Symbol() {
         }
 
         fun fromName(name: kotlin.String): TypeSymbol? {
-            return allTypes.firstOrNull { it.name == name }
+            return allTypes.firstOrNull { it.simpleName == name }
         }
 
         fun fromJavaType(javaType: java.lang.reflect.Type): TypeSymbol {

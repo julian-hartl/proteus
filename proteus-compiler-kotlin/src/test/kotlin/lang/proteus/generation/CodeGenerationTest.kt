@@ -10,13 +10,13 @@ import kotlin.test.assertEquals
 
 class CodeGenerationTest {
     private fun useProgram(input: String): String {
+        SyntaxTree.reset()
         val parsed = SyntaxTree.parse(input)
         val globalScope = Binder.bindGlobalScope(null, parsed.root)
-        val program = Binder.bindProgram(globalScope, optimize = false)
+        val program = Binder.bindProgram(globalScope, parsed, optimize = false)
         return CodeGenerator.generate(
-            program.globalScope.statement,
             program.functionBodies,
-            program.globalScope.functions.toSet()
+            program.globalScope.functions
         )
     }
 
@@ -37,17 +37,13 @@ class CodeGenerationTest {
                             val a = 1;
                             val b = 2;
                         }
-                        main();
                     """.trimIndent(),
                     """
-                        fn main() -> Unit {
-                            var a = 1;
-                            var b = 2;
+                        fn main@0() -> Unit {
+                            var a@0: Int = 1;
+                            var b@0: Int = 2;
                         }
-                        {
-                            main();
-                        }
-                        
+                       
                     """.trimIndent()
                 ),
                 Arguments.of(
@@ -57,18 +53,14 @@ class CodeGenerationTest {
                             val b = 2;
                             val c = a + b;
                         }
-                        main();
                     """.trimIndent(),
                     """
-                        fn main() -> Unit {
-                            var a = 1;
-                            var b = 2;
-                            var c = ((a) + (b));
+                        fn main@0() -> Unit {
+                            var a@0: Int = 1;
+                            var b@0: Int = 2;
+                            var c@0: Int = ((a@0) + (b@0));
                         }
-                        {
-                            main();
-                        }
-                        
+                   
                     """.trimIndent()
                 ),
                 Arguments.of(
@@ -78,12 +70,10 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main() -> Unit {
-                            var test = "test";
+                        fn main@0() -> Unit {
+                            var test@0: String = "test";
                         }
-                        {
-                        }
-                        
+                     
                     """.trimIndent()
                 ),
                 Arguments.of(
@@ -100,17 +90,15 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main() -> Unit {
+                        fn main@0() -> Unit {
                             gotoIfFalse else_0 true;
-                            var a = 1;
-                            var b = 2;
-                            var c = ((a) + (b));
+                            var a@0: Int = 1;
+                            var b@0: Int = 2;
+                            var c@0: Int = ((a@0) + (b@0));
                             goto if_0_end;
                             else_0:
-                            var a = 1;
+                            var a@0: Int = 1;
                             if_0_end:
-                        }
-                        {
                         }
                         
                     """.trimIndent()
@@ -123,10 +111,8 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main() -> Unit {
+                        fn main@0() -> Unit {
                             return;
-                        }
-                        {
                         }
                         
                     """.trimIndent()
@@ -138,10 +124,8 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main() -> Int {
+                        fn main@0() -> Int {
                             return ((1) + (1));
-                        }
-                        {
                         }
                         
                     """.trimIndent()

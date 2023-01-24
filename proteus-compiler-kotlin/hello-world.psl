@@ -1,9 +1,13 @@
-fn main() {
-    val hello = "Hello";
-    val number = 2;
-    var a = 20;
-    a = 2;
-    val numbere = 2 * number;
-    hello + " " + number as String;
+var a = 0;
+fn test() {
+    if a == 0 {
+        return;
+    }
+    else {
+        a = 10;
+    }
 }
-main();
+fn main() {
+    test();
+    val x = a;
+}

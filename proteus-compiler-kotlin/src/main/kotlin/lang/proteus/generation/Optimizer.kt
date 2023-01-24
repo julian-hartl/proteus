@@ -14,12 +14,21 @@ internal class Optimizer private constructor() :
             val optimizer = Optimizer()
             return optimizer.optimize(statement)
         }
+
+        fun optimize(statement: BoundExpression): BoundExpression {
+            val optimizer = Optimizer()
+            return optimizer.optimizeExpression(statement)
+        }
     }
 
     private val assignments: MutableMap<VariableSymbol, List<BoundExpression>> = mutableMapOf()
 
     private val declarations: MutableMap<VariableSymbol, BoundVariableDeclaration> = mutableMapOf()
 
+
+    private fun optimizeExpression(expression: BoundExpression): BoundExpression {
+        return rewriteExpression(expression)
+    }
 
     private fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
         var lastStatement = rewriteBlockStatement(statement)

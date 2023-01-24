@@ -2,7 +2,6 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
-import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
@@ -17,12 +16,9 @@ internal class AssertingEnumerator<T> private constructor(
     companion object {
         fun fromExpression(expression: SyntaxNode): AssertingEnumerator<SyntaxNode> {
             val flattenedTree = flatten(expression)
-            assertTrue(expression is GlobalVariableDeclarationSyntax, "root expression must be global statement syntax statement, but was ${expression::class.simpleName}")
+            assertTrue(expression is MemberSyntax, "root expression must be a member syntax statement, but was ${expression::class.simpleName}")
 
             val iterator = flattenedTree.iterator()
-            iterator.next()
-            val expressionStatement = iterator.next()
-            assertTrue(expressionStatement is ExpressionStatementSyntax, "first expression must be expression statement syntax, but was ${expressionStatement::class.simpleName}")
             return AssertingEnumerator(flattenedTree, iterator);
         }
 
@@ -43,7 +39,7 @@ internal class AssertingEnumerator<T> private constructor(
     }
 
 
-    fun <T : ExpressionSyntax> assertExpression(expressionClass: KClass<T>, value: Any? = null): T {
+    fun <T : SyntaxNode> assertNode(expressionClass: KClass<T>, value: Any? = null): T {
         assertTrue(iterator.hasNext(), "Expected an expression, but found nothing")
         val next = iterator.next()
         val isCorrectExpression = expressionClass.isInstance(next)

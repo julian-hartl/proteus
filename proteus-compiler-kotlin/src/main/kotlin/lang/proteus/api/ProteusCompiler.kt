@@ -20,6 +20,7 @@ internal class ProteusCompiler() {
 
     private val computationTimeStopper = ComputationTimeStopper()
     fun compile(fileName: String): CompilationResult {
+        computationTimeStopper.start()
         val tree = SyntaxTree.load(fileName)
         return compileTree(tree, tree.sourceText, generateCode = true)
     }
@@ -47,6 +48,7 @@ internal class ProteusCompiler() {
         val lexerTime = computationTimeStopper.stop()
 
 
+        computationTimeStopper.start()
         val compilation = Compilation(tree)
         val compilationResult = compilation.evaluate(variables, generateCode = generateCode) {
             DiagnosticsPrinter.printDiagnostics(it)

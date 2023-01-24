@@ -246,6 +246,7 @@ internal class LexerTest {
                 Arguments.of(Keyword.Continue, "continue"),
                 Arguments.of(Keyword.Return, "return"),
                 Arguments.of(Keyword.Import, "import"),
+                Arguments.of(Keyword.External, "external"),
 
                 )
         }

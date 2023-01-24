@@ -1,6 +1,16 @@
 import "./multiply";
 import "std/io";
 
+import "std/math";
+
+fn sum() {
+    const a = 2;
+    const b = 3;
+    val added = a + b;
+    println(added);
+    println(random(0,1));
+}
+
 fn main() {
     const a = 2;
     const b = 3;

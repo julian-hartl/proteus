@@ -9,7 +9,16 @@ class SourceText(private val text: String, private val path: String) {
 
     val length get() = text.length
 
-    val absolutePath get() = Paths.get("./").resolve(path).toAbsolutePath().toString()
+    val absolutePath: String
+        get() {
+
+            val resolvedPath = Paths.get(path)
+            val currentWorkingDir = System.getProperty("user.dir")
+            val file = if (resolvedPath.isAbsolute) resolvedPath else Paths.get(currentWorkingDir, path)
+            return file.normalize().toAbsolutePath().toString()
+
+        }
+
 
     operator fun get(index: Int): Char = text[index]
 

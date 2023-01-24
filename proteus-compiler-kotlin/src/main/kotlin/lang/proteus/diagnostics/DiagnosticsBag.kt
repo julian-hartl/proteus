@@ -2,12 +2,14 @@ package lang.proteus.diagnostics
 
 import lang.proteus.binding.ImportGraphNode
 import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.Symbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.ImportStatementSyntax
+import lang.proteus.syntax.parser.SyntaxTree
 
 internal class DiagnosticsBag {
     private val mutableDiagnostics = MutableDiagnostics()
@@ -73,7 +75,7 @@ internal class DiagnosticsBag {
         report(
             "Readonly variables cannot be reassigned",
             textLocation,
-            hint = "Variable '${variable.name}' is declared as '$variableDeclarationLiteral'"
+            hint = "Variable '${variable.simpleName}' is declared as '$variableDeclarationLiteral'"
         )
     }
 
@@ -221,6 +223,24 @@ internal class DiagnosticsBag {
             location,
             hint = "Install the required library."
         )
+    }
+
+    fun reportConflictingImport(
+        importedSymbol1: Symbol,
+        tree1: SyntaxTree,
+        importedSymbol2: Symbol,
+        tree2: SyntaxTree,
+        conflictingImportStatement: ImportStatementSyntax,
+    ) {
+        report(
+            "Conflicting import. Both '${importedSymbol1.simpleName}' and '${importedSymbol2.simpleName}' are imported from different files.",
+            conflictingImportStatement.location,
+            hint = "Imported from '${tree1.sourceText.absolutePath}' and '${tree2.sourceText.absolutePath}'"
+        )
+    }
+
+    fun reportCannotCallMain(location: TextLocation) {
+        report("Cannot call main function", location, hint = "The main function is called automatically.")
     }
 
 

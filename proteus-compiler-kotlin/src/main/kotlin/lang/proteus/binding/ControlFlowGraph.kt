@@ -34,7 +34,7 @@ internal class ControlFlowGraph private constructor(
             }
 
             for (statement in statements) {
-                val asString = CodeGenerator.generate(functions = setOf())
+                val asString = CodeGenerator.generate(functions = setOf(), functionBodies = mapOf(), globalVariables = setOf(), globalVariableInitializers = mapOf())
                 builder.appendLine(asString)
             }
             return builder.toString()
@@ -46,7 +46,7 @@ internal class ControlFlowGraph private constructor(
             if (condition == null) {
                 return ""
             }
-            return CodeGenerator.generate(functions = setOf())
+            return CodeGenerator.generate(functions = setOf(), functionBodies = mapOf(), globalVariables = setOf(), globalVariableInitializers = mapOf())
         }
     }
 
@@ -108,8 +108,6 @@ internal class ControlFlowGraph private constructor(
         }
 
         fun create(cfgStatement: BoundBlockStatement): ControlFlowGraph {
-
-
             val blockBuilder = BasicBlockBuilder(cfgStatement)
             blockBuilder.build()
             val blocks = blockBuilder.blocks
