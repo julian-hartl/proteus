@@ -8,6 +8,4 @@ internal data class BoundProgram(
     val diagnostics: Diagnostics,
     val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
     val mainFunction: FunctionSymbol?,
-) {
-    val statement: BoundBlockStatement = globalScope.statement
-}
+)

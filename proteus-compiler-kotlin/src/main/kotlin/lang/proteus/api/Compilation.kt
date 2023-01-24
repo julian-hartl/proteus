@@ -2,15 +2,11 @@ package lang.proteus.api
 
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
-import lang.proteus.binding.BoundBlockStatement
 import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
-import lang.proteus.generation.Lowerer
-import lang.proteus.generation.Optimizer
-import lang.proteus.generation.TreeShaker
 import lang.proteus.syntax.parser.SyntaxTree
 
 internal class Compilation(val syntaxTree: SyntaxTree) {
@@ -46,17 +42,18 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
         if (diagnostics.hasErrors()) {
             return EvaluationResult(diagnostics, null, parseTime)
         }
-        val program = Binder.bindProgram(globalScope, isMainFile = true)
+        val program = Binder.bindProgram(globalScope, mainTree = syntaxTree)
 
         _globalScope = program.globalScope
         computationTimeStopper.start()
-        val statement = getStatement()
         val codeGenerationTime = computationTimeStopper.stop()
-        val functions = _globalScope!!.functions.toSet()
+        val functions = _globalScope!!.functions.flatMap {
+            it.value.map { it }
+        }.toSet()
         val functionBodies = program.functionBodies.filter { functions.contains(it.key) }
         if (generateCode) {
             val generatedCode =
-                CodeGenerator.generate(statement, functionBodies, functions)
+                CodeGenerator.generate(functionBodies, functions)
             CodeGenerator.emitGeneratedCode(generatedCode)
         }
         if (program.diagnostics.hasErrors()) {
@@ -70,13 +67,6 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime, codeGenerationTime)
-    }
-
-    private fun getStatement(): BoundBlockStatement {
-//        val shaken = TreeShaker.shake(globalScope)
-//        _globalScope = shaken
-        val lowered = Lowerer.lower(globalScope.statement)
-        return Optimizer.optimize(lowered)
     }
 
 

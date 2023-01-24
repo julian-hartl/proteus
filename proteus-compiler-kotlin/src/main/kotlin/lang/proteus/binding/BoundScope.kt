@@ -3,54 +3,67 @@ package lang.proteus.binding
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.Symbol
 import lang.proteus.symbols.VariableSymbol
+import lang.proteus.syntax.parser.SyntaxTree
 
 internal class BoundScope internal constructor(val parent: BoundScope?) {
     private val variableScope: SymbolScope<VariableSymbol> = SymbolScope(parent?.variableScope)
     private val functionScope: SymbolScope<FunctionSymbol> = SymbolScope(parent?.functionScope)
 
-    fun getDeclaredVariables(): List<VariableSymbol> = variableScope.getSymbols()
+    fun getDeclaredVariables(): Map<SyntaxTree, Set<VariableSymbol>> = variableScope.getAllSymbols()
 
-    fun tryDeclareVariable(variable: VariableSymbol): VariableSymbol? {
-        return variableScope.tryDeclare(variable)
+    fun tryDeclareVariable(variable: VariableSymbol, syntaxTree: SyntaxTree): VariableSymbol? {
+        return variableScope.tryDeclare(variable, syntaxTree)
     }
 
-    fun tryLookupVariable(variable: String): VariableSymbol? {
-        return variableScope.tryLookup(variable)
+    fun tryLookupVariable(variable: String, syntaxTree: SyntaxTree): VariableSymbol? {
+        return variableScope.tryLookup(variable, syntaxTree)
     }
 
-    fun getDeclaredFunctions(): List<FunctionSymbol> = functionScope.getSymbols()
+    fun getDeclaredFunctions(
 
-    fun tryDeclareFunction(function: FunctionSymbol): FunctionSymbol? {
-        return functionScope.tryDeclare(function)
+    ): Map<SyntaxTree, Set<FunctionSymbol>> = functionScope.getAllSymbols()
+
+
+    fun tryDeclareFunction(function: FunctionSymbol, syntaxTree: SyntaxTree): FunctionSymbol? {
+        return functionScope.tryDeclare(function, syntaxTree)
     }
 
-    fun tryLookupFunction(function: String): FunctionSymbol? {
-        return functionScope.tryLookup(function)
+    fun tryLookupFunction(function: String, syntaxTree: SyntaxTree): FunctionSymbol? {
+        return functionScope.tryLookup(function, syntaxTree)
     }
 
 }
 
 internal class SymbolScope<T : Symbol>(val parent: SymbolScope<T>?) {
-    private val symbols: MutableMap<String, T> = mutableMapOf()
+    private val symbols: MutableMap<SyntaxTree, MutableMap<String, T>> = mutableMapOf()
 
-    fun getSymbols(): List<T> = symbols.values.toList()
+    fun getSymbols(syntaxTree: SyntaxTree): MutableMap<String, T> = symbols.getOrPut(syntaxTree) { mutableMapOf() }
 
-    fun tryDeclare(variable: T): T? {
-        val declaredVariable = symbols[variable.name]
+    fun getAllSymbols(): Map<SyntaxTree, Set<T>> {
+        val allSymbols = mutableMapOf<SyntaxTree, Set<T>>()
+        for (syntaxTree in symbols.keys) {
+            allSymbols[syntaxTree] = symbols[syntaxTree]!!.values.toSet()
+        }
+        return allSymbols
+    }
+
+
+    fun tryDeclare(variable: T, syntaxTree: SyntaxTree): T? {
+        val declaredVariable = getSymbols(syntaxTree)[variable.name]
         if (declaredVariable != null) {
             return null
         }
 
-        symbols[variable.name] = variable
-        return symbols[variable.name]
+        symbols[syntaxTree]!![variable.name] = variable
+        return variable
     }
 
-    fun tryLookup(variable: String): T? {
-        if (symbols.containsKey(variable)) {
-            return symbols[variable]!!
+    fun tryLookup(variable: String, syntaxTree: SyntaxTree): T? {
+        if (getSymbols(syntaxTree).containsKey(variable)) {
+            return symbols[syntaxTree]!![variable]!!
         }
         if (parent == null) return null
-        return parent.tryLookup(variable)
+        return parent.tryLookup(variable, syntaxTree)
 
     }
 }

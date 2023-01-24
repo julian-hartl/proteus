@@ -5,11 +5,10 @@ import lang.proteus.binding.BoundScope
 import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.FunctionDeclarationSyntax
-import lang.proteus.syntax.parser.GlobalStatementSyntax
+import lang.proteus.syntax.parser.GlobalVariableDeclarationSyntax
 import lang.proteus.syntax.parser.ImportStatementSyntax
 import lang.proteus.syntax.parser.Parser
 import lang.proteus.syntax.parser.statements.StatementSyntax
-import lang.proteus.text.SourceText
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
@@ -47,7 +46,7 @@ class BinderTest {
         val compilationUnitSyntax = parser.parseCompilationUnit()
         val member = compilationUnitSyntax.members[0]
         return when (member) {
-            is GlobalStatementSyntax -> member.statement
+            is GlobalVariableDeclarationSyntax -> member.statement
             is FunctionDeclarationSyntax -> member.body!!
             is ImportStatementSyntax -> TODO()
         }

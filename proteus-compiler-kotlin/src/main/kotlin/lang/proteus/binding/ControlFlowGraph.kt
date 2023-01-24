@@ -34,7 +34,7 @@ internal class ControlFlowGraph private constructor(
             }
 
             for (statement in statements) {
-                val asString = CodeGenerator.generate(statement, functions = setOf())
+                val asString = CodeGenerator.generate(functions = setOf())
                 builder.appendLine(asString)
             }
             return builder.toString()
@@ -46,7 +46,7 @@ internal class ControlFlowGraph private constructor(
             if (condition == null) {
                 return ""
             }
-            return CodeGenerator.generate(BoundExpressionStatement(condition), functions = setOf())
+            return CodeGenerator.generate(functions = setOf())
         }
     }
 

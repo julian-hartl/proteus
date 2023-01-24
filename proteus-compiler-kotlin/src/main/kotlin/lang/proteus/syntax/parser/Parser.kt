@@ -79,7 +79,12 @@ internal class Parser(
         return when (current.token) {
             is Keyword.Import -> parseImportStatement()
             is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
-            else -> parseGlobalStatement()
+            is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
+            else -> {
+                diagnosticsBag.reportInvalidTopLevelStatement(current.location)
+                nextToken()
+                parseMember()
+            }
         }
     }
 
@@ -124,7 +129,7 @@ internal class Parser(
         val modifiers = mutableSetOf<Keyword>()
         while (current.token is Keyword && current.token != Keyword.Fn) {
             val wasAdded = modifiers.add(current.token as Keyword)
-            if(!wasAdded) {
+            if (!wasAdded) {
                 diagnosticsBag.reportDuplicateModifier(current)
             }
             nextToken()
@@ -167,16 +172,11 @@ internal class Parser(
         return ParameterSyntax(identifier, typeClauseSyntax, syntaxTree)
     }
 
-    private fun parseGlobalStatement(): GlobalStatementSyntax {
-        val statement = parseStatement()
-        if (statement !is VariableDeclarationSyntax) {
-            diagnosticsBag.reportInvalidTopLevelStatement(statement.location)
-        }
-        val semiColon = if (peek(-1).token !is Token.CloseBrace) {
-            matchToken(Token.SemiColon)
-        } else null
+    private fun parseGlobalVariableDeclaration(): GlobalVariableDeclarationSyntax {
+        val statement = parseVariableDeclarationStatement()
+        val semiColon = matchToken(Token.SemiColon)
 
-        return GlobalStatementSyntax(statement, semiColon, syntaxTree)
+        return GlobalVariableDeclarationSyntax(statement, semiColon, syntaxTree)
     }
 
 
@@ -280,7 +280,7 @@ internal class Parser(
         null
     }
 
-    private fun parseVariableDeclarationStatement(): StatementSyntax {
+    private fun parseVariableDeclarationStatement(): VariableDeclarationSyntax {
         val keyword = nextToken().token as Keyword
         val identifier = matchToken(Token.Identifier)
         val typeClause = parseOptionalTypeClause()

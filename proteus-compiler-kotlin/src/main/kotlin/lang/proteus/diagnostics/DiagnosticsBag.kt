@@ -59,7 +59,9 @@ internal class DiagnosticsBag {
     }
 
     fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol) {
-        report("Cannot convert type '${actualType}' to '${expectedType}'", textLocation)
+        if (actualType !is TypeSymbol.Error) {
+            report("Cannot convert type '${actualType}' to '${expectedType}'", textLocation)
+        }
     }
 
     fun reportVariableAlreadyDeclared(textLocation: TextLocation, variableName: String) {

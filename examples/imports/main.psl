@@ -1,10 +1,9 @@
 import "./multiply";
 import "std/io";
-import "std/math";
+
 fn main() {
     const a = 2;
     const b = 3;
-    val summed = multiply(a, b);
-    println(summed);
-    println(PI);
+    val multiplied = multiply(a, b);
+    println(multiplied);
 }

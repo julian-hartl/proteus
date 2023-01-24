@@ -15,12 +15,11 @@ internal class CodeGenerator private constructor(
 
     companion object {
         fun generate(
-            statement: BoundStatement,
             functionBodies: Map<FunctionSymbol, BoundBlockStatement> = mapOf(),
             functions: Set<FunctionSymbol>,
         ): String {
             val generator = CodeGenerator(functionBodies = functionBodies, functions = functions)
-            return generator.generateCode(statement)
+            return generator.generateCode()
         }
 
         fun emitGeneratedCode(code: String) {
@@ -32,9 +31,8 @@ internal class CodeGenerator private constructor(
         }
     }
 
-    private fun generateCode(node: BoundStatement): String {
+    private fun generateCode(): String {
         generateFunctionDeclarations(functions)
-        rewriteStatement(node)
         return codeBuilder.toString()
     }
 
