@@ -48,7 +48,7 @@ class BinderTest {
         val member = compilationUnitSyntax.members[0]
         return when (member) {
             is GlobalStatementSyntax -> member.statement
-            is FunctionDeclarationSyntax -> member.body
+            is FunctionDeclarationSyntax -> member.body!!
             is ImportStatementSyntax -> TODO()
         }
     }

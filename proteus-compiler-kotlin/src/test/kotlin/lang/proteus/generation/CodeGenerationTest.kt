@@ -13,7 +13,11 @@ class CodeGenerationTest {
         val parsed = SyntaxTree.parse(input)
         val globalScope = Binder.bindGlobalScope(null, parsed.root)
         val program = Binder.bindProgram(globalScope, optimize = false)
-        return CodeGenerator.generate(program.globalScope.statement, program.functionBodies)
+        return CodeGenerator.generate(
+            program.globalScope.statement,
+            program.functionBodies,
+            program.globalScope.functions.toSet()
+        )
     }
 
     @ParameterizedTest
