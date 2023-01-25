@@ -458,7 +458,14 @@ internal class Binder(
     private fun bindBlockStatement(syntax: BlockStatementSyntax): BoundStatement {
         scope = BoundScope(scope)
         val statements = syntax.statements.map {
-            bindStatement(it)
+            val statement = bindStatement(it)
+            if (statement is BoundExpressionStatement ) {
+                val expression = statement.expression
+                if(expression !is BoundCallExpression && expression !is BoundAssignmentExpression && expression !is BoundErrorExpression) {
+                    diagnosticsBag.reportUnusedExpression(it.location)
+                }
+            }
+            statement
         }
         scope = scope.parent!!
         return BoundBlockStatement(
@@ -572,7 +579,7 @@ internal class Binder(
         val declaredVariable = scope.tryLookupVariable(variableName, syntax.syntaxTree)
         if (declaredVariable == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, variableName)
-            return boundExpression
+            return BoundErrorExpression
         }
         if (declaredVariable.isReadOnly) {
             diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.location, declaredVariable)

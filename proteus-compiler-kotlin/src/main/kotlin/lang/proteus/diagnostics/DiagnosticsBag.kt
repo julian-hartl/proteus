@@ -243,5 +243,9 @@ internal class DiagnosticsBag {
         report("Cannot call main function", location, hint = "The main function is called automatically.")
     }
 
+    fun reportUnusedExpression(location: TextLocation) {
+        report("Expression is unused", location, diagnosticType = DiagnosticType.Warning)
+    }
+
 
 }
