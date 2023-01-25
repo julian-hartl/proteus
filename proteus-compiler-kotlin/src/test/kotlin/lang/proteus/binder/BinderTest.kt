@@ -2,13 +2,8 @@ package lang.proteus.binder
 
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundScope
-import lang.proteus.symbols.GlobalVariableSymbol
-import lang.proteus.symbols.TypeSymbol
-import lang.proteus.syntax.parser.FunctionDeclarationSyntax
-import lang.proteus.syntax.parser.GlobalStatementSyntax
-import lang.proteus.syntax.parser.Parser
+import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.StatementSyntax
-import lang.proteus.text.SourceText
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
@@ -16,13 +11,9 @@ class BinderTest {
 
     private lateinit var binder: Binder
 
-    companion object {
-        private const val TEST_VARIABLE_NAME = "x"
-        private const val TEST_VARIABLE_VALUE = 1
-    }
 
-    private fun useExpression(input: String, inMain: Boolean = false) {
-        val expression = parseExpression(
+    private fun useExpression(input: String, inMain: Boolean = true) {
+        val parseResult = parseExpression(
             if (inMain) {
                 "fn main() { $input }"
             } else {
@@ -30,25 +21,26 @@ class BinderTest {
             }
         )
         val scope = BoundScope(null)
-        scope.tryDeclareVariable(
-            GlobalVariableSymbol(
-                TEST_VARIABLE_NAME,
-                TypeSymbol.Int,
-                isFinal = false,
-            )
-        )
+
         binder = Binder(scope, null)
-        binder.bindStatement(expression)
+        binder.bindStatement(parseResult.expression)
     }
 
-    private fun parseExpression(input: String): StatementSyntax {
-        val parser = Parser(SourceText.from(input))
+    private data class ParseExpressionResult(
+        val expression: StatementSyntax,
+        val tree: SyntaxTree,
+    )
+
+    private fun parseExpression(input: String): ParseExpressionResult {
+        val parser = Parser(input)
         val compilationUnitSyntax = parser.parseCompilationUnit()
         val member = compilationUnitSyntax.members[0]
-        return when (member) {
-            is GlobalStatementSyntax -> member.statement
-            is FunctionDeclarationSyntax -> member.body
+        val statement = when (member) {
+            is GlobalVariableDeclarationSyntax -> member.statement
+            is FunctionDeclarationSyntax -> member.body!!
+            is ImportStatementSyntax -> TODO()
         }
+        return ParseExpressionResult(statement, compilationUnitSyntax.syntaxTree)
     }
 
     @Test
@@ -238,11 +230,6 @@ class BinderTest {
         assertTrue(binder.hasErrors())
     }
 
-    @Test
-    fun shouldAllowAssignmentToIdentifier() {
-        useExpression("$TEST_VARIABLE_NAME = 1")
-        assertTrue(!binder.hasErrors())
-    }
 
     @Test
     fun shouldNotAllowAssignmentToLiteral() {
@@ -252,14 +239,24 @@ class BinderTest {
 
     @Test
     fun shouldAllowAssignmentToDeclaredVariable() {
-        useExpression("$TEST_VARIABLE_NAME = 2")
+        useExpression(
+            """
+            var a = 1
+            a = 2
+        """.trimIndent()
+        )
         assertTrue(!binder.hasErrors())
     }
 
 
     @Test
     fun shouldNotAllowAssignmentToOtherType() {
-        useExpression("$TEST_VARIABLE_NAME = true")
+        useExpression(
+            """
+            var a = 1
+            a = true
+        """.trimIndent()
+        )
         assertTrue(binder.hasErrors())
     }
 
@@ -277,13 +274,23 @@ class BinderTest {
 
     @Test
     fun shouldAllowTypeofOnVariable() {
-        useExpression("typeof $TEST_VARIABLE_NAME")
+        useExpression(
+            """
+            var a = 1;
+            typeof a;
+        """.trimIndent()
+        )
         assertTrue(!binder.hasErrors())
     }
 
     @Test
     fun shouldAllowTypeComparison() {
-        useExpression("typeof $TEST_VARIABLE_NAME == Int")
+        useExpression(
+            """
+            var a = 1;
+            typeof a == typeof 2;
+        """.trimIndent()
+        )
         assertTrue(!binder.hasErrors())
     }
 
@@ -464,6 +471,7 @@ class BinderTest {
         """.trimIndent(),
             inMain = true
         )
+        println(binder.diagnostics)
         assertTrue(!binder.hasErrors())
     }
 

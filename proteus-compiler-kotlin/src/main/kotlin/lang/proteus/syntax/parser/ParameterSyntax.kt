@@ -5,8 +5,8 @@ import lang.proteus.syntax.lexer.token.Token
 
 internal class ParameterSyntax(
     val identifier: SyntaxToken<Token.Identifier>,
-    val typeClause: TypeClauseSyntax,
-) : SyntaxNode() {
+    val typeClause: TypeClauseSyntax, syntaxTree: SyntaxTree,
+) : SyntaxNode(syntaxTree) {
     override val token: Token
         get() = Token.Parameter
 }

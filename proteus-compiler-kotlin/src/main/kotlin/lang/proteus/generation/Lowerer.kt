@@ -40,9 +40,16 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
      */
     override fun rewriteForStatement(node: BoundForStatement): BoundStatement {
         val randomUuid = UUID.randomUUID().toString()
-        val loopCounterVariable = LocalVariableSymbol("loop_counter_${randomUuid}", node.variable.type, false)
+        val loopCounterVariable = LocalVariableSymbol(
+            "loop_counter_${randomUuid}",
+            node.variable.type,
+            false,
+            syntaxTree = node.variable.syntaxTree,
+            enclosingFunction = node.variable.enclosingFunction
+        )
         val loopCounterVariableDeclaration = BoundVariableDeclaration(loopCounterVariable, node.lowerBound)
-        val loopValueVariableDeclaration = BoundVariableDeclaration(node.variable, BoundVariableExpression(loopCounterVariable))
+        val loopValueVariableDeclaration =
+            BoundVariableDeclaration(node.variable, BoundVariableExpression(loopCounterVariable))
         val increment = BoundAssignmentExpression(
             loopCounterVariable,
             BoundLiteralExpression(1),

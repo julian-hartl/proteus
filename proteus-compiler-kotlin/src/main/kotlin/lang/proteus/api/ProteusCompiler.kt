@@ -13,19 +13,31 @@ import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 import java.lang.management.MemoryUsage
 
-internal class ProteusCompiler() {
+internal class ProteusCompiler(private val outputGeneratedCode: Boolean = true) {
 
-    private var previous: Compilation? = null
 
     private val variables = mutableMapOf<String, Any>()
 
-    fun compile(text: String, verbose: Boolean = false, generateCode: Boolean = false): CompilationResult {
+    private val computationTimeStopper = ComputationTimeStopper()
+    fun compile(fileName: String): CompilationResult {
+        computationTimeStopper.start()
+        val tree = SyntaxTree.load(fileName)
+        return compileTree(tree, tree.sourceText)
+    }
+
+    fun compileText(text: String): CompilationResult {
         val sourceText = SourceText.from(text)
-        val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
+        return compileTree(tree, sourceText)
+    }
+
+    private fun compileTree(
+        tree: SyntaxTree,
+        sourceText: SourceText,
+    ): CompilationResult {
         if (tree.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(tree.diagnostics, sourceText)
+            DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
             return CompilationResult(
                 tree,
                 null,
@@ -35,16 +47,16 @@ internal class ProteusCompiler() {
         val lexerTime = computationTimeStopper.stop()
 
 
-        val compilation = if (previous == null) Compilation(tree) else previous!!.continueWith(tree)
-        val compilationResult = compilation.evaluate(variables, generateCode = generateCode) {
-            DiagnosticsPrinter.printDiagnostics(it, sourceText)
+        computationTimeStopper.start()
+        val compilation = Compilation(tree)
+        val compilationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
+            DiagnosticsPrinter.printDiagnostics(it)
         }
         val memoryUsage = getMemoryUsage()
         if (compilationResult.diagnostics.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics, sourceText)
+            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics)
         } else {
             printResult(compilationResult)
-            previous = compilation
         }
         val performance = CompilationPerformance(
             lexerTime,

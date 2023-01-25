@@ -1,13 +1,24 @@
 package lang.proteus.text
 
 import lang.proteus.diagnostics.TextSpan
+import java.nio.file.Paths
 
-class SourceText private constructor(private val text: String) {
+class SourceText(private val text: String, private val path: String) {
 
     val lines: List<TextLine> = parseLines(this, text)
 
-
     val length get() = text.length
+
+    val absolutePath: String
+        get() {
+
+            val resolvedPath = Paths.get(path)
+            val currentWorkingDir = System.getProperty("user.dir")
+            val file = if (resolvedPath.isAbsolute) resolvedPath else Paths.get(currentWorkingDir, path)
+            return file.normalize().toAbsolutePath().toString()
+
+        }
+
 
     operator fun get(index: Int): Char = text[index]
 
@@ -44,7 +55,7 @@ class SourceText private constructor(private val text: String) {
 
     companion object {
         fun from(text: String): SourceText {
-            return SourceText(text)
+            return SourceText(text, "<none>")
         }
 
         fun parseLines(sourceText: SourceText, text: String): List<TextLine> {

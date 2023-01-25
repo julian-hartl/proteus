@@ -2,33 +2,42 @@ package lang.proteus.printing
 
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.diagnostics.TextSpan
-import lang.proteus.text.SourceText
 
 object DiagnosticsPrinter {
-    fun printDiagnostics(diagnostics: Diagnostics, sourceText: SourceText) {
+    fun printDiagnostics(diagnostics: Diagnostics) {
         val printer = ConsolePrinter()
-        val text = sourceText.toString()
-        for (diagnostic in diagnostics.diagnostics) {
+        val orderedDiagnostics = diagnostics.diagnostics.sortedBy {
+            it.location.sourceText.absolutePath
+        }.sortedBy {
+            it.span.start
+        }.sortedBy {
+            it.span.length
+        }
+        for (diagnostic in orderedDiagnostics) {
 
-            val lineIndex = sourceText.getLineIndex(diagnostic.span.start)
-            val endLineIndex = sourceText.getLineIndex(diagnostic.span.end)
+            val sourceText = diagnostic.location.sourceText
+            val text = sourceText.toString()
+            val fileName = diagnostic.location.fileName
+            val span = diagnostic.span
+            val lineIndex = sourceText.getLineIndex(span.start)
+            val endLineIndex = sourceText.getLineIndex(span.end)
             val lineNumber = lineIndex + 1
             val line = sourceText.lines[lineIndex]
             val endLine = sourceText.lines[endLineIndex]
-            val character = diagnostic.span.start - line.start + 1
+            val character = span.start - line.start + 1
 
             printer.println()
 
-            val prefixSpan = TextSpan.fromBounds(line.start, diagnostic.span.start)
+            val prefixSpan = TextSpan.fromBounds(line.start, span.start)
             val prefix = sourceText.toString(prefixSpan)
-            val error = text.substring(diagnostic.span.start, diagnostic.span.end)
-            val suffixSpan = TextSpan.fromBounds(diagnostic.span.end, endLine.endIncludingLineBreak)
+            val error = text.substring(span.start, span.end)
+            val suffixSpan = TextSpan.fromBounds(span.end, endLine.endIncludingLineBreak)
             val suffix = sourceText.toString(suffixSpan)
 
 
             val color = if (diagnostic.isError) PrinterColor.RED else PrinterColor.YELLOW
             printer.setColor(color)
-            printer.print("(${lineNumber}:${character}) ")
+            printer.print("$fileName(${lineNumber}:${character}) ")
             printer.println(diagnostic.message)
             printer.reset()
 

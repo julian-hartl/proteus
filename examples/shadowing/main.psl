@@ -1,0 +1,12 @@
+import "std/io";
+
+val a = 10;
+
+fn getA() -> Int {
+    return 2;
+}
+
+fn main() {
+    val a = getA();
+    println(a);
+}

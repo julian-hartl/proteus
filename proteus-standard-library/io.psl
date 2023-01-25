@@ -1,0 +1,2 @@
+external fn println(s: Any) -> Unit;
+external fn print(s: Any) -> Unit;

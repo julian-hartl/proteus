@@ -1,16 +1,14 @@
 package lang.proteus.syntax.parser
 
-import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Operators
 import lang.proteus.syntax.lexer.token.Token
-import lang.proteus.syntax.parser.statements.ExpressionStatementSyntax
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
-import kotlin.test.assertTrue
 
 internal class ParserTest {
 
@@ -23,29 +21,20 @@ internal class ParserTest {
     }
 
     @Test
-    fun `should parse function call`() {
-        val text = """
-            
-                foo(x, y);
-            
+    @Timeout(1)
+    fun `invalidate call expression should terminate`() {
+        SyntaxTree.parse(
+            """
+            fn main() {
+                const a = 2;
+                const b = 3;
+                val multiplied = multiply(a, b);
+                println(multiplied;
+            }
         """.trimIndent()
-        val expression = SyntaxTree.parse(text)
-        val errorAsserter = ErrorAsserter(expression.diagnostics)
-        errorAsserter.assertNoErrors()
-        val e = AssertingEnumerator.fromExpression(expression.root.members[0])
-        val classExpression = e.assertExpression(CallExpressionSyntax::class)
-        val argumentsIterator = classExpression.arguments.iterator()
-        val firstArgument = argumentsIterator.next()
-        assertTrue(firstArgument is NameExpressionSyntax)
-        val secondArgument = argumentsIterator.next()
-        assertTrue(secondArgument is NameExpressionSyntax)
-
-        e.assertToken(Token.Identifier, "foo")
-        e.assertToken(Operator.OpenParenthesis, "(")
-        e.assertToken(Operator.CloseParenthesis, ")")
-        e.assertToken(Token.SemiColon, ";")
-        e.dispose()
+        )
     }
+
 
     @ParameterizedTest(name = "Precedence: a {0} b {1} c")
     @MethodSource
@@ -58,28 +47,28 @@ internal class ParserTest {
 
         val e = AssertingEnumerator.fromExpression(expression.root.members[0])
         if (precedence1 >= precedence2) {
-            e.assertExpression(BinaryExpressionSyntax::class)
-            e.assertExpression(BinaryExpressionSyntax::class)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(BinaryExpressionSyntax::class)
+            e.assertNode(BinaryExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "a")
             e.assertToken(op1, op1.literal)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "b")
             e.assertToken(op2, op2.literal)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "c")
             e.dispose()
 
         } else {
-            e.assertExpression(BinaryExpressionSyntax::class)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(BinaryExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "a")
             e.assertToken(op1, op1.literal)
-            e.assertExpression(BinaryExpressionSyntax::class)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(BinaryExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "b")
             e.assertToken(op2, op2.literal)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "c")
             e.dispose()
         }
@@ -97,23 +86,23 @@ internal class ParserTest {
 
         val e = AssertingEnumerator.fromExpression(expression.root)
         if (unaryPrecedence >= binaryPrecedence) {
-            e.assertExpression(BinaryExpressionSyntax::class)
-            e.assertExpression(UnaryExpressionSyntax::class)
+            e.assertNode(BinaryExpressionSyntax::class)
+            e.assertNode(UnaryExpressionSyntax::class)
             e.assertToken(unaryOperator, unaryOperator.literal)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "a")
             e.assertToken(unaryOperator, unaryOperator.literal)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "b")
             e.dispose()
 
         } else {
-            e.assertExpression(UnaryExpressionSyntax::class)
+            e.assertNode(UnaryExpressionSyntax::class)
             e.assertToken(unaryOperator, unaryOperator.literal)
-            e.assertExpression(BinaryExpressionSyntax::class)
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(BinaryExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "a")
-            e.assertExpression(NameExpressionSyntax::class)
+            e.assertNode(NameExpressionSyntax::class)
             e.assertToken(Token.Identifier, "b")
             e.dispose()
         }

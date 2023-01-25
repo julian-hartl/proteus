@@ -1,5 +1,6 @@
 package lang.proteus.syntax.parser
 
+import lang.proteus.diagnostics.TextLocation
 import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.lexer.token.Token
 import kotlin.reflect.KProperty1
@@ -7,7 +8,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.isAccessible
 
-abstract class SyntaxNode {
+internal abstract class SyntaxNode protected constructor(val syntaxTree: SyntaxTree) {
     abstract val token: Token
 
     // Note: This needs to be a method to prevent it from being called when `this::class.memberProperties` is called in the getChildren method,
@@ -19,14 +20,14 @@ abstract class SyntaxNode {
         return if (first != null && last != null) {
             val firstSpan = first.span()
             val lastSpan = last.span()
-            if(lastSpan.end< firstSpan.start )  {
-                val test = 0;
-            }
             TextSpan.fromBounds(firstSpan.start, lastSpan.end)
         } else {
             TextSpan(0, token.literal?.length ?: 0)
         }
     }
+
+    val location: TextLocation
+        get() = TextLocation(syntaxTree.sourceText, span())
 
     fun getChildren(): List<SyntaxNode> {
         val children = mutableListOf<SyntaxNode>()
@@ -38,7 +39,7 @@ abstract class SyntaxNode {
                 }
 
         for (property in properties) {
-            val property = property as KProperty1<Any, *>
+            @Suppress("UNCHECKED_CAST") val property = property as KProperty1<Any, *>
             if (!property.isAccessible) {
                 property.isAccessible = true
             }

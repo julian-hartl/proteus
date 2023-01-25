@@ -1,3 +1,4 @@
+
 fn sum(n: Int) -> Int {
     var i = n;
     var result = 0;

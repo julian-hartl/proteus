@@ -6,10 +6,12 @@ enum class DiagnosticType {
     Info
 }
 
-data class Diagnostic(val message: String, val span: TextSpan, val type: DiagnosticType) {
+data class Diagnostic(val message: String, val location: TextLocation, val type: DiagnosticType) {
     override fun toString(): String {
         return message
     }
+
+    val span get() = location.span
 
     val isError get() = type == DiagnosticType.Error
 

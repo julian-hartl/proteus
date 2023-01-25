@@ -2,20 +2,28 @@ package lang.proteus.evaluator
 
 import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.ProteusExternalFunction
 import java.util.*
 
 internal class Evaluator(
-    private val root: BoundBlockStatement,
-    private val globals: MutableMap<String, Any>,
     private val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
-    private val locals: Stack<MutableMap<String, Any>> = Stack(),
+    private val mainFunction: FunctionSymbol,
+    private val globalVariableInitializers: Map<GlobalVariableSymbol, BoundExpression>,
 ) {
-
+    private val locals: Stack<MutableMap<String, Any>> = Stack()
+    private val globals: MutableMap<String, Any> = mutableMapOf()
     private var lastValue: Any? = null
 
     fun evaluate(): Any? {
-        return evaluateStatement(root)
+        evaluateGlobalVariableInitializers()
+        return evaluateCallExpression(BoundCallExpression(mainFunction, emptyList()))
+    }
+
+    private fun evaluateGlobalVariableInitializers() {
+        for ((symbol, initializer) in globalVariableInitializers) {
+            globals[symbol.qualifiedName] = evaluateExpression(initializer)!!
+        }
     }
 
     private fun evaluateStatement(body: BoundBlockStatement): Any? {
@@ -97,9 +105,9 @@ internal class Evaluator(
     private fun evaluateVariableDeclaration(statement: BoundVariableDeclaration) {
         val value = evaluateExpression(statement.initializer)
         if (statement.variable.isLocal) {
-            locals.peek()[statement.variable.name] = value!!
+            locals.peek()[statement.variable.qualifiedName] = value!!
         } else {
-            globals[statement.variable.name] = value!!
+            globals[statement.variable.qualifiedName] = value!!
         }
         lastValue = value
     }
@@ -141,13 +149,13 @@ internal class Evaluator(
     private fun evaluateCallExpression(callExpression: BoundCallExpression): Any? {
         val function = callExpression.functionSymbol
         val arguments = callExpression.arguments.map { evaluateExpression(it)!! }
-        if (callExpression.isExternal) {
-            val externalFunction = ProteusExternalFunction.lookup(function.name)!!
+        if (function.declaration.isExternal) {
+            val externalFunction = ProteusExternalFunction.lookup(function.declaration)!!
             return externalFunction.call(arguments)
         }
         val stackFrame = mutableMapOf<String, Any>()
         for ((index, parameter) in function.parameters.withIndex()) {
-            stackFrame[parameter.name] = arguments[index]
+            stackFrame[parameter.qualifiedName] = arguments[index]
         }
         locals.push(stackFrame)
         val statement = functionBodies[function]
@@ -158,27 +166,27 @@ internal class Evaluator(
 
     private fun evaluateVariableExpression(expression: BoundVariableExpression): Any {
         if (expression.variable.isLocal) {
-            if (locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.name}")
-            return locals.peek()[expression.variable.name]
-                ?: throw IllegalStateException("No locals found for ${expression.variable.name}")
+            if (locals.isEmpty()) throw IllegalStateException("No locals found for ${expression.variable.qualifiedName}")
+            return locals.peek()[expression.variable.qualifiedName]
+                ?: throw IllegalStateException("No locals found for ${expression.variable.simpleName}")
         }
-        return globals[expression.variable.name]
-            ?: throw IllegalStateException("No globals found for ${expression.variable.name}")
+        return globals[expression.variable.qualifiedName]
+            ?: throw IllegalStateException("No globals found for ${expression.variable.simpleName}")
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
         val currentValue = if (expression.variable.isLocal) {
-            locals.peek()[expression.variable.name]
-                ?: throw IllegalStateException("No locals found for ${expression.variable.name}")
+            locals.peek()[expression.variable.qualifiedName]
+                ?: throw IllegalStateException("No locals found for ${expression.variable.simpleName}")
         } else {
-            globals[expression.variable.name]
-                ?: throw IllegalStateException("No globals found for ${expression.variable.name}")
+            globals[expression.variable.qualifiedName]
+                ?: throw IllegalStateException("No globals found for ${expression.variable.simpleName}")
         }
         val expressionValue = evaluateExpression(expression.expression)
         if (expression.variable.isGlobal) {
-            globals[expression.variable.name] = expressionValue!!
+            globals[expression.variable.qualifiedName] = expressionValue!!
         } else {
-            locals.peek()[expression.variable.name] = expressionValue!!
+            locals.peek()[expression.variable.qualifiedName] = expressionValue!!
         }
 
         return if (expression.returnAssignment) expressionValue else currentValue

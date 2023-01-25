@@ -1,0 +1,4 @@
+import "./sum";
+
+fn main() {
+}

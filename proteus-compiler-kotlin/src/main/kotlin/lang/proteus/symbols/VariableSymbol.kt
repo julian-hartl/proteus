@@ -2,15 +2,19 @@ package lang.proteus.symbols
 
 import lang.proteus.binding.BoundExpression
 import lang.proteus.binding.BoundLiteralExpression
+import lang.proteus.syntax.parser.SyntaxTree
+import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
 
 internal sealed class VariableSymbol(
-    override val name: String,
+    name: String,
     val type: TypeSymbol,
     val isFinal: Boolean,
     var constantValue: BoundExpression?,
-) : Symbol() {
+    syntaxTree: SyntaxTree,
+    uniqueIdentifier: String = syntaxTree.id.toString(),
+) : Symbol(uniqueIdentifier, name) {
     override fun toString(): String {
-        return "$name: $type"
+        return "$simpleName: $type"
     }
 
     val isReadOnly get() = isFinal || isConst
@@ -26,6 +30,8 @@ internal sealed class VariableSymbol(
 
     val isConst: Boolean
         get() = constantValue != null
+
+    val declarationLiteral: String get() = if (isConst) "const" else if (isFinal) "val" else "var"
 }
 
 internal class GlobalVariableSymbol(
@@ -33,18 +39,29 @@ internal class GlobalVariableSymbol(
     type: TypeSymbol,
     isFinal: Boolean,
     constantValue: BoundLiteralExpression<*>? = null,
+    val declarationSyntax: VariableDeclarationSyntax,
+    syntaxTree: SyntaxTree,
 ) : VariableSymbol(
-    name, type,
-    isFinal, constantValue
+    name,
+    type,
+    isFinal,
+    constantValue,
+    syntaxTree
 )
 
 internal open class LocalVariableSymbol(
-    name: String, type: TypeSymbol, isFinal: Boolean,
+    name: String, type: TypeSymbol,
+    isFinal: Boolean,
     constantValue: BoundLiteralExpression<*>? = null,
+    val syntaxTree: SyntaxTree,
+    val enclosingFunction: FunctionSymbol,
 ) :
     VariableSymbol(
-        name, type,
-        isFinal, constantValue
-
+        name,
+        type,
+        isFinal,
+        constantValue,
+        syntaxTree,
+        uniqueIdentifier = enclosingFunction.qualifiedName
     )
 

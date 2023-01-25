@@ -34,7 +34,7 @@ internal class ControlFlowGraph private constructor(
             }
 
             for (statement in statements) {
-                val asString = CodeGenerator.generate(statement)
+                val asString = statement.toString().replace("\"", "\\\"")
                 builder.appendLine(asString)
             }
             return builder.toString()
@@ -46,7 +46,7 @@ internal class ControlFlowGraph private constructor(
             if (condition == null) {
                 return ""
             }
-            return CodeGenerator.generate(BoundExpressionStatement(condition))
+            return condition.toString()
         }
     }
 
@@ -108,8 +108,6 @@ internal class ControlFlowGraph private constructor(
         }
 
         fun create(cfgStatement: BoundBlockStatement): ControlFlowGraph {
-
-
             val blockBuilder = BasicBlockBuilder(cfgStatement)
             blockBuilder.build()
             val blocks = blockBuilder.blocks

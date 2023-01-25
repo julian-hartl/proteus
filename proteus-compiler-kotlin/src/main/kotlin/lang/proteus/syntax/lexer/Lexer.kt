@@ -1,8 +1,11 @@
 package lang.proteus.syntax.lexer
 
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.diagnostics.TextLocation
+import lang.proteus.diagnostics.TextSpan
 import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.lexer.token_lexers.*
+import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 
 internal object Lexers {
@@ -16,14 +19,15 @@ internal object Lexers {
         )
 }
 
-internal class Lexer private constructor(
-    private val sourceText: SourceText,
-    private var position: Int,
-    val diagnosticsBag: DiagnosticsBag,
+internal class Lexer(
+    private val syntaxTree: SyntaxTree,
 ) {
 
+    private var position: Int = 0
+    val diagnosticsBag: DiagnosticsBag = DiagnosticsBag()
 
-    constructor(sourceText: SourceText) : this(sourceText, 0, DiagnosticsBag())
+    private val sourceText: SourceText
+        get() = syntaxTree.sourceText
 
 
     private val tokenLexers: List<TokenLexer> = Lexers.allLexers
@@ -43,7 +47,7 @@ internal class Lexer private constructor(
                 literal.append(current)
                 next()
             }
-            val tokenLexerResult = matchingLexer.submit(start, position, literal.toString())
+            val tokenLexerResult = matchingLexer.submit(start, position, literal.toString(), syntaxTree)
             if (tokenLexerResult != null) {
                 val token = tokenLexerResult.syntaxToken
                 val difference = length - tokenLexerResult.consumed
@@ -52,9 +56,11 @@ internal class Lexer private constructor(
             }
         }
 
-        diagnosticsBag.reportBadCharacter(current, position)
+        val span = TextSpan(position, 1)
+        val location = TextLocation(sourceText, span)
+        diagnosticsBag.reportBadCharacter(current, location)
         next()
-        return SyntaxToken.badToken(position, current.toString())
+        return SyntaxToken.badToken(position, current.toString(), syntaxTree)
     }
 
     private val isAtEnd: Boolean
@@ -75,7 +81,9 @@ internal class Lexer private constructor(
                 }
 
                 '\n', '\r' -> {
-                    diagnosticsBag.reportUnterminatedString(start)
+                    val span = TextSpan(start, position - start)
+                    val location = TextLocation(sourceText, span)
+                    diagnosticsBag.reportUnterminatedString(location)
                     done = true
                 }
 
@@ -88,7 +96,9 @@ internal class Lexer private constructor(
                         'r' -> literal.append('\r')
                         't' -> literal.append('\t')
                         else -> {
-                            diagnosticsBag.reportIllegalEscape(current, position)
+                            val span = TextSpan(start, position - start)
+                            val location = TextLocation(sourceText, span)
+                            diagnosticsBag.reportIllegalEscape(current, location)
                         }
                     }
                     next()
@@ -100,10 +110,12 @@ internal class Lexer private constructor(
                 }
             }
         }
-        if(!done) {
-            diagnosticsBag.reportUnterminatedString(start)
+        if (!done) {
+            val span = TextSpan(start, position - start)
+            val location = TextLocation(sourceText, span)
+            diagnosticsBag.reportUnterminatedString(location)
         }
-        return Token.String.toSyntaxToken(start + 1, literal.toString())
+        return Token.String.toSyntaxToken(start + 1, literal.toString(), syntaxTree = syntaxTree)
 
     }
 

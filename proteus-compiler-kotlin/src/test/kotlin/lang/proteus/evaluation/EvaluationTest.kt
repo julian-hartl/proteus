@@ -23,24 +23,20 @@ class EvaluationTest {
             {([]
         """
 
-        ProteusCompiler().compile(text)
+        ProteusCompiler().compileText(text)
     }
 
     @ParameterizedTest
     @MethodSource("getValidSyntaxInputs")
     fun `test valid inputs to evaluate correctly`(input: String, value: Any) {
-        val expression = SyntaxTree.parse(
+        val tree = SyntaxTree.parse(
             """
             fn main() {
                 $input
             }
-            main();
         """.trimIndent()
         )
-        val boundScope = BoundScope(null)
-        boundScope.tryDeclareVariable(GlobalVariableSymbol("a", TypeSymbol.Int, isFinal = false, ))
-        boundScope.tryDeclareVariable(GlobalVariableSymbol("b", TypeSymbol.Int, isFinal = false, ))
-        val compilation = Compilation(expression)
+        val compilation = Compilation(tree)
 
         val evaluationResult = compilation.evaluate(mutableMapOf()) {
 
@@ -64,7 +60,7 @@ class EvaluationTest {
         )
         val compilation = Compilation(expression)
 
-        val evaluationResult = compilation.evaluate(mutableMapOf()){
+        val evaluationResult = compilation.evaluate(mutableMapOf()) {
 
         }
         assertFalse(
@@ -86,14 +82,15 @@ class EvaluationTest {
             fn main(){
                 $input
             }
-            main();
         """.trimIndent(), expectedValue
         )
     }
 
     private fun assertValue(input: String, expectedValue: Any) {
-        val compiler = ProteusCompiler()
-        val result = compiler.compile(input, generateCode = false)
+        val compiler = ProteusCompiler(
+            outputGeneratedCode = false,
+        )
+        val result = compiler.compileText(input)
         assertEquals(
             expectedValue,
             result.evaluationResult?.value,
@@ -371,14 +368,7 @@ class EvaluationTest {
                     "Hello World"
                 ),
 
-                Arguments.of(
-                    """
-                        {
-                            val random = "1";
-                            random(random as Int, 1);
-                        }
-                    """.trimIndent(), 1
-                ),
+
 
                 Arguments.of(
                     """
@@ -469,9 +459,22 @@ class EvaluationTest {
                         fn test() -> Int{
                             return 10;
                         }
-                        test();
+                        
+                        fn main() {
+                            val x = test();
+                        }
                     """.trimIndent(),
                 10,
+            ),
+
+            Arguments.of(
+                """
+                    import "std/math";
+                        fn main() {
+                            val random = "1";
+                            random(random as Int, 1);
+                        }
+                    """.trimIndent(), 1
             ),
 
             Arguments.of(
@@ -486,7 +489,10 @@ class EvaluationTest {
                             }
                             
                         }
-                        val x = a;
+                        fn main() {
+                            test();
+                            val x = a;
+                        }
                     """.trimIndent(),
                 0,
             ),
@@ -503,7 +509,9 @@ class EvaluationTest {
                         }
                     }
 
-                    val sum = sum(90);
+                    fn main() {
+                        val sum = sum(90);
+                    }
                 """.trimIndent(), 4095
             )
         )
@@ -556,7 +564,7 @@ class EvaluationTest {
                 [x] = 20;
             
         """
-        val diagnostics = "Val cannot be reassigned"
+        val diagnostics = "Readonly variables cannot be reassigned --- Hint: Variable 'x' is declared as 'val'"
         assertDiagnostics(text, diagnostics)
     }
 
@@ -667,7 +675,7 @@ class EvaluationTest {
                 [a] += 1;
             
         """.trimIndent()
-        val diagnostics = "Val cannot be reassigned"
+        val diagnostics = "Readonly variables cannot be reassigned --- Hint: Variable 'a' is declared as 'val'"
 
         assertDiagnostics(text, diagnostics)
     }
@@ -680,7 +688,7 @@ class EvaluationTest {
                 [a] -= 1;
             
         """.trimIndent()
-        val diagnostics = "Val cannot be reassigned"
+        val diagnostics = "Readonly variables cannot be reassigned --- Hint: Variable 'a' is declared as 'val'"
 
         assertDiagnostics(text, diagnostics)
     }
@@ -718,6 +726,9 @@ class EvaluationTest {
             [while true {
                 var a = 1;
             }]
+            
+            fn main() {
+            }
         """.trimIndent()
         val diagnostics = """
             Invalid top-level statement
@@ -730,12 +741,11 @@ class EvaluationTest {
             fn main(){
                 $text
             }
-            main();
         """.trimIndent() else text
         val annotatedText = AnnotatedText.parse(wrappedText)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
         val compilation = Compilation(syntaxTree)
-        val result = compilation.evaluate(mutableMapOf()){
+        val result = compilation.evaluate(mutableMapOf()) {
 
         }
 

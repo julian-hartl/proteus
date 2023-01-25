@@ -1,8 +1,9 @@
 package lang.proteus.syntax.lexer.token
 
 import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.parser.SyntaxTree
 
-sealed class Operator(
+internal sealed class Operator(
     override val literal: kotlin.String,
     val precedence: Int,
     val isUnaryOperator: Boolean = false,
@@ -10,8 +11,8 @@ sealed class Operator(
     val isAssignmentOperator: Boolean = false,
 ) : Token() {
 
-    fun toSyntaxToken(position: Int): SyntaxToken<Operator> {
-        return super.toSyntaxToken(position, literal, null) as SyntaxToken<Operator>
+    fun toSyntaxToken(position: Int, syntaxTree: SyntaxTree): SyntaxToken<Operator> {
+        return super.toSyntaxToken(position, literal, null, syntaxTree) as SyntaxToken<Operator>
     }
 
     fun unaryPrecedence(): Int {

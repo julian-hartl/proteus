@@ -2,23 +2,31 @@ package lang.proteus.generation
 
 import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
+import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
 import java.io.File
 import java.time.Instant
 
 internal class CodeGenerator private constructor(
-    private val codeBuilder: StringBuilder = StringBuilder(),
     private val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
+    private val functions: Set<FunctionSymbol>,
+    private val globalVariables: Set<GlobalVariableSymbol>,
+    private val globalVariableInitializers: Map<GlobalVariableSymbol, BoundExpression>,
 ) :
     BoundTreeRewriter() {
+    private val codeBuilder: StringBuilder = StringBuilder()
 
     companion object {
         fun generate(
-            statement: BoundStatement,
-            functionBodies: Map<FunctionSymbol, BoundBlockStatement> = mapOf(),
+            boundProgram: BoundProgram,
         ): String {
-            val generator = CodeGenerator(functionBodies = functionBodies)
-            return generator.generateCode(statement)
+            val generator = CodeGenerator(
+                functionBodies = boundProgram.functionBodies,
+                functions = boundProgram.globalScope.functions,
+                globalVariables = boundProgram.globalScope.globalVariables,
+                globalVariableInitializers = boundProgram.variableInitializers,
+            )
+            return generator.generateCode()
         }
 
         fun emitGeneratedCode(code: String) {
@@ -30,33 +38,56 @@ internal class CodeGenerator private constructor(
         }
     }
 
-    private fun generateCode(node: BoundStatement): String {
-        generateFunctionDeclarations(functionBodies)
-        rewriteStatement(node)
+    private fun generateCode(): String {
+        generateGlobalVariables(globalVariables)
+        generateFunctionDeclarations(functions)
         return codeBuilder.toString()
     }
 
-    private fun generateFunctionDeclarations(functions: Map<FunctionSymbol, BoundBlockStatement>) {
-        for ((symbol, body) in functions) {
-            val declaration = symbol.declaration!!;
-            codeBuilder.append("fn ${symbol.name}(")
-            for (parameter in declaration.parameters) {
-                codeBuilder.append("${parameter.identifier.literal}: ${parameter.typeClause.type.literal}, ")
+    private fun generateGlobalVariables(globalVariables: Set<GlobalVariableSymbol>) {
+        for (symbol in globalVariables) {
+            val declarationLiteral = symbol.declarationLiteral
+            codeBuilder.append("$declarationLiteral ${symbol.qualifiedName}: ${symbol.type.simpleName}")
+            val initializer = globalVariableInitializers[symbol]!!
+            codeBuilder.append(" = ")
+            rewriteExpression(initializer)
+            codeBuilder.appendLine(";")
+        }
+    }
+
+    private fun generateFunctionDeclarations(functions: Set<FunctionSymbol>) {
+        for (symbol in functions) {
+            val declaration = symbol.declaration
+            for (modifier in declaration.modifiers) {
+                codeBuilder.append("${modifier.literal} ")
+            }
+            codeBuilder.append("fn ${symbol.qualifiedName}(")
+            for (parameter in symbol.parameters) {
+
+                codeBuilder.append("${parameter.qualifiedName}: ${parameter.type.simpleName}, ")
             }
 
             if (declaration.parameters.count != 0) {
                 codeBuilder.delete(codeBuilder.length - 2, codeBuilder.length)
             }
             codeBuilder.append(") ")
-            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"} ")
-            rewriteBlockStatement(body)
+            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"}")
+            val body = functionBodies[symbol]
+            if (body != null) {
+                codeBuilder.append(" ")
+                rewriteBlockStatement(body)
+            } else {
+                codeBuilder.appendLine(";")
+            }
         }
     }
 
 
     override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
-        codeBuilder.append(node.variable.name)
+        codeBuilder.append(node.variable.qualifiedName)
+        codeBuilder.append(" ")
         codeBuilder.append(node.assignmentOperator.literal)
+        codeBuilder.append(" ")
         rewriteExpression(node.expression)
         return node
     }
@@ -89,10 +120,13 @@ internal class CodeGenerator private constructor(
     }
 
     override fun rewriteCallExpression(expression: BoundCallExpression): BoundExpression {
-        codeBuilder.append(expression.functionSymbol.name)
+        codeBuilder.append(expression.functionSymbol.qualifiedName)
         codeBuilder.append("(")
-        for (argument in expression.arguments) {
+        for ((index, argument) in expression.arguments.withIndex()) {
             rewriteExpression(argument)
+            if (index < expression.arguments.size - 1) {
+                codeBuilder.append(", ")
+            }
         }
         codeBuilder.append(")")
         return expression
@@ -110,7 +144,7 @@ internal class CodeGenerator private constructor(
     override fun rewriteConversionExpression(expression: BoundConversionExpression): BoundExpression {
         rewriteExpression(expression.expression)
         codeBuilder.append(" as ")
-        codeBuilder.append(expression.type.name)
+        codeBuilder.append(expression.type.simpleName)
 
         return expression
     }
@@ -162,13 +196,15 @@ internal class CodeGenerator private constructor(
     }
 
     override fun rewriteVariableExpression(expression: BoundVariableExpression): BoundExpression {
-        codeBuilder.append(expression.variable.name)
+        codeBuilder.append(expression.variable.qualifiedName)
         return expression
     }
 
     override fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
         codeBuilder.append("var ")
-        codeBuilder.append(node.variable.name)
+        codeBuilder.append(node.variable.qualifiedName)
+        codeBuilder.append(": ")
+        codeBuilder.append(node.variable.type.simpleName)
         codeBuilder.append(" = ")
         rewriteExpression(node.initializer)
         codeBuilder.append(";")
