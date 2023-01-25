@@ -53,10 +53,7 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
         if (generateCode) {
             val generatedCode =
                 CodeGenerator.generate(
-                    functionBodies,
-                    functions,
-                    program.globalScope.globalVariables,
-                    variableDeclarations
+                   program
                 )
             CodeGenerator.emitGeneratedCode(generatedCode)
         }

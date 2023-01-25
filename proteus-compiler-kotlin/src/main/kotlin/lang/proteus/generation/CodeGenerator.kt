@@ -18,17 +18,13 @@ internal class CodeGenerator private constructor(
 
     companion object {
         fun generate(
-            functionBodies: Map<FunctionSymbol, BoundBlockStatement> = mapOf(),
-            functions: Set<FunctionSymbol>,
-            globalVariables: Set<GlobalVariableSymbol>,
-            globalVariableInitializers: Map<GlobalVariableSymbol, BoundExpression>,
-
-            ): String {
+            boundProgram: BoundProgram,
+        ): String {
             val generator = CodeGenerator(
-                functionBodies = functionBodies,
-                functions = functions,
-                globalVariables,
-                globalVariableInitializers
+                functionBodies = boundProgram.functionBodies,
+                functions = boundProgram.globalScope.functions,
+                globalVariables = boundProgram.globalScope.globalVariables,
+                globalVariableInitializers = boundProgram.variableInitializers,
             )
             return generator.generateCode()
         }
@@ -66,8 +62,9 @@ internal class CodeGenerator private constructor(
                 codeBuilder.append("${modifier.literal} ")
             }
             codeBuilder.append("fn ${symbol.qualifiedName}(")
-            for (parameter in declaration.parameters) {
-                codeBuilder.append("${parameter.identifier.literal}: ${parameter.typeClause.type.literal}, ")
+            for (parameter in symbol.parameters) {
+
+                codeBuilder.append("${parameter.qualifiedName}: ${parameter.type.simpleName}, ")
             }
 
             if (declaration.parameters.count != 0) {

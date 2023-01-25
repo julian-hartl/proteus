@@ -276,8 +276,8 @@ class BinderTest {
     fun shouldAllowTypeofOnVariable() {
         useExpression(
             """
-            var a = 1
-            typeof a
+            var a = 1;
+            typeof a;
         """.trimIndent()
         )
         assertTrue(!binder.hasErrors())
@@ -287,8 +287,8 @@ class BinderTest {
     fun shouldAllowTypeComparison() {
         useExpression(
             """
-            var a = 1
-            typeof a == typeof 2
+            var a = 1;
+            typeof a == typeof 2;
         """.trimIndent()
         )
         assertTrue(!binder.hasErrors())

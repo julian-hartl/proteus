@@ -62,6 +62,6 @@ internal open class LocalVariableSymbol(
         isFinal,
         constantValue,
         syntaxTree,
-        uniqueIdentifier = "${enclosingFunction.qualifiedName}.$name"
+        uniqueIdentifier = enclosingFunction.qualifiedName
     )
 

@@ -36,15 +36,6 @@ class EvaluationTest {
             }
         """.trimIndent()
         )
-        val boundScope = BoundScope(null)
-        boundScope.tryDeclareVariable(
-            GlobalVariableSymbol("a", TypeSymbol.Int, isFinal = false, syntaxTree = tree),
-            tree
-        )
-        boundScope.tryDeclareVariable(
-            GlobalVariableSymbol("b", TypeSymbol.Int, isFinal = false, syntaxTree = tree),
-            tree
-        )
         val compilation = Compilation(tree)
 
         val evaluationResult = compilation.evaluate(mutableMapOf()) {

@@ -1,13 +1,13 @@
-var a = 0;
-fn test() {
-    if a == 0 {
-        return;
-    }
-    else {
-        a = 10;
-    }
-}
+fn sum(n: Int) -> Int {
+                        var i = n;
+                        var result = 0;
+                        while true {
+                            if i == 0 return result;
+                            result += i;
+                            i -= 1;
+                        }
+                    }
+
 fn main() {
-    test();
-    val x = a;
+                        val sum = sum(90);
 }

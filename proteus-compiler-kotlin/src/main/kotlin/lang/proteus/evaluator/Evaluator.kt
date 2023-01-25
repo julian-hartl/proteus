@@ -155,7 +155,7 @@ internal class Evaluator(
         }
         val stackFrame = mutableMapOf<String, Any>()
         for ((index, parameter) in function.parameters.withIndex()) {
-            stackFrame[parameter.simpleName] = arguments[index]
+            stackFrame[parameter.qualifiedName] = arguments[index]
         }
         locals.push(stackFrame)
         val statement = functionBodies[function]
