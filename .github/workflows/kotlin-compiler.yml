@@ -24,6 +24,14 @@ jobs:
           distribution: 'corretto'
       - name: Build kotlin compiler
         working-directory: ./proteus-compiler-kotlin
-        run: gradle build
+        run: gradle clean build
+      - name: Report test failures
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          if-no-files-found: error
+          path: ./proteus-compiler-kotlin/build/test-results/test
+
 
 
