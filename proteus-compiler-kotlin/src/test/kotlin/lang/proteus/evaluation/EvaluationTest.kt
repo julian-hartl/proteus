@@ -87,8 +87,10 @@ class EvaluationTest {
     }
 
     private fun assertValue(input: String, expectedValue: Any) {
-        val compiler = ProteusCompiler()
-        val result = compiler.compileText(input, generateCode = false)
+        val compiler = ProteusCompiler(
+            outputGeneratedCode = false,
+        )
+        val result = compiler.compileText(input)
         assertEquals(
             expectedValue,
             result.evaluationResult?.value,
