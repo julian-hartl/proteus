@@ -32,7 +32,9 @@ class ExampleTests {
     @MethodSource("getExampleTestArguments")
     fun testExamples(mainFilePath: String, expectedValue: Any) {
         val path = getExampleTestFile(mainFilePath)
-        val compiler = ProteusCompiler()
+        val compiler = ProteusCompiler(
+            outputGeneratedCode = false,
+        )
         val result = compiler.compile(path)
         val actualValue = result.evaluationResult?.value
         assertEquals(expectedValue, actualValue, "Expected value $expectedValue, but got $actualValue")

@@ -13,7 +13,7 @@ import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
 import java.lang.management.MemoryUsage
 
-internal class ProteusCompiler() {
+internal class ProteusCompiler(private val outputGeneratedCode: Boolean = true) {
 
 
     private val variables = mutableMapOf<String, Any>()
@@ -22,20 +22,19 @@ internal class ProteusCompiler() {
     fun compile(fileName: String): CompilationResult {
         computationTimeStopper.start()
         val tree = SyntaxTree.load(fileName)
-        return compileTree(tree, tree.sourceText, generateCode = true)
+        return compileTree(tree, tree.sourceText)
     }
 
-    fun compileText(text: String, generateCode: Boolean = false): CompilationResult {
+    fun compileText(text: String): CompilationResult {
         val sourceText = SourceText.from(text)
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
-        return compileTree(tree, sourceText, generateCode)
+        return compileTree(tree, sourceText)
     }
 
     private fun compileTree(
         tree: SyntaxTree,
         sourceText: SourceText,
-        generateCode: Boolean,
     ): CompilationResult {
         if (tree.hasErrors()) {
             DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
@@ -50,7 +49,7 @@ internal class ProteusCompiler() {
 
         computationTimeStopper.start()
         val compilation = Compilation(tree)
-        val compilationResult = compilation.evaluate(variables, generateCode = generateCode) {
+        val compilationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
             DiagnosticsPrinter.printDiagnostics(it)
         }
         val memoryUsage = getMemoryUsage()
