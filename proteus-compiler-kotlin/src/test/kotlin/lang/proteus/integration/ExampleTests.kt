@@ -12,7 +12,7 @@ class ExampleTests {
 
         @JvmStatic
         fun getExampleTestFile(path: String): String {
-            return "src/test/resources/examples/$path"
+            return System.getProperty("user.dir") +  "/src/test/resources/examples/$path"
         }
 
         @JvmStatic
