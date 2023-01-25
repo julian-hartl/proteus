@@ -9,11 +9,21 @@ import kotlin.test.assertEquals
 
 class ExampleTests {
     companion object {
+
+        @JvmStatic
+        fun getExampleTestFile(path: String): String {
+            return "src/test/resources/examples/$path"
+        }
+
         @JvmStatic
         val exampleTestArguments: Stream<Arguments> = Stream.of(
             Arguments.of(
-                "src/test/resources/examples/random_multiply/main.psl",
+                "random_multiply/main.psl",
                 3
+            ),
+            Arguments.of(
+                "shadowing/main.psl",
+                10
             )
         )
     }
@@ -21,8 +31,9 @@ class ExampleTests {
     @ParameterizedTest
     @MethodSource("getExampleTestArguments")
     fun testExamples(mainFilePath: String, expectedValue: Any) {
+        val path = getExampleTestFile(mainFilePath)
         val compiler = ProteusCompiler()
-        val result = compiler.compile(mainFilePath)
+        val result = compiler.compile(path)
         val actualValue = result.evaluationResult?.value
         assertEquals(expectedValue, actualValue, "Expected value $expectedValue, but got $actualValue")
     }

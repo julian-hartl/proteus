@@ -1,0 +1,14 @@
+import "std/math";
+
+fn main() {
+    var y = 10;
+    var x = 10;
+    while y > 0 {
+        var x = y;
+        if y == 5 {
+            break;
+        }
+        y -= 1;
+    }
+    x;
+}
