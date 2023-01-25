@@ -31,7 +31,7 @@ jobs:
         with:
           name: test-reports
           if-no-files-found: error
-          path: ./proteus-compiler-kotlin/build/reports/test/test/index.html
+          path: ./proteus-compiler-kotlin/build/reports/tests/test/index.html
 
 
 
