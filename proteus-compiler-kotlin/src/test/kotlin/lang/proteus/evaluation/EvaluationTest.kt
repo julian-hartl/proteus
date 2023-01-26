@@ -3,7 +3,6 @@ package lang.proteus.evaluation
 import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
-import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
@@ -23,7 +22,7 @@ class EvaluationTest {
             {([]
         """
 
-        ProteusCompiler().compileText(text)
+        ProteusCompiler().loadText(text)
     }
 
     @ParameterizedTest
@@ -90,7 +89,7 @@ class EvaluationTest {
         val compiler = ProteusCompiler(
             outputGeneratedCode = false,
         )
-        val result = compiler.compileText(input)
+        val result = compiler.loadText(input)
         assertEquals(
             expectedValue,
             result.evaluationResult?.value,

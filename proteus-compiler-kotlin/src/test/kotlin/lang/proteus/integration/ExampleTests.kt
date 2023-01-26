@@ -35,7 +35,7 @@ class ExampleTests {
         val compiler = ProteusCompiler(
             outputGeneratedCode = false,
         )
-        val result = compiler.compile(path)
+        val result = compiler.compileFile(path)
         val actualValue = result.evaluationResult?.value
         assertEquals(expectedValue, actualValue, "Expected value $expectedValue, but got $actualValue")
     }

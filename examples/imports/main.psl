@@ -8,7 +8,6 @@ fn sum() {
     const b = 3;
     val added = a + b;
     println(added);
-    println(random(0,1));
 }
 
 fn main() {

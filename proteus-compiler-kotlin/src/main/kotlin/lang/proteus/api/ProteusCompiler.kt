@@ -5,21 +5,60 @@ import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
 import lang.proteus.evaluator.EvaluationResult
+import lang.proteus.metatdata.Metadata
+import lang.proteus.metatdata.Metadata.PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.DiagnosticsPrinter
 import lang.proteus.printing.PrinterColor
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
+import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.CmdLineException
+import org.kohsuke.args4j.CmdLineParser
+import org.kohsuke.args4j.Option
 import java.lang.management.MemoryUsage
 
-internal class ProteusCompiler(private val outputGeneratedCode: Boolean = true) {
+internal class ProteusCompiler(
+    private val outputGeneratedCode: Boolean = true,
+) {
 
+    @Option(name = "-o", usage = "The path of the output java byte code file")
+    private var byteCodeOutPath: String? = null
+
+    @Argument(metaVar = "source", usage = "The path of the source file", required = true)
+    private var sourcePath = ""
 
     private val variables = mutableMapOf<String, Any>()
 
     private val computationTimeStopper = ComputationTimeStopper()
-    fun compile(fileName: String): CompilationResult {
+
+    fun run(args: Array<String>) {
+        val parser = CmdLineParser(this)
+        try {
+            parser.parseArgument(*args)
+            if (!sourcePath.endsWith(Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT)) {
+                println("The source file must be a .psl file")
+                return
+            }
+            if (byteCodeOutPath?.endsWith(PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT) == false) {
+                println("The output file must be a $PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT file")
+                return
+            }
+            try {
+                compileFile(sourcePath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println()
+            }
+        } catch (e: CmdLineException) {
+            System.err.println(e.message)
+            parser.printUsage(System.err)
+        }
+
+    }
+
+    fun compileFile(fileName: String): CompilationResult {
         computationTimeStopper.start()
         val tree = SyntaxTree.load(fileName)
         return compileTree(tree, tree.sourceText)
@@ -48,7 +87,12 @@ internal class ProteusCompiler(private val outputGeneratedCode: Boolean = true) 
 
 
         computationTimeStopper.start()
-        val compilation = Compilation(tree)
+        val compilation = Compilation.compile(tree)
+        val outputPath =
+            byteCodeOutPath ?: sourceText.absolutePath.replace(Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT, PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT)
+        compilation.emit(
+            outputPath
+        )
         val compilationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
             DiagnosticsPrinter.printDiagnostics(it)
         }

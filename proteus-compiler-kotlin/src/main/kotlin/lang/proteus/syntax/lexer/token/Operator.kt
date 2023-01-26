@@ -11,6 +11,12 @@ internal sealed class Operator(
     val isAssignmentOperator: Boolean = false,
 ) : Token() {
 
+    val isComparisonOperator: Boolean
+        get() = when (this) {
+            is LessThanEquals, is GreaterThanEquals, is LessThan, is GreaterThan, is Equals, is NotEquals -> true
+            else -> false
+        }
+
     fun toSyntaxToken(position: Int, syntaxTree: SyntaxTree): SyntaxToken<Operator> {
         return super.toSyntaxToken(position, literal, null, syntaxTree) as SyntaxToken<Operator>
     }

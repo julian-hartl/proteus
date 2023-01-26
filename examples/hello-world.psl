@@ -1,5 +1,11 @@
-fn main() {
-    println("Hello World!")
-}
+import "std/io";
 
-main();
+
+fn main() {
+    var message = "Hello ";
+        message += "World";
+   for i in 1 until 10 {
+         message += "!";
+         println(message);
+   }
+}

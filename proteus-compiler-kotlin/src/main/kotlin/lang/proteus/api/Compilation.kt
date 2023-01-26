@@ -3,15 +3,35 @@ package lang.proteus.api
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundGlobalScope
+import lang.proteus.binding.BoundProgram
 import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.emit.Emitter
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
 import lang.proteus.syntax.parser.SyntaxTree
 
-internal class Compilation(val syntaxTree: SyntaxTree) {
+internal class Compilation private constructor(
+    private val entryPointTree: SyntaxTree,
+) {
 
     private var _globalScope: BoundGlobalScope? = null
+
+    companion object {
+
+        fun compile(
+            entryPointTree: SyntaxTree,
+
+            ): Compilation {
+            return Compilation(entryPointTree)
+        }
+
+        fun interpret(
+            entryPointTree: SyntaxTree,
+        ): Compilation {
+            return Compilation(entryPointTree)
+        }
+    }
 
 
     val globalScope: BoundGlobalScope
@@ -19,7 +39,8 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
             if (_globalScope == null) {
                 synchronized(this) {
                     if (_globalScope == null) {
-                        _globalScope = Binder.bindGlobalScope(null, syntaxTree.root)
+                        _globalScope = Binder.bindGlobalScope(null, entryPointTree.root)
+                        _globalScope!!.diagnostics.concat(entryPointTree.diagnostics)
                     }
                 }
             }
@@ -32,28 +53,22 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
         generateCode: Boolean = false,
         onWarning: (Diagnostics) -> Unit,
     ): EvaluationResult<*> {
-
         val computationTimeStopper = ComputationTimeStopper()
         computationTimeStopper.start()
-        val syntaxDiagnostics = syntaxTree.diagnostics
-        globalScope.diagnostics.concat(syntaxDiagnostics)
         val diagnostics = globalScope.diagnostics
         val parseTime = computationTimeStopper.stop()
         if (diagnostics.hasErrors()) {
             return EvaluationResult(diagnostics, null, parseTime)
         }
         computationTimeStopper.start()
-        val program = Binder.bindProgram(globalScope, mainTree = syntaxTree)
-
-        _globalScope = program.globalScope
-        val functions = _globalScope!!.functions
+        val program = getProgram()
 
         val functionBodies = program.functionBodies
         val variableDeclarations = program.variableInitializers
         if (generateCode) {
             val generatedCode =
                 CodeGenerator.generate(
-                   program
+                    program
                 )
             CodeGenerator.emitGeneratedCode(generatedCode)
         }
@@ -69,6 +84,24 @@ internal class Compilation(val syntaxTree: SyntaxTree) {
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime, codeGenerationTime)
+    }
+
+    fun emit(
+        outputPath: String,
+    ) {
+        val program = getProgram()
+        val generatedCode =
+            CodeGenerator.generate(
+                program
+            )
+        CodeGenerator.emitGeneratedCode(generatedCode)
+        Emitter.emit(program, outputPath)
+    }
+
+    private fun getProgram(): BoundProgram {
+        val program = Binder.bindProgram(globalScope, mainTree = entryPointTree)
+        _globalScope = program.globalScope
+        return program
     }
 
 
