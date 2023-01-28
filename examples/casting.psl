@@ -1,0 +1,7 @@
+import "std/io";
+
+fn main() {
+    var x = 1;
+    x = x + 1;
+    println(x as String);
+}

@@ -116,7 +116,7 @@ internal class Binder(
             for (function in globalScope.functions) {
                 val binder = Binder(parentScope ?: BoundScope(null), function)
                 val functionBody = function.declaration.body ?: continue
-                val body = binder.bindStatement(functionBody)
+                val body = binder.bindBlockStatement(functionBody)
                 var optimizedBody: BoundBlockStatement = BoundBlockStatement(listOf())
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
@@ -255,11 +255,11 @@ internal class Binder(
 
     private fun bindReturnStatement(syntax: ReturnStatementSyntax): BoundStatement {
         val statement = if (syntax.expression == null) null else bindExpression(syntax.expression)
+        val actualReturnType = statement?.type ?: TypeSymbol.Unit
         if (!isInsideFunction()) {
             diagnosticsBag.reportReturnNotAllowed(syntax.returnKeyword.location)
         } else {
             val functionReturnType = function!!.returnType
-            val actualReturnType = statement?.type ?: TypeSymbol.Unit
             val conversion = Conversion.classify(actualReturnType, functionReturnType)
             if (conversion.isNone) {
                 diagnosticsBag.reportInvalidReturnType(
@@ -269,7 +269,7 @@ internal class Binder(
                 )
             }
         }
-        return BoundReturnStatement(statement)
+        return BoundReturnStatement(statement, actualReturnType)
     }
 
     private fun isInsideFunction(): Boolean {
@@ -455,13 +455,13 @@ internal class Binder(
         return BoundExpressionStatement(boundExpression)
     }
 
-    private fun bindBlockStatement(syntax: BlockStatementSyntax): BoundStatement {
+    private fun bindBlockStatement(syntax: BlockStatementSyntax): BoundBlockStatement {
         scope = BoundScope(scope)
         val statements = syntax.statements.map {
             val statement = bindStatement(it)
-            if (statement is BoundExpressionStatement ) {
+            if (statement is BoundExpressionStatement) {
                 val expression = statement.expression
-                if(expression !is BoundCallExpression && expression !is BoundAssignmentExpression && expression !is BoundErrorExpression) {
+                if (expression !is BoundCallExpression && expression !is BoundAssignmentExpression && expression !is BoundErrorExpression) {
                     diagnosticsBag.reportUnusedExpression(it.location)
                 }
             }

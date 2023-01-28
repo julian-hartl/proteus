@@ -87,7 +87,7 @@ internal class Evaluator(
 
             is BoundReturnStatement -> {
                 lastValue =
-                    if (statement.boundExpression == null) null else evaluateExpression(statement.boundExpression)
+                    if (statement.expression == null) null else evaluateExpression(statement.expression)
                 totalStatements
             }
 
@@ -147,7 +147,7 @@ internal class Evaluator(
     }
 
     private fun evaluateCallExpression(callExpression: BoundCallExpression): Any? {
-        val function = callExpression.functionSymbol
+        val function = callExpression.function
         val arguments = callExpression.arguments.map { evaluateExpression(it)!! }
         if (function.declaration.isExternal) {
             val externalFunction = ProteusExternalFunction.lookup(function.declaration)!!

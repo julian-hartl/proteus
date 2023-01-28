@@ -5,7 +5,7 @@ import lang.proteus.binding.Binder
 import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.binding.BoundProgram
 import lang.proteus.diagnostics.Diagnostics
-import lang.proteus.emit.Emitter
+import lang.proteus.emit.JVMEmitter
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
@@ -95,7 +95,7 @@ internal class Compilation private constructor(
                 program
             )
         CodeGenerator.emitGeneratedCode(generatedCode)
-        Emitter.emit(program, outputPath)
+        JVMEmitter.emit(program, outputPath)
     }
 
     private fun getProgram(): BoundProgram {

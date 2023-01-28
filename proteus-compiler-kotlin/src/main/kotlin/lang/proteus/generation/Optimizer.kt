@@ -99,7 +99,7 @@ internal class Optimizer private constructor() :
         if (arguments == expression.arguments) {
             return expression
         }
-        return BoundCallExpression(expression.functionSymbol, arguments)
+        return BoundCallExpression(expression.function, arguments)
     }
 
     override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {

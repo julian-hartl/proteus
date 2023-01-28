@@ -6,3 +6,4 @@ internal sealed class BinaryOperator(literal: kotlin.String, precedence: Int) : 
     literal = literal,
     precedence = precedence
 )
+
