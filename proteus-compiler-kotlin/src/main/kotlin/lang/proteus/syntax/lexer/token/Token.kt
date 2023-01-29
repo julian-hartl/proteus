@@ -31,6 +31,7 @@ internal sealed class Token(open val literal: kotlin.String? = null) {
     object Arrow : Token("->")
 
     object String : Token()
+    object Annotation : Token()
     object GlobalStatement : Token()
     object FunctionDeclaration : Token()
     object FunctionReturnType : Token()

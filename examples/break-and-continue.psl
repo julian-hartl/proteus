@@ -1,4 +1,4 @@
-
+import "std/io";
 fn main() {
     for x in 1 until 10 {
         var i = -1;
@@ -11,5 +11,6 @@ fn main() {
                 continue;
             }
         }
+        println("Hello, World!");
     }
 }

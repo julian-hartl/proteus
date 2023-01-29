@@ -76,7 +76,7 @@ internal class JvmBytecodeClass(private val qualifiedName: String) {
         val variableName = variableSymbol.qualifiedName
         val variableIndex = stackFrame.getLocalVariableIndex(variableSymbol)
         val startLabel = stackFrame.startLabel
-        val endLabel =stackFrame.endLabel
+        val endLabel = stackFrame.endLabel
         currentMethod.visitLocalVariable(
             variableName,
             buildTypeDescriptor(variableSymbol.type),
@@ -153,7 +153,7 @@ internal class JvmBytecodeClass(private val qualifiedName: String) {
     }
 
     private fun getReturnOpCode(returnTypeSymbol: TypeSymbol): Int {
-        if(returnTypeSymbol is TypeSymbol.Unit) {
+        if (returnTypeSymbol is TypeSymbol.Unit) {
             return Opcodes.RETURN
         }
         val isPointer = JVMSymbols.isPointer(returnTypeSymbol)
@@ -192,18 +192,14 @@ internal class JvmBytecodeClass(private val qualifiedName: String) {
     fun call(functionSymbol: FunctionSymbol) {
         val functionName = functionSymbol.qualifiedName
         val descriptor = buildFunctionDescriptor(functionSymbol)
-        if (functionSymbol.declaration.isExternal) {
-            TODO("Rethink how to handle external functions")
-        } else {
 
-            currentMethod.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Metadata.JAVA_MAIN_CLASS_NAME,
-                functionName,
-                descriptor,
-                false
-            )
-        }
+        currentMethod.visitMethodInsn(
+            Opcodes.INVOKESTATIC,
+            Metadata.JAVA_MAIN_CLASS_NAME,
+            functionName,
+            descriptor,
+            false
+        )
     }
 
     fun endGeneration() {
@@ -301,6 +297,35 @@ internal class JvmBytecodeClass(private val qualifiedName: String) {
 
     fun nop() {
         currentMethod.visitInsn(Opcodes.NOP)
+    }
+
+    fun visitNativeField(receiver: String, fieldName: String, descriptor: String) {
+        currentMethod.visitFieldInsn(
+            Opcodes.GETSTATIC,
+            receiver,
+            fieldName,
+            descriptor
+        )
+    }
+
+    fun callNativeMethod(receiver: String, methodName: String, descriptor: String) {
+        currentMethod.visitMethodInsn(
+            Opcodes.INVOKEVIRTUAL,
+            receiver,
+            methodName,
+            descriptor,
+            false
+        )
+    }
+
+    fun callNativeFunction(receiver: String, functionName: String, descriptor: String) {
+        currentMethod.visitMethodInsn(
+            Opcodes.INVOKESTATIC,
+            receiver,
+            functionName,
+            descriptor,
+            false
+        )
     }
 
 }

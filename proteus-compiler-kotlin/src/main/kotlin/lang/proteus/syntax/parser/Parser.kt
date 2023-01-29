@@ -63,7 +63,6 @@ internal class Parser(
                     if (!member.file.exists()) {
                         diagnosticsBag.reportImportedFileNotFound(member.resolvedFilePath, member.location)
                     }
-
                 }
             } else {
                 hasParsedOtherThanImport = true
