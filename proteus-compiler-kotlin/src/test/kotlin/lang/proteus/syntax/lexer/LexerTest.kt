@@ -38,6 +38,7 @@ internal class LexerTest {
                 Token.Parameter,
                 Token.GlobalStatement,
                 Token.ImportStatement,
+                Token.Annotation
             )
         )
 
@@ -55,7 +56,7 @@ internal class LexerTest {
             }
         """.trimIndent()
         val actual = SyntaxTree.parse(input)
-        val diagnostics = actual.diagnostics.diagnostics
+        val diagnostics = actual.diagnostics.errors
         println(diagnostics)
         assertEquals(3, diagnostics.size)
         assertEquals("Unterminated string literal", diagnostics[0].message)

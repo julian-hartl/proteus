@@ -13,6 +13,7 @@ import lang.proteus.syntax.parser.SyntaxTree
 
 internal class Compilation private constructor(
     private val entryPointTree: SyntaxTree,
+    private val isInterpreting: Boolean,
 ) {
 
     private var _globalScope: BoundGlobalScope? = null
@@ -23,13 +24,13 @@ internal class Compilation private constructor(
             entryPointTree: SyntaxTree,
 
             ): Compilation {
-            return Compilation(entryPointTree)
+            return Compilation(entryPointTree, isInterpreting = false)
         }
 
         fun interpret(
             entryPointTree: SyntaxTree,
         ): Compilation {
-            return Compilation(entryPointTree)
+            return Compilation(entryPointTree, isInterpreting = true)
         }
     }
 
@@ -88,18 +89,26 @@ internal class Compilation private constructor(
 
     fun emit(
         outputPath: String,
-    ) {
+    ): Diagnostics {
+        val diagnostics = globalScope.diagnostics
+        if (diagnostics.hasErrors()) {
+            return diagnostics
+        }
         val program = getProgram()
+        if(program.diagnostics.hasErrors()) {
+            return program.diagnostics
+        }
         val generatedCode =
             CodeGenerator.generate(
                 program
             )
         CodeGenerator.emitGeneratedCode(generatedCode)
         JVMEmitter.emit(program, outputPath)
+        return program.diagnostics
     }
 
     private fun getProgram(): BoundProgram {
-        val program = Binder.bindProgram(globalScope, mainTree = entryPointTree)
+        val program = Binder.bindProgram(globalScope, mainTree = entryPointTree, optimize = !isInterpreting)
         _globalScope = program.globalScope
         return program
     }

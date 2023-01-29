@@ -11,7 +11,7 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     companion object {
         fun lower(statement: BoundBlockStatement): BoundBlockStatement {
             val lowerer = Lowerer()
-            val result = lowerer.rewriteBlockStatement(statement)
+            val result = lowerer.lower(statement)
             return lowerer.flatten(result)
         }
     }
@@ -24,17 +24,16 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     private val whileCount
         get() = loopStack.size
 
-    override fun rewriteBlockStatement(node: BoundBlockStatement): BoundBlockStatement {
-        val rewritten = super.rewriteBlockStatement(node)
-        if (loopStack.isEmpty()) {
-            if (rewritten.statements.lastOrNull() !is BoundReturnStatement) {
-                val statements = rewritten.statements.toMutableList()
-                statements.add(BoundReturnStatement(null, TypeSymbol.Unit))
-                return BoundBlockStatement(statements)
-            }
+    private fun lower(node: BoundBlockStatement): BoundBlockStatement {
+        val rewritten = rewriteBlockStatement(node)
+        if (rewritten.statements.lastOrNull() !is BoundReturnStatement) {
+            val statements = rewritten.statements.toMutableList()
+            statements.add(BoundReturnStatement(null, TypeSymbol.Unit))
+            return BoundBlockStatement(statements)
         }
-        return rewritten
+        return flatten(rewritten)
     }
+
 
     /*
     * for <var> in <iterator>
@@ -92,7 +91,7 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         val condition = BoundBinaryExpression(
             BoundVariableExpression(node.variable),
             node.upperBound,
-            BoundBinaryOperator.bind(Operator.LessThanEquals, node.variable.type, node.upperBound.type)!!,
+            BoundBinaryOperator.bind(Operator.LessThan, node.variable.type, node.upperBound.type)!!,
         )
         val whileStatement = BoundWhileStatement(
             condition,

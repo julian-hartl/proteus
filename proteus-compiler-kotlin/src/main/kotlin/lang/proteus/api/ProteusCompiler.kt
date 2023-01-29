@@ -58,26 +58,53 @@ internal class ProteusCompiler(
 
     }
 
-    fun compileFile(fileName: String): CompilationResult {
+    fun compileFile(fileName: String) {
         computationTimeStopper.start()
         val tree = SyntaxTree.load(fileName)
-        return compileTree(tree, tree.sourceText)
+        compileTree(tree, tree.sourceText)
     }
 
-    fun compileText(text: String): CompilationResult {
-        val sourceText = SourceText.from(text)
+    fun interpretFile(fileName: String): InterpretationResult {
+        computationTimeStopper.start()
+        val tree = SyntaxTree.load(fileName)
+        return interpretTree(tree)
+    }
+
+    fun interpretText(text: String): InterpretationResult {
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
-        return compileTree(tree, sourceText)
+        return interpretTree(tree)
     }
 
     private fun compileTree(
         tree: SyntaxTree,
         sourceText: SourceText,
-    ): CompilationResult {
+    ) {
         if (tree.hasErrors()) {
             DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
-            return CompilationResult(
+            return
+        }
+        val outputPath =
+            byteCodeOutPath ?: sourceText.absolutePath.replace(
+                Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT,
+                PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
+            )
+        val compilation = Compilation.compile(tree)
+        val diagnostics = compilation.emit(
+            outputPath
+        )
+        if(diagnostics.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(diagnostics)
+            return
+        }
+    }
+
+    private fun interpretTree(
+        tree: SyntaxTree,
+    ): InterpretationResult {
+        if (tree.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
+            return InterpretationResult(
                 tree,
                 null,
                 null
@@ -87,31 +114,26 @@ internal class ProteusCompiler(
 
 
         computationTimeStopper.start()
-        val compilation = Compilation.compile(tree)
-        val outputPath =
-            byteCodeOutPath ?: sourceText.absolutePath.replace(Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT, PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT)
-        compilation.emit(
-            outputPath
-        )
-        val compilationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
+        val compilation = Compilation.interpret(tree)
+        val evaluationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
             DiagnosticsPrinter.printDiagnostics(it)
         }
         val memoryUsage = getMemoryUsage()
-        if (compilationResult.diagnostics.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics)
+        if (evaluationResult.diagnostics.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(evaluationResult.diagnostics)
         } else {
-            printResult(compilationResult)
+            printResult(evaluationResult)
         }
         val performance = CompilationPerformance(
             lexerTime,
-            compilationResult.parseTime ?: ComputationTime(0),
-            compilationResult.evaluationTime ?: ComputationTime(0),
-            compilationResult.codeGenerationTime ?: ComputationTime(0),
+            evaluationResult.parseTime ?: ComputationTime(0),
+            evaluationResult.evaluationTime ?: ComputationTime(0),
+            evaluationResult.codeGenerationTime ?: ComputationTime(0),
             memoryUsage
         )
         val performancePrinter = PerformancePrinter()
         performancePrinter.print(performance)
-        return CompilationResult(tree, compilationResult, performance)
+        return InterpretationResult(tree, evaluationResult, performance)
     }
 
     private fun getMemoryUsage(): Int {

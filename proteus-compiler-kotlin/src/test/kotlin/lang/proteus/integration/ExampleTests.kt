@@ -23,7 +23,7 @@ class ExampleTests {
             ),
             Arguments.of(
                 "shadowing/main.psl",
-                10
+                5
             )
         )
     }
@@ -35,7 +35,7 @@ class ExampleTests {
         val compiler = ProteusCompiler(
             outputGeneratedCode = false,
         )
-        val result = compiler.compileFile(path)
+        val result = compiler.interpretFile(path)
         val actualValue = result.evaluationResult?.value
         assertEquals(expectedValue, actualValue, "Expected value $expectedValue, but got $actualValue")
     }

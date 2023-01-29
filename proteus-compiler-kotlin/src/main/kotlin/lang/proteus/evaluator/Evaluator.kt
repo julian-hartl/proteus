@@ -17,7 +17,8 @@ internal class Evaluator(
 
     fun evaluate(): Any? {
         evaluateGlobalVariableInitializers()
-        return evaluateCallExpression(BoundCallExpression(mainFunction, emptyList()))
+        evaluateCallExpression(BoundCallExpression(mainFunction, emptyList()))
+        return lastValue
     }
 
     private fun evaluateGlobalVariableInitializers() {
@@ -86,8 +87,8 @@ internal class Evaluator(
             }
 
             is BoundReturnStatement -> {
-                lastValue =
-                    if (statement.expression == null) null else evaluateExpression(statement.expression)
+
+                if (statement.expression != null) lastValue = evaluateExpression(statement.expression)
                 totalStatements
             }
 
