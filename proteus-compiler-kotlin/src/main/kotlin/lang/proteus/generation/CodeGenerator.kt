@@ -106,7 +106,7 @@ internal class CodeGenerator private constructor(
     }
 
 
-    override fun rewriteBlockStatement(node: BoundBlockStatement): BoundStatement {
+    override fun rewriteBlockStatement(node: BoundBlockStatement): BoundBlockStatement {
         codeBuilder.append("{")
         codeBuilder.appendLine()
         for (statement in node.statements) {
@@ -120,7 +120,7 @@ internal class CodeGenerator private constructor(
     }
 
     override fun rewriteCallExpression(expression: BoundCallExpression): BoundExpression {
-        codeBuilder.append(expression.functionSymbol.qualifiedName)
+        codeBuilder.append(expression.function.qualifiedName)
         codeBuilder.append("(")
         for ((index, argument) in expression.arguments.withIndex()) {
             rewriteExpression(argument)
@@ -151,9 +151,9 @@ internal class CodeGenerator private constructor(
 
     override fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
         codeBuilder.append("return")
-        if (statement.boundExpression != null) {
+        if (statement.expression != null) {
             codeBuilder.append(" ")
-            rewriteExpression(statement.boundExpression)
+            rewriteExpression(statement.expression)
         }
         codeBuilder.append(";")
         return statement

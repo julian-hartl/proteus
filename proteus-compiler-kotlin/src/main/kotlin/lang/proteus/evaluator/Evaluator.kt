@@ -17,7 +17,8 @@ internal class Evaluator(
 
     fun evaluate(): Any? {
         evaluateGlobalVariableInitializers()
-        return evaluateCallExpression(BoundCallExpression(mainFunction, emptyList()))
+        evaluateCallExpression(BoundCallExpression(mainFunction, emptyList()))
+        return lastValue
     }
 
     private fun evaluateGlobalVariableInitializers() {
@@ -86,8 +87,8 @@ internal class Evaluator(
             }
 
             is BoundReturnStatement -> {
-                lastValue =
-                    if (statement.boundExpression == null) null else evaluateExpression(statement.boundExpression)
+
+                if (statement.expression != null) lastValue = evaluateExpression(statement.expression)
                 totalStatements
             }
 
@@ -147,7 +148,7 @@ internal class Evaluator(
     }
 
     private fun evaluateCallExpression(callExpression: BoundCallExpression): Any? {
-        val function = callExpression.functionSymbol
+        val function = callExpression.function
         val arguments = callExpression.arguments.map { evaluateExpression(it)!! }
         if (function.declaration.isExternal) {
             val externalFunction = ProteusExternalFunction.lookup(function.declaration)!!

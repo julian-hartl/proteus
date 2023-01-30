@@ -1,5 +1,7 @@
 package lang.proteus.binding
 
-internal data class BoundReturnStatement(val boundExpression: BoundExpression?) : BoundStatement() {
+import lang.proteus.symbols.TypeSymbol
+
+internal data class BoundReturnStatement(val expression: BoundExpression?, val returnType: TypeSymbol) : BoundStatement() {
 
 }

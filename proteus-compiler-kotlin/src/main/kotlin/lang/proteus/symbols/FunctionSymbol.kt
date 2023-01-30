@@ -52,7 +52,7 @@ internal class FunctionSymbol(
     val returnType: TypeSymbol,
     val declaration: FunctionDeclarationSyntax,
     syntaxTree: SyntaxTree,
-) : Symbol(syntaxTree.id.toString(), declaration.identifier.literal) {
+) : Symbol(if (declaration.isExternal) "external" else syntaxTree.id.toString(), declaration.identifier.literal) {
     var parameters: List<ParameterSymbol>
 
     init {

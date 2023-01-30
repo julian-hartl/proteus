@@ -1,24 +1,22 @@
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.external.Functions
-import lang.proteus.printing.ConsolePrinter
-import lang.proteus.printing.PrinterColor
+import lang.proteus.metatdata.Metadata
+import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.CmdLineException
+import org.kohsuke.args4j.CmdLineParser
+import org.kohsuke.args4j.Option
 
 
-fun main(args: Array<String>) {
-    Functions;
-    val filePath = args.getOrNull(0)
-    val consolePrinter = ConsolePrinter()
-    if (filePath == null) {
-        consolePrinter.setColor(PrinterColor.RED)
-        consolePrinter.println("No file path provided. Usage: proteus <file_path> [-v]")
-        return
+class Main {
+
+
+    companion object {
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            Functions;
+            val compiler = ProteusCompiler()
+            compiler.run(args)
+        }
     }
-    val compiler = ProteusCompiler()
-    try {
-        compiler.compile(filePath)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        println()
-    }
-
 }

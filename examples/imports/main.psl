@@ -7,13 +7,12 @@ fn sum() {
     const a = 2;
     const b = 3;
     val added = a + b;
-    println(added);
-    println(random(0,1));
+    println(added as String);
 }
 
 fn main() {
     const a = 2;
     const b = 3;
     val multiplied = multiply(a, b);
-    println(multiplied);
+    println(multiplied as String);
 }

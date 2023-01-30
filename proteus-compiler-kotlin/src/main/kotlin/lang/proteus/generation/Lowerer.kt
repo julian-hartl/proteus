@@ -2,15 +2,16 @@ package lang.proteus.generation
 
 import lang.proteus.binding.*
 import lang.proteus.symbols.LocalVariableSymbol
+import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.lexer.token.Operator
 import java.util.*
 
 
 internal class Lowerer private constructor() : BoundTreeRewriter() {
     companion object {
-        fun lower(statement: BoundStatement): BoundBlockStatement {
+        fun lower(statement: BoundBlockStatement): BoundBlockStatement {
             val lowerer = Lowerer()
-            val result = lowerer.rewriteStatement(statement)
+            val result = lowerer.lower(statement)
             return lowerer.flatten(result)
         }
     }
@@ -23,6 +24,17 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     private val whileCount
         get() = loopStack.size
 
+    private fun lower(node: BoundBlockStatement): BoundBlockStatement {
+        val rewritten = rewriteBlockStatement(node)
+        if (rewritten.statements.lastOrNull() !is BoundReturnStatement) {
+            val statements = rewritten.statements.toMutableList()
+            statements.add(BoundReturnStatement(null, TypeSymbol.Unit))
+            return BoundBlockStatement(statements)
+        }
+        return flatten(rewritten)
+    }
+
+
     /*
     * for <var> in <iterator>
     *   <body>;
@@ -30,44 +42,65 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
     * -->
     * {
     *
-    *   var <random_uuid> = <lower>;
-    *   while <random_uuid> <= <upper> {
-    *       var <var> = <random_uuid>;
-    *       <random_uuid> += 1;
+    *   var <var> = <lower>;
+    * var @modify = false;
+    *   while <var> <= <upper> {
+    *       if (@modify) {
+    *          <var> += 1;
+    *       }
+    *      @modify = true;
     *       <body>;
+    *
     *   }
     * }
      */
     override fun rewriteForStatement(node: BoundForStatement): BoundStatement {
-        val randomUuid = UUID.randomUUID().toString()
-        val loopCounterVariable = LocalVariableSymbol(
-            "loop_counter_${randomUuid}",
-            node.variable.type,
-            false,
-            syntaxTree = node.variable.syntaxTree,
-            enclosingFunction = node.variable.enclosingFunction
+
+        val modifyFlagDeclaration = BoundVariableDeclaration(
+            LocalVariableSymbol(
+                "@modify",
+                TypeSymbol.Boolean,
+                isFinal = false,
+                syntaxTree = node.variable.syntaxTree,
+                enclosingFunction = node.variable.enclosingFunction,
+            ),
+            BoundLiteralExpression(false)
         )
-        val loopCounterVariableDeclaration = BoundVariableDeclaration(loopCounterVariable, node.lowerBound)
-        val loopValueVariableDeclaration =
-            BoundVariableDeclaration(node.variable, BoundVariableExpression(loopCounterVariable))
+
+        val modifyFlagModification = BoundExpressionStatement(
+            BoundAssignmentExpression(
+                modifyFlagDeclaration.variable,
+                BoundLiteralExpression(true),
+                Operator.Equals,
+                returnAssignment = false
+            )
+        )
         val increment = BoundAssignmentExpression(
-            loopCounterVariable,
+            node.variable,
             BoundLiteralExpression(1),
             Operator.PlusEquals,
             returnAssignment = false
         )
+        val modifyCheckStatement = BoundIfStatement(
+            BoundVariableExpression(modifyFlagDeclaration.variable),
+            BoundBlockStatement(listOf(BoundExpressionStatement(increment))),
+            null
+        )
+        val loopVariableDeclaration = BoundVariableDeclaration(node.variable, node.lowerBound)
+
         val condition = BoundBinaryExpression(
-            BoundVariableExpression(loopCounterVariable),
+            BoundVariableExpression(node.variable),
             node.upperBound,
-            BoundBinaryOperator.bind(Operator.LessThanEquals, loopCounterVariable.type, node.upperBound.type)!!,
+            BoundBinaryOperator.bind(Operator.LessThan, node.variable.type, node.upperBound.type)!!,
         )
         val whileStatement = BoundWhileStatement(
             condition,
-            BoundBlockStatement(listOf(loopValueVariableDeclaration, BoundExpressionStatement(increment), node.body))
+            BoundBlockStatement(listOf(modifyCheckStatement, modifyFlagModification, node.body))
         )
         val result = BoundBlockStatement(
             listOf(
-                loopCounterVariableDeclaration,
+                modifyFlagDeclaration,
+                loopVariableDeclaration,
                 whileStatement,
             ),
         )

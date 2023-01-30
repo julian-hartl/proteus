@@ -5,40 +5,106 @@ import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
 import lang.proteus.evaluator.EvaluationResult
+import lang.proteus.metatdata.Metadata
+import lang.proteus.metatdata.Metadata.PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.DiagnosticsPrinter
 import lang.proteus.printing.PrinterColor
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import lang.proteus.text.SourceText
+import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.CmdLineException
+import org.kohsuke.args4j.CmdLineParser
+import org.kohsuke.args4j.Option
 import java.lang.management.MemoryUsage
 
-internal class ProteusCompiler(private val outputGeneratedCode: Boolean = true) {
+internal class ProteusCompiler(
+    private val outputGeneratedCode: Boolean = true,
+) {
 
+    @Option(name = "-o", usage = "The path of the output java byte code file")
+    private var byteCodeOutPath: String? = null
+
+    @Argument(metaVar = "source", usage = "The path of the source file", required = true)
+    private var sourcePath = ""
 
     private val variables = mutableMapOf<String, Any>()
 
     private val computationTimeStopper = ComputationTimeStopper()
-    fun compile(fileName: String): CompilationResult {
-        computationTimeStopper.start()
-        val tree = SyntaxTree.load(fileName)
-        return compileTree(tree, tree.sourceText)
+
+    fun run(args: Array<String>) {
+        val parser = CmdLineParser(this)
+        try {
+            parser.parseArgument(*args)
+            if (!sourcePath.endsWith(Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT)) {
+                println("The source file must be a .psl file")
+                return
+            }
+            if (byteCodeOutPath?.endsWith(PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT) == false) {
+                println("The output file must be a $PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT file")
+                return
+            }
+            try {
+                compileFile(sourcePath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println()
+            }
+        } catch (e: CmdLineException) {
+            System.err.println(e.message)
+            parser.printUsage(System.err)
+        }
+
     }
 
-    fun compileText(text: String): CompilationResult {
-        val sourceText = SourceText.from(text)
+    fun compileFile(fileName: String) {
+        computationTimeStopper.start()
+        val tree = SyntaxTree.load(fileName)
+        compileTree(tree, tree.sourceText)
+    }
+
+    fun interpretFile(fileName: String): InterpretationResult {
+        computationTimeStopper.start()
+        val tree = SyntaxTree.load(fileName)
+        return interpretTree(tree)
+    }
+
+    fun interpretText(text: String): InterpretationResult {
         computationTimeStopper.start()
         val tree = SyntaxTree.parse(text)
-        return compileTree(tree, sourceText)
+        return interpretTree(tree)
     }
 
     private fun compileTree(
         tree: SyntaxTree,
         sourceText: SourceText,
-    ): CompilationResult {
+    ) {
         if (tree.hasErrors()) {
             DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
-            return CompilationResult(
+            return
+        }
+        val outputPath =
+            byteCodeOutPath ?: sourceText.absolutePath.replace(
+                Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT,
+                PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
+            )
+        val compilation = Compilation.compile(tree)
+        val diagnostics = compilation.emit(
+            outputPath
+        )
+        if(diagnostics.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(diagnostics)
+            return
+        }
+    }
+
+    private fun interpretTree(
+        tree: SyntaxTree,
+    ): InterpretationResult {
+        if (tree.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
+            return InterpretationResult(
                 tree,
                 null,
                 null
@@ -48,26 +114,26 @@ internal class ProteusCompiler(private val outputGeneratedCode: Boolean = true) 
 
 
         computationTimeStopper.start()
-        val compilation = Compilation(tree)
-        val compilationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
+        val compilation = Compilation.interpret(tree)
+        val evaluationResult = compilation.evaluate(variables, generateCode = outputGeneratedCode) {
             DiagnosticsPrinter.printDiagnostics(it)
         }
         val memoryUsage = getMemoryUsage()
-        if (compilationResult.diagnostics.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(compilationResult.diagnostics)
+        if (evaluationResult.diagnostics.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(evaluationResult.diagnostics)
         } else {
-            printResult(compilationResult)
+            printResult(evaluationResult)
         }
         val performance = CompilationPerformance(
             lexerTime,
-            compilationResult.parseTime ?: ComputationTime(0),
-            compilationResult.evaluationTime ?: ComputationTime(0),
-            compilationResult.codeGenerationTime ?: ComputationTime(0),
+            evaluationResult.parseTime ?: ComputationTime(0),
+            evaluationResult.evaluationTime ?: ComputationTime(0),
+            evaluationResult.codeGenerationTime ?: ComputationTime(0),
             memoryUsage
         )
         val performancePrinter = PerformancePrinter()
         performancePrinter.print(performance)
-        return CompilationResult(tree, compilationResult, performance)
+        return InterpretationResult(tree, evaluationResult, performance)
     }
 
     private fun getMemoryUsage(): Int {

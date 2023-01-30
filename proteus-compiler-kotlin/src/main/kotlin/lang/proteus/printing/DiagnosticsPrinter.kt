@@ -6,7 +6,7 @@ import lang.proteus.diagnostics.TextSpan
 object DiagnosticsPrinter {
     fun printDiagnostics(diagnostics: Diagnostics) {
         val printer = ConsolePrinter()
-        val orderedDiagnostics = diagnostics.diagnostics.sortedBy {
+        val orderedDiagnostics = diagnostics.errors.sortedBy {
             it.location.sourceText.absolutePath
         }.sortedBy {
             it.span.start

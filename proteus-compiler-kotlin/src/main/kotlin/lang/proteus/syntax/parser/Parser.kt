@@ -63,7 +63,6 @@ internal class Parser(
                     if (!member.file.exists()) {
                         diagnosticsBag.reportImportedFileNotFound(member.resolvedFilePath, member.location)
                     }
-
                 }
             } else {
                 hasParsedOtherThanImport = true
@@ -563,9 +562,9 @@ internal class Parser(
             nodesAndSeparators.add(expression)
             lastToken = expression
             if (current.token !is Operator.CloseParenthesis) {
-                val diagnosticSize = diagnosticsBag.diagnostics.diagnostics.size
+                val diagnosticSize = diagnosticsBag.diagnostics.errors.size
                 val comma = matchToken(Token.Comma)
-                val newDiagnosticSize = diagnosticsBag.diagnostics.diagnostics.size
+                val newDiagnosticSize = diagnosticsBag.diagnostics.errors.size
                 if (diagnosticSize == newDiagnosticSize) {
                     nodesAndSeparators.add(comma)
                     lastToken = comma

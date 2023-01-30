@@ -9,6 +9,7 @@ internal sealed class Operator(
     val isUnaryOperator: Boolean = false,
     val isBinaryOperator: Boolean = false,
     val isAssignmentOperator: Boolean = false,
+    val isComparisonOperator: Boolean = false
 ) : Token() {
 
     fun toSyntaxToken(position: Int, syntaxTree: SyntaxTree): SyntaxToken<Operator> {
@@ -43,13 +44,13 @@ internal sealed class Operator(
     object Not : UnaryOperator("not", 3)
 
     object And : BinaryOperator("and", 2)
-    object DoubleEquals : BinaryOperator("==", 1)
-    object NotEquals : BinaryOperator("!=", 1)
+    object DoubleEquals : ComparisonOperator("==", 1)
+    object NotEquals : ComparisonOperator("!=", 1)
 
-    object LessThan : BinaryOperator("<", 1)
-    object GreaterThan : BinaryOperator(">", 1)
-    object GreaterThanEquals : BinaryOperator(">=", 1)
-    object LessThanEquals : BinaryOperator("<=", 1)
+    object LessThan : ComparisonOperator("<", 1)
+    object GreaterThan : ComparisonOperator(">", 1)
+    object GreaterThanEquals : ComparisonOperator(">=", 1)
+    object LessThanEquals : ComparisonOperator("<=", 1)
 
     object Or : BinaryOperator("or", 2)
     object Xor : BinaryOperator("xor", 2)

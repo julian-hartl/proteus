@@ -1,5 +1,7 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.TypeSymbol
+
 internal abstract class BoundTreeRewriter {
 
     fun rewriteStatement(statement: BoundStatement): BoundStatement {
@@ -21,8 +23,11 @@ internal abstract class BoundTreeRewriter {
     }
 
     protected open fun rewriteReturnStatement(statement: BoundReturnStatement): BoundStatement {
-        val expression = statement.boundExpression?.let { rewriteExpression(it) }
-        return BoundReturnStatement(expression)
+        val expression = statement.expression?.let { rewriteExpression(it) }
+        if (expression == statement.expression) {
+            return statement
+        }
+        return BoundReturnStatement(expression, statement.returnType)
     }
 
     protected open fun rewriteContinueStatement(statement: BoundContinueStatement): BoundStatement {
@@ -99,7 +104,9 @@ internal abstract class BoundTreeRewriter {
         return BoundExpressionStatement(expression)
     }
 
-    protected open fun rewriteBlockStatement(node: BoundBlockStatement): BoundStatement {
+    protected open fun rewriteBlockStatement(
+        node: BoundBlockStatement,
+    ): BoundBlockStatement {
         val statements = mutableListOf<BoundStatement>()
         var changed = false
         for (s in node.statements) {
@@ -109,6 +116,7 @@ internal abstract class BoundTreeRewriter {
                 changed = true
             }
         }
+
         if (!changed) {
             return node
         }
@@ -141,7 +149,7 @@ internal abstract class BoundTreeRewriter {
         if (arguments == expression.arguments) {
             return expression
         }
-        return BoundCallExpression(expression.functionSymbol, arguments)
+        return BoundCallExpression(expression.function, arguments)
     }
 
     private fun rewriteErrorExpression(expression: BoundExpression): BoundExpression {

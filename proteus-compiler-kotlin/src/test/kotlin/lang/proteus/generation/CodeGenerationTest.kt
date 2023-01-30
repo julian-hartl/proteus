@@ -15,7 +15,7 @@ class CodeGenerationTest {
         val globalScope = Binder.bindGlobalScope(null, parsed.root)
         val program = Binder.bindProgram(globalScope, parsed, optimize = false)
         return CodeGenerator.generate(
-    program
+            program
         )
     }
 
@@ -38,9 +38,10 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main@0() -> Unit {
-                            var a@main@0: Int = 1;
-                            var b@main@0: Int = 2;
+                        fn main_0() -> Unit {
+                            var a_main_0: Int = 1;
+                            var b_main_0: Int = 2;
+                            return;
                         }
                        
                     """.trimIndent()
@@ -54,10 +55,11 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main@0() -> Unit {
-                            var a@main@0: Int = 1;
-                            var b@main@0: Int = 2;
-                            var c@main@0: Int = ((a@main@0) + (b@main@0));
+                        fn main_0() -> Unit {
+                            var a_main_0: Int = 1;
+                            var b_main_0: Int = 2;
+                            var c_main_0: Int = ((a_main_0) + (b_main_0));
+                            return;
                         }
                    
                     """.trimIndent()
@@ -69,8 +71,9 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main@0() -> Unit {
-                            var test@main@0: String = "test";
+                        fn main_0() -> Unit {
+                            var test_main_0: String = "test";
+                            return;
                         }
                      
                     """.trimIndent()
@@ -89,15 +92,16 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main@0() -> Unit {
+                        fn main_0() -> Unit {
                             gotoIfFalse else_0 true;
-                            var a@main@0: Int = 1;
-                            var b@main@0: Int = 2;
-                            var c@main@0: Int = ((a@main@0) + (b@main@0));
+                            var a_main_0: Int = 1;
+                            var b_main_0: Int = 2;
+                            var c_main_0: Int = ((a_main_0) + (b_main_0));
                             goto if_0_end;
                             else_0:
-                            var a@main@0: Int = 1;
+                            var a_main_0: Int = 1;
                             if_0_end:
+                            return;
                         }
                         
                     """.trimIndent()
@@ -110,7 +114,7 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main@0() -> Unit {
+                        fn main_0() -> Unit {
                             return;
                         }
                         
@@ -123,7 +127,7 @@ class CodeGenerationTest {
                         }
                     """.trimIndent(),
                     """
-                        fn main@0() -> Int {
+                        fn main_0() -> Int {
                             return ((1) + (1));
                         }
                         

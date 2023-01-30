@@ -38,6 +38,8 @@ dependencies {
     testImplementation ("org.junit.jupiter:junit-jupiter-params:5.9.1")
     implementation(kotlin("reflect"))
     implementation(kotlin("stdlib-jdk8"))
+    implementation("args4j:args4j:2.33")
+    implementation("org.ow2.asm:asm:8.0.1")
 }
 
 

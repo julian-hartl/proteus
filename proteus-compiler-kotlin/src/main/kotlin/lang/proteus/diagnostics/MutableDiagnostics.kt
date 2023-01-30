@@ -25,21 +25,15 @@ class MutableDiagnostics private constructor(private var mutableDiagnostics: Mut
         }
     }
 
-    override val diagnostics: List<Diagnostic>
-        get() = mutableDiagnostics.toList()
 
-    val errors get() = mutableDiagnostics.filter { it.isError }
+    override val errors get() = mutableDiagnostics.filter { it.isError }
 
-    val warnings get() = mutableDiagnostics.filter { it.isWarning }
-
-    override fun hasErrors(): Boolean {
-        return errors.isNotEmpty()
-    }
+    override val warnings get() = mutableDiagnostics.filter { it.isWarning }
 
     override fun concat(other: Diagnostics) {
         val newDiagnostics = mutableListOf<Diagnostic>()
         newDiagnostics.addAll(mutableDiagnostics)
-        newDiagnostics.addAll(other.diagnostics)
+        newDiagnostics.addAll(other.errors)
         mutableDiagnostics = newDiagnostics
     }
 

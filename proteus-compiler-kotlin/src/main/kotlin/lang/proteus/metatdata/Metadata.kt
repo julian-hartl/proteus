@@ -1,0 +1,12 @@
+package lang.proteus.metatdata
+
+object Metadata {
+    val PROTEUS_VERSION = "0.0.1"
+    val PROTEUS_FILE_EXTENSION = "psl"
+    val PROTEUS_FILE_EXTENSION_WITH_DOT = ".$PROTEUS_FILE_EXTENSION"
+
+    val PROTEUS_FILE_OUTPUT_EXTENSION = "class"
+    val PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT = ".$PROTEUS_FILE_OUTPUT_EXTENSION"
+
+    val JAVA_MAIN_CLASS_NAME = "MainPsl"
+}

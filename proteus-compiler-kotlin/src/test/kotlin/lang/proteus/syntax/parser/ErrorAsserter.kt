@@ -6,7 +6,7 @@ import lang.proteus.diagnostics.Diagnostics
 class ErrorAsserter(private val diagnosticsWrapper: Diagnostics) {
 
     private val diagnostics: List<Diagnostic>
-        get() = diagnosticsWrapper.diagnostics
+        get() = diagnosticsWrapper.errors
 
     companion object {
         fun fromDiagnostics(diagnostics: Diagnostics): ErrorAsserter {

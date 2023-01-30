@@ -108,7 +108,7 @@ internal class DiagnosticsBag {
     }
 
     fun addAll(diagnostics: Diagnostics) {
-        for (diagnostic in diagnostics.diagnostics) {
+        for (diagnostic in diagnostics.errors) {
             mutableDiagnostics.add(diagnostic)
         }
     }

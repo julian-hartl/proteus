@@ -3,7 +3,6 @@ package lang.proteus.evaluation
 import lang.proteus.api.Compilation
 import lang.proteus.api.ProteusCompiler
 import lang.proteus.binding.*
-import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 import org.junit.jupiter.params.ParameterizedTest
@@ -23,7 +22,7 @@ class EvaluationTest {
             {([]
         """
 
-        ProteusCompiler().compileText(text)
+        ProteusCompiler().interpretText(text)
     }
 
     @ParameterizedTest
@@ -36,7 +35,7 @@ class EvaluationTest {
             }
         """.trimIndent()
         )
-        val compilation = Compilation(tree)
+        val compilation = Compilation.interpret(tree)
 
         val evaluationResult = compilation.evaluate(mutableMapOf()) {
 
@@ -58,7 +57,7 @@ class EvaluationTest {
         val expression = SyntaxTree.parse(
             input
         )
-        val compilation = Compilation(expression)
+        val compilation = Compilation.interpret(expression)
 
         val evaluationResult = compilation.evaluate(mutableMapOf()) {
 
@@ -90,7 +89,7 @@ class EvaluationTest {
         val compiler = ProteusCompiler(
             outputGeneratedCode = false,
         )
-        val result = compiler.compileText(input)
+        val result = compiler.interpretText(input)
         assertEquals(
             expectedValue,
             result.evaluationResult?.value,
@@ -744,7 +743,7 @@ class EvaluationTest {
         """.trimIndent() else text
         val annotatedText = AnnotatedText.parse(wrappedText)
         val syntaxTree = SyntaxTree.parse(annotatedText.text)
-        val compilation = Compilation(syntaxTree)
+        val compilation = Compilation.interpret(syntaxTree)
         val result = compilation.evaluate(mutableMapOf()) {
 
         }
@@ -757,19 +756,19 @@ class EvaluationTest {
 
         assertEquals(
             expectedDiagnostics.size,
-            result.diagnostics.diagnostics.size,
-            "Did not get the expected number of diagnostics, actual: ${result.diagnostics.diagnostics}."
+            result.diagnostics.errors.size,
+            "Did not get the expected number of diagnostics, actual: ${result.diagnostics.errors}."
         )
 
         var assertedDiagnostics = 0
         for (i in expectedDiagnostics.indices) {
             val expectedMessage = expectedDiagnostics[assertedDiagnostics]
-            val actualMessage = result.diagnostics.diagnostics[i].message
+            val actualMessage = result.diagnostics.errors[i].message
             assertEquals(expectedMessage, actualMessage, "Diagnostic message does not match.")
 
             val expectedSpan = annotatedText.spans[i]
-            val actualSpan = result.diagnostics.diagnostics[i].span
-            assertEquals(expectedSpan, actualSpan, "Diagnostic span does not match: ${result.diagnostics.diagnostics}")
+            val actualSpan = result.diagnostics.errors[i].span
+            assertEquals(expectedSpan, actualSpan, "Diagnostic span does not match: ${result.diagnostics.errors}")
 
             assertedDiagnostics++
         }
@@ -777,7 +776,7 @@ class EvaluationTest {
             expectedDiagnostics.size, assertedDiagnostics, """
             Did not get the expected amount diagnostics.
             Expected: $expectedDiagnostics
-            Actual: ${result.diagnostics.diagnostics}
+            Actual: ${result.diagnostics.errors}
         """.trimIndent()
         )
     }
