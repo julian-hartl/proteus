@@ -1,10 +1,8 @@
-import lang.proteus.api.ProteusCompiler
-import lang.proteus.external.Functions
-import lang.proteus.metatdata.Metadata
-import org.kohsuke.args4j.Argument
-import org.kohsuke.args4j.CmdLineException
-import org.kohsuke.args4j.CmdLineParser
-import org.kohsuke.args4j.Option
+import lang.proteus.grammar.ProteusLexer
+import lang.proteus.grammar.ProteusParser
+import org.antlr.v4.runtime.BaseErrorListener
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
 
 
 class Main {
@@ -14,9 +12,18 @@ class Main {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            Functions;
-            val compiler = ProteusCompiler()
-            compiler.run(args)
+//            Functions;
+//            val compiler = ProteusCompiler()
+//            compiler.run(args)
+            val lexer = ProteusLexer(
+                CharStreams.fromString("fn test();")
+            )
+            val tokens = CommonTokenStream(lexer)
+            val parser = ProteusParser(tokens)
+            parser.addErrorListener(BaseErrorListener())
+            val tree = parser.compilationUnit().toStringTree()
+            println(tree)
+
         }
     }
 }

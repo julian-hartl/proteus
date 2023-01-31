@@ -40,12 +40,15 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("args4j:args4j:2.33")
     implementation("org.ow2.asm:asm:8.0.1")
+    implementation("org.antlr:antlr4-runtime:4.11.1")
 }
-
 
 sourceSets {
     main {
         kotlin {
+            srcDirs("src/main/kotlin")
+        }
+        java {
             srcDirs("src/main/kotlin")
         }
     }
@@ -63,6 +66,7 @@ tasks.test {
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
+
 
 application {
     mainClass.set("MainKt")

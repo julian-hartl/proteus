@@ -1,6 +1,8 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
+import lang.proteus.grammar.ProteusLexer
+import lang.proteus.grammar.ProteusParser
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.ProteusExternalFunction
