@@ -5,71 +5,79 @@ import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextLocation
 import lang.proteus.generation.Lowerer
 import lang.proteus.generation.Optimizer
+import lang.proteus.grammar.ProteusParser
+import lang.proteus.grammar.ProteusParser.BlockStatementContext
+import lang.proteus.grammar.ProteusParser.ExpressionContext
+import lang.proteus.grammar.ProteusParserBaseVisitor
 import lang.proteus.symbols.*
-import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.parser.*
-import lang.proteus.syntax.parser.statements.*
+import org.antlr.v4.runtime.ParserRuleContext
 import java.util.*
+
 
 internal class Binder(
     private var scope: BoundScope,
     private val function: FunctionSymbol?,
+    private val module: Module,
+    private val constantPool: ConstantPool,
 ) : Diagnosable {
 
 
     init {
         if (function != null) {
             for (parameter in function.parameters) {
-                scope.tryDeclareVariable(parameter, function.declaration.syntaxTree)
+                scope.tryDeclareVariable(parameter, module)
             }
         }
     }
 
-    private val controlStructureStack: Stack<Keyword> = Stack()
+    private val controlStructureStack: Stack<Unit> = Stack()
 
 
     companion object {
 
 
-        fun bindGlobalScope(previous: BoundGlobalScope?, syntax: CompilationUnitSyntax): BoundGlobalScope {
+        fun bindGlobalScope(previous: BoundGlobalScope?, entryPointModule: Module): BoundGlobalScope {
             val parentScope = createParentScopes(previous)
-            val binder = Binder(parentScope ?: BoundScope(null), null)
+            val binder =
+                Binder(
+                    parentScope ?: BoundScope(null),
+                    null,
+                    module = entryPointModule,
+                    constantPool = ConstantPool(),
+                )
             val diagnostics = DiagnosticsBag()
-            val importGraph = ImportGraph.create(syntax.syntaxTree)
+            val importGraph = ModuleGraph.create(entryPointModule)
             val cycles = importGraph.findCycles()
             for (cycle in cycles) {
-                val location = syntax.members.first().location
-                diagnostics.reportCircularDependency(location, cycle)
+                diagnostics.reportCircularDependency(cycle)
             }
-            val trees = importGraph.getTrees()
-            for (tree in trees) {
-                diagnostics.addAll(tree.diagnostics)
-            }
-            val symbolMap: MutableMap<SyntaxTree, MutableSet<Symbol>> = mutableMapOf()
-            for (tree in trees) {
+            val modules = importGraph.getModules()
+//            for (tree in modules) {
+//                diagnostics.addAll(tree.diagnostics)
+//            }
+            for (module in modules) {
                 val symbols = mutableSetOf<Symbol>()
-                symbols.addAll(importGraph.gatherExportedSymbols(binder, tree))
-                symbols.addAll(importGraph.gatherImportedSymbols(binder, tree))
-                symbolMap[tree] = symbols
-            }
-            diagnostics.concat(importGraph.diagnosticsBag)
-
-            for ((tree, symbols) in symbolMap) {
+                symbols.addAll(importGraph.gatherExportedSymbols(module))
+                symbols.addAll(importGraph.gatherImportedSymbols(module))
                 for (symbol in symbols) {
                     if (symbol is FunctionSymbol) {
-                        binder.scope.tryDeclareFunction(symbol, tree)
+                        binder.scope.tryDeclareFunction(symbol, module)
                     } else if (symbol is VariableSymbol) {
-                        binder.scope.tryDeclareVariable(symbol, tree)
+                        binder.scope.tryDeclareVariable(symbol, module)
                     }
                 }
             }
+            diagnostics.concat(importGraph.diagnosticsBag)
+
             diagnostics.addAll(binder.diagnostics)
             val variables = binder.scope.getDeclaredVariables()
             val functions = binder.scope.getDeclaredFunctions()
             if (previous != null) {
                 diagnostics.addAll(previous.diagnostics)
             }
-            return BoundGlobalScope(previous, diagnostics.diagnostics, functions, variables)
+            val globalScope = BoundGlobalScope(previous, diagnostics.diagnostics, functions, variables)
+            globalScope.importConstantPool(previous?.constantPool ?: ConstantPool())
+            return globalScope
         }
 
         private fun createParentScopes(scope: BoundGlobalScope?): BoundScope? {
@@ -86,13 +94,12 @@ internal class Binder(
                 previous = stack.pop()
                 val scope = BoundScope(parent)
                 for ((syntaxTree, variables) in previous.mappedVariables) {
-                    for (variable in variables)
-                        scope.tryDeclareVariable(variable, syntaxTree)
+                    for (variable in variables) scope.tryDeclareVariable(variable, syntaxTree)
                 }
                 for ((syntaxTree, functions) in previous.mappedFunctions) {
-                    for (function in functions)
-                        scope.tryDeclareFunction(function, syntaxTree)
+                    for (function in functions) scope.tryDeclareFunction(function, syntaxTree)
                 }
+
 
                 parent = scope
             }
@@ -101,70 +108,78 @@ internal class Binder(
 
         fun bindProgram(
             globalScope: BoundGlobalScope,
-            mainTree: SyntaxTree,
+            module: Module,
             optimize: Boolean = true,
+            functionBodySyntax: Map<FunctionSymbol, BlockStatementContext>,
+            variableInitializerSyntax: Map<GlobalVariableSymbol, ProteusParser.ExpressionContext>,
         ): BoundProgram {
 
             val parentScope = createParentScopes(globalScope)
 
             val functionBodies = mutableMapOf<FunctionSymbol, BoundBlockStatement>()
 
+
             val diagnostics = DiagnosticsBag()
             diagnostics.addAll(globalScope.diagnostics)
 
 
-            for (function in globalScope.functions) {
-                val binder = Binder(parentScope ?: BoundScope(null), function)
-                val functionBody = function.declaration.body ?: continue
-                val body = binder.bindBlockStatement(functionBody)
-                var optimizedBody: BoundBlockStatement = BoundBlockStatement(listOf())
-                if (!binder.hasErrors()) {
-                    val loweredBody = Lowerer.lower(body)
-                    optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
-                    val graph = ControlFlowGraph.createAndOutput(optimizedBody)
-                    if (!graph.allPathsReturn()) {
-                        diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
-                    } else {
-                        if (function.returnType !is TypeSymbol.Unit) {
-                            for (incoming in graph.end.incoming) {
-                                if (incoming.statements.lastOrNull() !is BoundReturnStatement) {
-                                    diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
+            for ((module, functions) in globalScope.mappedFunctions) {
+                for (function in functions) {
+                    val binder = Binder(
+                        parentScope ?: BoundScope(null),
+                        function,
+                        module,
+                        globalScope.constantPool,
+                    )
+                    val functionBody: BlockStatementContext = functionBodySyntax[function]!!
+                    val body = binder.walk(functionBody) as BoundBlockStatement
+                    var optimizedBody = BoundBlockStatement(listOf())
+                    if (!binder.hasErrors()) {
+                        val loweredBody = Lowerer.lower(body)
+                        optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
+                        val graph = ControlFlowGraph.createAndOutput(optimizedBody)
+                        if (!graph.allPathsReturn()) {
+                            diagnostics.reportAllCodePathsMustReturn(TextLocation(module, functionBody))
+                        } else {
+                            if (function.specifiedReturnType != null && function.specifiedReturnType != TypeSymbol.Unit){
+                                for (incoming in graph.end.incoming) {
+                                    if (incoming.statements.lastOrNull() !is BoundReturnStatement) {
+                                        diagnostics.reportAllCodePathsMustReturn(TextLocation(module, functionBody))
+                                    }
                                 }
                             }
                         }
-                    }
-                    for (block in graph.blocks) {
-                        if (block.isEnd != true && block.isStart != true && block.incoming.size == 0) {
-                            // todo: better error message
-                            diagnostics.reportUnreachableCode(function.declaration.body.location);
+                        for (block in graph.blocks) {
+                            if (block.isEnd != true && block.isStart != true && block.incoming.size == 0) {
+                                diagnostics.reportUnreachableCode(TextLocation(module, functionBody));
+                            }
                         }
                     }
-                }
-                functionBodies[function] = optimizedBody
-                diagnostics.addAll(binder.diagnostics)
-            }
-
-            val variableInitializers = mutableMapOf<GlobalVariableSymbol, BoundExpression>()
-            for (variable in globalScope.variables) {
-                if (variable is GlobalVariableSymbol) {
-                    val binder = Binder(parentScope ?: BoundScope(null), null)
-                    val initializer = variable.declarationSyntax.initializer
-                    val boundInitializer = binder.bindExpression(initializer)
-                    val optimized = Optimizer.optimize(boundInitializer)
-                    variableInitializers[variable] = optimized
+                    functionBodies[function] = optimizedBody
                     diagnostics.addAll(binder.diagnostics)
                 }
             }
 
-            val mainFunction = validateMainFunction(globalScope.mappedFunctions[mainTree] ?: emptySet(), diagnostics)
+            val variableInitializers = mutableMapOf<GlobalVariableSymbol, BoundExpression>()
+            for ((module, variables) in globalScope.mappedVariables) {
+                for (variable in variables) {
+                    if (variable is GlobalVariableSymbol) {
+                        val binder = Binder(parentScope ?: BoundScope(null), null, module, globalScope.constantPool)
+                        val initializer = variableInitializerSyntax[variable]!!
+                        val boundInitializer = binder.walk(initializer) as BoundExpression
+                        val optimized = Optimizer.optimize(boundInitializer)
+                        variableInitializers[variable] = optimized
+                        diagnostics.addAll(binder.diagnostics)
+                    }
+                }
+            }
+
+            val mainFunction =
+                validateMainFunction(globalScope.mappedFunctions[module] ?: emptySet(), diagnostics)
 
 
             return BoundProgram(
-                globalScope,
-                diagnostics.diagnostics,
-                functionBodies,
-                variableInitializers,
-                mainFunction
+                globalScope, diagnostics.diagnostics, functionBodies, variableInitializers, mainFunction
             )
         }
 
@@ -174,257 +189,324 @@ internal class Binder(
                 throw IllegalStateException("No entry point found. Specify a main function.")
             } else if (mainFunction.parameters.isNotEmpty()) {
                 diagnostics.reportMainMustHaveNoParameters(mainFunction)
-            } else if (mainFunction.returnType != TypeSymbol.Unit) {
+            } else if (mainFunction.specifiedReturnType != TypeSymbol.Unit) {
                 diagnostics.invalidMainFunctionReturnType(mainFunction, TypeSymbol.Unit)
             }
             return mainFunction
         }
     }
 
-    private data class ParameterInfo(
-        val name: String,
-        val type: TypeSymbol,
-    )
-
-    internal fun bindFunctionDeclaration(
-        function: FunctionDeclarationSyntax,
-        tree: SyntaxTree,
-        defineSymbol: Boolean = true,
-    ): FunctionSymbol {
-        val parameterInfos = mutableListOf<ParameterInfo>()
-
-        val seenParameters = mutableSetOf<String>()
-
-        for (parameterSyntax in function.parameters) {
-            val name = parameterSyntax.identifier.literal
-            if (!seenParameters.add(name)) {
-                diagnosticsBag.reportParameterAlreadyDeclared(parameterSyntax.identifier.location, name)
-                continue
-            }
-            val type = bindTypeClause(parameterSyntax.typeClause)
-            val parameter =
-                ParameterInfo(name, type)
-            parameterInfos.add(parameter)
-        }
-
-        val returnType = bindOptionalReturnTypeClause(function.returnTypeClause) ?: TypeSymbol.Unit
-        val functionSymbol = FunctionSymbol(null, returnType, function, tree)
-        val parameters = parameterInfos.map { ParameterSymbol(it.name, it.type, tree, functionSymbol) }
-        functionSymbol.parameters = parameters
-        if (defineSymbol) {
-            if (scope.tryDeclareFunction(functionSymbol, tree) == null) {
-                diagnosticsBag.reportFunctionAlreadyDeclared(function.identifier.location, function.identifier.literal)
-            }
-        }
-        return functionSymbol
-    }
-
-    private fun bindOptionalReturnTypeClause(returnTypeClause: FunctionReturnTypeSyntax?): TypeSymbol? {
-        if (returnTypeClause == null) {
-            return null
-        }
-        return bindReturnTypeClause(returnTypeClause)
-    }
-
-    private fun bindReturnTypeClause(returnTypeClause: FunctionReturnTypeSyntax): TypeSymbol {
-        val type = TypeSymbol.fromName(returnTypeClause.type.literal)
-        if (type == null) {
-            diagnosticsBag.reportUndefinedType(returnTypeClause.type.location, returnTypeClause.type.literal)
-            return TypeSymbol.Error
-        }
-        return type
-    }
 
     private val diagnosticsBag = DiagnosticsBag()
 
     override val diagnostics = diagnosticsBag.diagnostics
 
-    fun bindStatement(syntax: StatementSyntax): BoundStatement {
-        return when (syntax) {
-            is BlockStatementSyntax -> bindBlockStatement(syntax)
-            is ExpressionStatementSyntax -> bindExpressionStatement(syntax)
-            is VariableDeclarationSyntax -> bindVariableDeclaration(syntax)
-            is IfStatementSyntax -> bindIfStatement(syntax)
-            is WhileStatementSyntax -> bindWhileStatement(syntax)
-            is ForStatementSyntax -> bindForStatement(syntax)
-            is BreakStatementSyntax -> bindBreakStatement(syntax)
-            is ContinueStatementSyntax -> bindContinueStatement(syntax)
-            is ReturnStatementSyntax -> bindReturnStatement(syntax)
-        }
+    fun walk(ctx: ParserRuleContext): BoundNode {
+        return ctx.accept(BoundTreeWalker())
     }
 
-    private fun bindReturnStatement(syntax: ReturnStatementSyntax): BoundStatement {
-        val statement = if (syntax.expression == null) null else bindExpression(syntax.expression)
-        val actualReturnType = statement?.type ?: TypeSymbol.Unit
-        if (!isInsideFunction()) {
-            diagnosticsBag.reportReturnNotAllowed(syntax.returnKeyword.location)
-        } else {
-            val functionReturnType = function!!.returnType
-            val conversion = Conversion.classify(actualReturnType, functionReturnType)
-            if (conversion.isNone) {
-                diagnosticsBag.reportInvalidReturnType(
-                    syntax.expression?.location ?: syntax.returnKeyword.location,
-                    functionReturnType,
-                    actualReturnType
+    private inner class BoundTreeWalker : ProteusParserBaseVisitor<BoundNode>() {
+
+        override fun visitReturnStatement(ctx: ProteusParser.ReturnStatementContext): BoundReturnStatement {
+            val expression = ctx.expression()
+            val statement = if (expression == null) null else visitExpression(expression)
+            val actualReturnType = statement?.type ?: TypeSymbol.Unit
+            if (!isInsideFunction()) {
+                diagnosticsBag.reportReturnNotAllowed(TextLocation(module, ctx.RETURN().symbol))
+            } else {
+                val functionReturnType = function!!.returnType
+                val conversion = Conversion.classify(actualReturnType, functionReturnType)
+                if (conversion.isNone) {
+                    diagnosticsBag.reportInvalidReturnType(
+                        if (expression != null) TextLocation(module, expression) else TextLocation(
+                            module, ctx.RETURN().symbol
+                        ), functionReturnType, actualReturnType
+                    )
+                }
+            }
+            return BoundReturnStatement(statement, actualReturnType)
+        }
+
+
+        override fun visitExpression(ctx: ProteusParser.ExpressionContext): BoundExpression {
+            val isUnary = ctx.prefix != null
+            val isBinary = ctx.bop != null
+            if (isUnary) {
+                val operator = ctx.prefix.text
+                val operand = visitExpression(ctx.expression(0))
+                val boundUnaryOperator = BoundUnaryOperator.bind(operator, operand.type)
+                if (boundUnaryOperator == null) {
+                    diagnosticsBag.reportUnaryOperatorMismatch(operator, TextLocation(module, ctx.prefix), operand.type)
+                    return BoundErrorExpression
+                }
+                return BoundUnaryExpression(operand, boundUnaryOperator)
+            }
+            if (isBinary) {
+                val leftSyntax = ctx.expression(0)
+                val left = visitExpression(leftSyntax)
+                val rightSyntax = ctx.expression(1)
+                val right = visitExpression(rightSyntax)
+                val operator = ctx.bop.text
+                val boundBinaryOperator = BoundBinaryOperator.bind(operator, left.type, right.type)
+                if (boundBinaryOperator == null) {
+                    diagnosticsBag.reportBinaryOperatorMismatch(
+                        operator, TextLocation(module, ctx.bop), left.type, right.type
+                    )
+                    return BoundErrorExpression
+                }
+                val isAssignment = when (boundBinaryOperator.kind) {
+                    BoundBinaryOperatorKind.Assignment -> true
+                    BoundBinaryOperatorKind.AdditionAssignment -> true
+                    BoundBinaryOperatorKind.SubtractionAssignment -> true
+                    else -> false
+                }
+                if (isAssignment) {
+                    val variableName = (left as BoundVariableExpression).variable.simpleName
+                    val declaredVariable = scope.tryLookupVariable(variableName, module)
+                    if (declaredVariable == null) {
+                        diagnosticsBag.reportUnresolvedReference(TextLocation(module, leftSyntax), variableName)
+                        return BoundErrorExpression
+                    }
+                    if (declaredVariable.isReadOnly) {
+                        diagnosticsBag.reportFinalVariableCannotBeReassigned(
+                            TextLocation(module, leftSyntax), declaredVariable
+                        )
+                        return BoundErrorExpression
+                    }
+                    val convertedExpression = convertToType(rightSyntax, right, declaredVariable.type)
+                    return BoundAssignmentExpression(
+                        declaredVariable, convertedExpression, boundBinaryOperator, returnAssignment = true
+                    )
+                }
+                return BoundBinaryExpression(left, right, boundBinaryOperator)
+            }
+            return super.visitChildren(ctx) as BoundExpression
+        }
+
+        override fun visitMethodCall(ctx: ProteusParser.MethodCallContext): BoundNode {
+            val functionName = ctx.identifier().text
+            val declaredFunction = scope.tryLookupFunction(functionName, module)
+            if (declaredFunction == null) {
+                diagnosticsBag.reportUndefinedFunction(TextLocation(module, ctx.identifier()), functionName)
+                return BoundErrorExpression
+            }
+            val argumentsCount = ctx.expressionList().expression().size
+            val parameterCount = declaredFunction.parameters.size
+            if (argumentsCount < parameterCount) {
+                val location = TextLocation(module, ctx.expressionList().expression(0).start)
+                diagnosticsBag.reportTooFewArguments(
+                    location, functionName, parameterCount, argumentsCount
+                )
+                return BoundErrorExpression
+            }
+            if (argumentsCount > parameterCount) {
+                val count = argumentsCount - parameterCount
+                val location = TextLocation(module, ctx.expressionList().expression(count).start)
+                diagnosticsBag.reportTooManyArguments(
+                    location, functionName, parameterCount, argumentsCount
+                )
+                return BoundErrorExpression
+            }
+            val boundParameters: MutableList<BoundExpression> = mutableListOf()
+            for ((index, parameter) in declaredFunction.parameters.withIndex()) {
+
+                val argument = ctx.expressionList().expression()[index]
+                val boundArgument = visitExpression(argument)
+                if (boundArgument.type == TypeSymbol.Error) return BoundErrorExpression
+                if (!boundArgument.type.isAssignableTo(parameter.type)) {
+                    diagnosticsBag.reportCannotConvert(
+                        TextLocation(module, argument), parameter.type, boundArgument.type
+                    )
+                    return BoundErrorExpression
+                }
+                boundParameters.add(boundArgument)
+            }
+
+
+            return BoundCallExpression(declaredFunction, boundParameters)
+        }
+
+        override fun visitLiteral(ctx: ProteusParser.LiteralContext): BoundLiteralExpression<*> {
+            val isBoolean = ctx.BOOL_LITERAL() != null
+            if (isBoolean) {
+                val value = ctx.BOOL_LITERAL().text.toBoolean()
+                return BoundLiteralExpression(value)
+            }
+            val isString = ctx.STRING_LITERAL() != null
+            if (isString) {
+                val value = ctx.STRING_LITERAL().text
+                return BoundLiteralExpression(value)
+            }
+            val isInt = ctx.INT_LITERAL() != null
+            if (isInt) {
+                val value = ctx.INT_LITERAL().text.toInt()
+                return BoundLiteralExpression(value)
+            }
+            throw IllegalStateException("Unexpected literal type")
+        }
+
+        override fun visitContinueStatement(ctx: ProteusParser.ContinueStatementContext): BoundContinueStatement {
+            val isInsideLoop = isInsideLoop()
+            if (!isInsideLoop) {
+                diagnosticsBag.reportContinueOutsideLoop(TextLocation(module, ctx))
+            }
+            return BoundContinueStatement()
+        }
+
+        override fun visitBreakStatement(ctx: ProteusParser.BreakStatementContext): BoundBreakStatement {
+            if (!isInsideLoop()) {
+                diagnosticsBag.reportBreakOutsideLoop(TextLocation(module, ctx))
+            }
+            return BoundBreakStatement()
+        }
+
+        override fun visitForStatement(ctx: ProteusParser.ForStatementContext): BoundNode {
+            val forControl = ctx.forControl()
+            val lowerBoundSyntax = forControl.INT_LITERAL(0)
+            val boundLower = BoundLiteralExpression(lowerBoundSyntax.text.toInt())
+            val upperBoundSyntax = forControl.INT_LITERAL(1)
+            val boundUpper = BoundLiteralExpression(upperBoundSyntax.text.toInt())
+
+            if (boundLower.type != TypeSymbol.Int) {
+                diagnosticsBag.reportCannotConvert(
+                    TextLocation(module, lowerBoundSyntax.symbol), TypeSymbol.Int, boundLower.type
                 )
             }
+
+            if (boundUpper.type != TypeSymbol.Int) {
+                diagnosticsBag.reportCannotConvert(
+                    TextLocation(module, upperBoundSyntax.symbol), TypeSymbol.Int, boundUpper.type
+                )
+            }
+
+            scope = BoundScope(scope)
+
+            val name = forControl.identifier().IDENTIFIER().text
+            val variable = LocalVariableSymbol(
+                name, TypeSymbol.Int, null, isFinal = true, isConst = false, module.moduleReference,
+            )
+            val declaredVariable = scope.tryLookupVariable(name, module)
+            if (declaredVariable != null) {
+                diagnosticsBag.reportVariableAlreadyDeclared(TextLocation(module, forControl.identifier()), name)
+            }
+
+            scope.tryDeclareVariable(variable, module)
+            controlStructureStack.push(Unit)
+            val body = visitStatement(ctx.statement())
+            controlStructureStack.pop()
+            scope = scope.parent!!
+            return BoundForStatement(variable, boundLower, boundUpper, body)
         }
-        return BoundReturnStatement(statement, actualReturnType)
+
+        override fun visitWhileStatement(ctx: ProteusParser.WhileStatementContext): BoundWhileStatement {
+            val condition: BoundExpression = visitExpressionWithType(ctx.expression(), TypeSymbol.Boolean)
+            controlStructureStack.push(Unit)
+            scope = BoundScope(scope)
+            val body = visitStatement(ctx.statement())
+            scope = scope.parent!!
+            controlStructureStack.pop()
+            return BoundWhileStatement(condition, body)
+        }
+
+        override fun visitIfStatement(ctx: ProteusParser.IfStatementContext): BoundNode {
+            val condition: BoundExpression = visitExpressionWithType(ctx.expression(), TypeSymbol.Boolean)
+            scope = BoundScope(scope)
+            val thenStatement = visitStatement(ctx.statement(0))
+            scope = scope.parent!!
+            val elseStatement = ctx.statement().getOrNull(1)?.let { visitStatement(it) }
+            return BoundIfStatement(condition, thenStatement, elseStatement)
+        }
+
+        override fun visitStatement(ctx: ProteusParser.StatementContext?): BoundStatement {
+            return super.visitStatement(ctx) as BoundStatement
+        }
+
+        private fun visitExpressionWithType(
+            expression: ProteusParser.ExpressionContext,
+            expectedType: TypeSymbol,
+        ): BoundExpression {
+            val boundExpression = visitExpression(expression)
+            if (boundExpression.type == TypeSymbol.Error) return boundExpression
+            if (!boundExpression.type.isAssignableTo(expectedType)) {
+                diagnosticsBag.reportCannotConvert(
+                    TextLocation(module, expression), expectedType, boundExpression.type
+                )
+                return BoundErrorExpression
+            }
+            return boundExpression
+        }
+
+        override fun visitVariableDeclaration(ctx: ProteusParser.VariableDeclarationContext): BoundVariableDeclaration {
+            val symbol = VariableDeclarationSymbolParser.parse(ctx, module, isGlobal = function == null)
+            val initializer = visitExpression(ctx.expression())
+            val convertedInitializer = convertToType(ctx.expression(), initializer, symbol.type)
+            if (symbol.isConst) {
+                if (isExpressionConst(convertedInitializer)) {
+                    constantPool.add(symbol, convertedInitializer)
+                } else {
+                    diagnosticsBag.reportExpectedConstantExpression(TextLocation(module, ctx.expression()))
+                }
+            }
+            val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol, module) == null
+            if (isVariableAlreadyDeclared) {
+                diagnosticsBag.reportVariableAlreadyDeclared(TextLocation(module, ctx.identifier()), symbol.simpleName)
+            }
+            return BoundVariableDeclaration(symbol, convertedInitializer)
+        }
+
+        override fun visitBlockStatement(ctx: ProteusParser.BlockStatementContext): BoundNode {
+            scope = BoundScope(scope)
+            val statements = ctx.statement().map {
+                val statement = visitStatement(it)
+                if (statement is BoundExpressionStatement) {
+                    val expression = statement.expression
+                    if (expression !is BoundCallExpression && expression !is BoundAssignmentExpression && expression !is BoundErrorExpression) {
+                        diagnosticsBag.reportUnusedExpression(TextLocation(module, it))
+                    }
+                }
+                statement
+            }
+            scope = scope.parent!!
+            return BoundBlockStatement(
+                statements
+            )
+        }
+
+        override fun visitIdentifier(ctx: ProteusParser.IdentifierContext): BoundExpression {
+            val name = ctx.IDENTIFIER().text
+            val variable = scope.tryLookupVariable(name, module)
+            if (variable == null) {
+                diagnosticsBag.reportUnresolvedReference(TextLocation(module, ctx), name)
+                return BoundErrorExpression
+            }
+            return BoundVariableExpression(variable)
+        }
+
+        private fun convertToType(
+            expressionSyntax: ExpressionContext,
+            boundExpression: BoundExpression,
+            type: TypeSymbol,
+        ): BoundExpression {
+            val conversion = Conversion.classify(boundExpression.type, type)
+            if (conversion.isIdentity) return boundExpression
+            if (conversion.isImplicit) return BoundConversionExpression(type, boundExpression, conversion)
+            if (conversion.isExplicit) return BoundConversionExpression(type, boundExpression, conversion)
+            diagnosticsBag.reportCannotConvert(TextLocation(module, expressionSyntax), type, boundExpression.type)
+            return BoundErrorExpression
+        }
+
     }
+
 
     private fun isInsideFunction(): Boolean {
         return function != null
     }
 
-    private fun bindContinueStatement(syntax: ContinueStatementSyntax): BoundStatement {
-        val isInsideLoop = isInsideLoop()
-        if (!isInsideLoop) {
-            diagnosticsBag.reportContinueOutsideLoop(syntax.location)
-        }
-        return BoundContinueStatement()
-    }
-
-    private fun bindBreakStatement(syntax: BreakStatementSyntax): BoundStatement {
-        if (!isInsideLoop()) {
-            diagnosticsBag.reportBreakOutsideLoop(syntax.location)
-        }
-        return BoundBreakStatement()
-    }
 
     private fun isInsideLoop(): Boolean {
-        var isInsideLoop = false
-        for (keyword in controlStructureStack) {
-            if (keyword == Keyword.While || keyword == Keyword.For) {
-                isInsideLoop = true
-                break
-            }
-        }
-        return isInsideLoop
+        return controlStructureStack.isNotEmpty()
     }
 
-    private fun bindForStatement(syntax: ForStatementSyntax): BoundStatement {
-        val boundLower = bindExpression(syntax.lowerBound)
-        val boundUpper = bindExpression(syntax.upperBound)
-
-        if (boundLower.type != TypeSymbol.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.lowerBound.location, TypeSymbol.Int, boundLower.type)
-        }
-
-        if (boundUpper.type != TypeSymbol.Int) {
-            diagnosticsBag.reportCannotConvert(syntax.upperBound.location, TypeSymbol.Int, boundUpper.type)
-        }
-
-        scope = BoundScope(scope)
-
-        val name = syntax.identifier.literal
-        val variable = LocalVariableSymbol(
-            name, TypeSymbol.Int, isFinal = true, syntaxTree = syntax.syntaxTree,
-            enclosingFunction = this.function!!
-        )
-        val declaredVariable = scope.tryLookupVariable(name, syntax.syntaxTree)
-        if (declaredVariable != null) {
-            diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.location, name)
-        }
-
-        scope.tryDeclareVariable(variable, syntax.syntaxTree)
-        controlStructureStack.push(Keyword.For)
-        val body = bindStatement(syntax.body)
-        controlStructureStack.pop()
-        scope = scope.parent!!
-        return BoundForStatement(variable, boundLower, syntax.rangeOperator.token, boundUpper, body)
-    }
-
-    private fun bindWhileStatement(syntax: WhileStatementSyntax): BoundStatement {
-        val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
-        controlStructureStack.push(Keyword.While)
-        scope = BoundScope(scope)
-        val body = bindStatement(syntax.body)
-        scope = scope.parent!!
-        controlStructureStack.pop()
-        return BoundWhileStatement(condition, body)
-    }
-
-
-    private fun bindIfStatement(syntax: IfStatementSyntax): BoundStatement {
-        val condition = bindExpressionWithType(syntax.condition, TypeSymbol.Boolean)
-        scope = BoundScope(scope)
-        val thenStatement = bindStatement(syntax.thenStatement)
-        scope = scope.parent!!
-        val elseStatement = syntax.elseClause?.let { bindStatement(it.elseStatementSyntax) }
-        return BoundIfStatement(condition, thenStatement, elseStatement)
-    }
-
-    private fun bindExpressionWithType(syntax: ExpressionSyntax, expectedType: TypeSymbol): BoundExpression {
-        return bindConversion(syntax, expectedType)
-    }
-
-    private fun bindConversion(
-        syntax: ExpressionSyntax,
-        expectedType: TypeSymbol,
-        isCastExplicit: Boolean = false,
-    ): BoundExpression {
-        val boundExpression = bindExpression(syntax)
-        val textSpan = syntax.location
-        return bindConversion(boundExpression, expectedType, textSpan, isCastExplicit)
-    }
-
-    private fun bindConversion(
-        boundExpression: BoundExpression,
-        expectedType: TypeSymbol,
-        textLocation: TextLocation,
-        isCastExplicit: Boolean = false,
-    ): BoundExpression {
-        val conversion = Conversion.classify(boundExpression.type, expectedType)
-        if (conversion.isIdentity) {
-            return boundExpression
-        }
-        if (conversion.isNone || (conversion.isExplicit && !isCastExplicit)) {
-            diagnosticsBag.reportCannotConvert(textLocation, expectedType, boundExpression.type)
-            return BoundErrorExpression
-        }
-
-        return BoundConversionExpression(expectedType, boundExpression, conversion)
-    }
-
-    internal fun bindVariableDeclaration(
-        syntax: VariableDeclarationSyntax,
-        defineSymbol: Boolean = true,
-    ): BoundVariableDeclaration {
-        val initializer = bindExpression(syntax.initializer)
-        val isConst = syntax.keyword is Keyword.Const
-        val isFinal = isConst || syntax.keyword is Keyword.Val
-        val typeClause = bindOptionalTypeClause(syntax.typeClauseSyntax)
-        val type = typeClause ?: initializer.type
-        val convertedInitializer = bindConversion(initializer, type, syntax.initializer.location)
-        val symbol = if (function == null) GlobalVariableSymbol(
-            syntax.identifier.literal,
-            type,
-            isFinal,
-            syntaxTree = syntax.syntaxTree,
-            declarationSyntax = syntax
-        ) else LocalVariableSymbol(
-            syntax.identifier.literal,
-            type,
-            isFinal,
-            syntaxTree = syntax.syntaxTree,
-            enclosingFunction = function
-        )
-        if (isConst) {
-            if (isExpressionConst(convertedInitializer)) {
-                symbol.constantValue = convertedInitializer
-            }
-            if (symbol.constantValue == null) {
-                diagnosticsBag.reportExpectedConstantExpression(syntax.initializer.location)
-            }
-        }
-        if (defineSymbol) {
-            val isVariableAlreadyDeclared = scope.tryDeclareVariable(symbol, syntax.syntaxTree) == null
-            if (isVariableAlreadyDeclared) {
-                diagnosticsBag.reportVariableAlreadyDeclared(syntax.identifier.location, syntax.identifier.literal)
-            }
-        }
-        return BoundVariableDeclaration(symbol, convertedInitializer)
-    }
 
     private fun isExpressionConst(expression: BoundExpression): Boolean {
         return when (expression) {
@@ -434,228 +516,6 @@ internal class Binder(
             is BoundBinaryExpression -> isExpressionConst(expression.left) && isExpressionConst(expression.right)
             else -> false
         }
-    }
-
-    private fun bindOptionalTypeClause(syntax: TypeClauseSyntax?): TypeSymbol? {
-        if (syntax == null) return null
-        return bindTypeClause(syntax)
-    }
-
-    private fun bindTypeClause(syntax: TypeClauseSyntax): TypeSymbol {
-        val type = TypeSymbol.fromName(syntax.type.literal)
-        if (type == null) {
-            diagnosticsBag.reportUndefinedType(syntax.type.location, syntax.type.literal)
-            return TypeSymbol.Error
-        }
-        return type
-    }
-
-    private fun bindExpressionStatement(syntax: ExpressionStatementSyntax): BoundStatement {
-        val boundExpression = bindExpression(syntax.expression, canBeVoid = true)
-        return BoundExpressionStatement(boundExpression)
-    }
-
-    private fun bindBlockStatement(syntax: BlockStatementSyntax): BoundBlockStatement {
-        scope = BoundScope(scope)
-        val statements = syntax.statements.map {
-            val statement = bindStatement(it)
-            if (statement is BoundExpressionStatement) {
-                val expression = statement.expression
-                if (expression !is BoundCallExpression && expression !is BoundAssignmentExpression && expression !is BoundErrorExpression) {
-                    diagnosticsBag.reportUnusedExpression(it.location)
-                }
-            }
-            statement
-        }
-        scope = scope.parent!!
-        return BoundBlockStatement(
-            statements
-        )
-    }
-
-    private fun bindExpressionInternal(syntax: ExpressionSyntax): BoundExpression {
-        return when (syntax) {
-            is LiteralExpressionSyntax -> {
-                bindLiteralExpression(syntax)
-            }
-
-            is UnaryExpressionSyntax -> {
-                bindUnaryExpression(syntax)
-            }
-
-            is BinaryExpressionSyntax -> {
-                bindBinaryExpression(syntax)
-            }
-
-
-            is ParenthesizedExpressionSyntax -> {
-                bindExpression(syntax.expressionSyntax)
-            }
-
-            is NameExpressionSyntax -> bindNameExpressionSyntax(syntax)
-            is AssignmentExpressionSyntax -> bindAssignmentExpression(syntax)
-            is CallExpressionSyntax -> bindCallExpression(syntax)
-            is CastExpressionSyntax -> bindCastExpression(syntax)
-        }
-    }
-
-    private fun bindCastExpression(syntax: CastExpressionSyntax): BoundExpression {
-        val type = TypeSymbol.fromName(syntax.typeToken.literal)
-        if (type == null) {
-            diagnosticsBag.reportUndefinedType(syntax.typeToken.location, syntax.typeToken.literal)
-            return BoundErrorExpression
-        }
-
-        return bindConversion(syntax.expressionSyntax, type, isCastExplicit = true)
-
-    }
-
-    private fun bindExpression(syntax: ExpressionSyntax, canBeVoid: Boolean = false): BoundExpression {
-        val result = bindExpressionInternal(syntax)
-        if (!canBeVoid && result.type == TypeSymbol.Unit) {
-            val span = syntax.location
-            diagnosticsBag.reportExpressionMustHaveValue(span)
-            return BoundErrorExpression
-        }
-        return result
-    }
-
-    private fun bindCallExpression(syntax: CallExpressionSyntax): BoundExpression {
-        val functionName = syntax.functionIdentifier.literal
-        val declaredFunction = scope.tryLookupFunction(functionName, syntax.syntaxTree)
-        if (declaredFunction == null) {
-            diagnosticsBag.reportUndefinedFunction(syntax.functionIdentifier.location, functionName)
-            return BoundErrorExpression
-        }
-        if (declaredFunction.declaration.isExternal) {
-            val externalFunction = ProteusExternalFunction.lookup(declaredFunction.declaration)
-            if (externalFunction == null) {
-                diagnosticsBag.reportExternalFunctionNotFound(declaredFunction.declaration, syntax.location)
-                return BoundErrorExpression
-            }
-        }
-        if (syntax.arguments.count < declaredFunction.parameters.size) {
-            val location = syntax.closeParenthesis.location.copy(span = syntax.functionIdentifier.span())
-            diagnosticsBag.reportTooFewArguments(
-                location,
-                functionName,
-                declaredFunction.parameters.size,
-                syntax.arguments.count
-            )
-            return BoundErrorExpression
-        }
-        if (syntax.arguments.count > declaredFunction.parameters.size) {
-            val count = syntax.arguments.count - declaredFunction.parameters.size
-            val location = syntax.arguments.get(syntax.arguments.count - count).location
-            diagnosticsBag.reportTooManyArguments(
-                location,
-                functionName,
-                declaredFunction.parameters.size,
-                syntax.arguments.count
-            )
-            return BoundErrorExpression
-        }
-        val boundParameters: MutableList<BoundExpression> = mutableListOf()
-        for ((index, parameter) in declaredFunction.parameters.withIndex()) {
-
-            val argument: ExpressionSyntax = syntax.arguments.get(index)
-            val boundArgument = bindExpression(argument)
-            if (boundArgument.type == TypeSymbol.Error) return BoundErrorExpression
-            if (!boundArgument.type.isAssignableTo(parameter.type)) {
-                diagnosticsBag.reportCannotConvert(argument.location, parameter.type, boundArgument.type)
-                return BoundErrorExpression
-            }
-            boundParameters.add(boundArgument)
-        }
-
-
-        return BoundCallExpression(declaredFunction, boundParameters)
-    }
-
-    private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
-        val assignmentOperator = syntax.assignmentOperator.token
-        val boundExpression = bindExpression(syntax.expression)
-        val variableName = syntax.identifierToken.literal
-        val declaredVariable = scope.tryLookupVariable(variableName, syntax.syntaxTree)
-        if (declaredVariable == null) {
-            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, variableName)
-            return BoundErrorExpression
-        }
-        if (declaredVariable.isReadOnly) {
-            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.location, declaredVariable)
-            return BoundErrorExpression
-        }
-        val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.location)
-        return BoundAssignmentExpression(
-            declaredVariable,
-            convertedExpression,
-            assignmentOperator,
-            returnAssignment = true
-        )
-    }
-
-    private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
-        val name = syntax.identifierToken.literal
-        if (name.isEmpty()) {
-            return BoundErrorExpression
-        }
-        val variable = scope.tryLookupVariable(name, syntax.syntaxTree)
-        if (variable == null) {
-            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, name)
-            return BoundErrorExpression
-        }
-        return BoundVariableExpression(variable)
-    }
-
-
-    private fun bindBinaryExpression(binaryExpression: BinaryExpressionSyntax): BoundExpression {
-
-        val boundLeft = bindExpression(binaryExpression.left)
-        val boundRight = bindExpression(binaryExpression.right)
-        if (boundLeft.type is TypeSymbol.Error || boundRight.type is TypeSymbol.Error) {
-            return BoundErrorExpression
-        }
-        val binaryOperator =
-            BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
-        if (binaryOperator == null) {
-            diagnosticsBag.reportBinaryOperatorMismatch(
-                binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.location,
-                boundLeft.type,
-                boundRight.type
-            )
-            return BoundErrorExpression
-        }
-        return BoundBinaryExpression(boundLeft, boundRight, binaryOperator)
-
-    }
-
-
-    private fun bindUnaryExpression(unaryExpression: UnaryExpressionSyntax): BoundExpression {
-        val boundOperand = bindExpression(unaryExpression.operand)
-        if (boundOperand.type is TypeSymbol.Error) {
-            return BoundErrorExpression
-        }
-        val boundOperator = BoundUnaryOperator.bind(unaryExpression.operatorSyntaxToken.token, boundOperand.type)
-        if (boundOperator == null) {
-            diagnosticsBag.reportUnaryOperatorMismatch(
-                unaryExpression.operatorSyntaxToken.literal,
-                unaryExpression.operatorSyntaxToken.location,
-                boundOperand.type
-            )
-            return BoundErrorExpression
-        }
-        return BoundUnaryExpression(boundOperand, boundOperator)
-    }
-
-
-    private fun bindLiteralExpression(syntax: LiteralExpressionSyntax): BoundLiteralExpression<*> {
-        val value = evaluateValueOfLiteralExpression(syntax)
-        return BoundLiteralExpression(value)
-    }
-
-    private fun evaluateValueOfLiteralExpression(syntax: LiteralExpressionSyntax): Any {
-        return syntax.value
     }
 
 

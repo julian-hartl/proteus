@@ -8,7 +8,11 @@ compilationUnit
 
 
 importDeclaration
-    : IMPORT STRING_LITERAL ';'
+    : IMPORT moduleReference ';'
+    ;
+
+moduleReference
+    : identifier ('::' identifier)*
     ;
 
 memberDeclaration
@@ -65,16 +69,43 @@ literal
 
 
 statement
-    : '{' statement* '}'
-    | IF expression statement (ELSE statement)?
-    | FOR '(' forControl ')' statement
-    | WHILE expression statement
-    | RETURN expression? ';'
-    | BREAK ';'
-    | CONTINUE  ';'
+    : blockStatement
+    | ifStatement
+    | forStatement
+    | whileStatement
+    | returnStatement
+    | breakStatement
+    | continueStatement
     | variableDeclaration
     | SEMI
     ;
+
+
+ifStatement
+    : IF expression statement (ELSE statement)?;
+forStatement
+    : FOR '(' forControl ')' statement
+    ;
+
+whileStatement
+    : WHILE expression statement
+    ;
+breakStatement
+    : BREAK ';'
+    ;
+
+continueStatement
+    : CONTINUE ';'
+    ;
+
+returnStatement
+    : RETURN expression? ';'
+    ;
+
+blockStatement
+    : '{' statement* '}'
+    ;
+
 forControl
     : identifier IN INT_LITERAL UNTIL INT_LITERAL
     ;

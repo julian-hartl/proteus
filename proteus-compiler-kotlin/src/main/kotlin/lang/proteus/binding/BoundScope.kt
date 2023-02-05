@@ -8,6 +8,7 @@ import lang.proteus.syntax.parser.SyntaxTree
 internal class BoundScope internal constructor(val parent: BoundScope?) {
     private val variableScope: SymbolScope<VariableSymbol> = SymbolScope(parent?.variableScope)
     private val functionScope: SymbolScope<FunctionSymbol> = SymbolScope(parent?.functionScope)
+    private val constantPool: ConstantPool = ConstantPool()
 
     fun getDeclaredVariables(): Map<SyntaxTree, Set<VariableSymbol>> = variableScope.getAllSymbols()
 
@@ -32,7 +33,11 @@ internal class BoundScope internal constructor(val parent: BoundScope?) {
         return functionScope.tryLookup(function, syntaxTree)
     }
 
+
 }
+
+
+
 
 internal class SymbolScope<T : Symbol>(val parent: SymbolScope<T>?) {
     private val symbols: MutableMap<SyntaxTree, MutableMap<String, T>> = mutableMapOf()

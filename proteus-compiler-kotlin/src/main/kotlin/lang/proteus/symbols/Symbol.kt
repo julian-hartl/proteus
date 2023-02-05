@@ -1,10 +1,10 @@
 package lang.proteus.symbols
 
-sealed class Symbol(uniqueIdentifier: String, val simpleName: String) {
+ sealed class Symbol(val simpleName: String, val moduleReferenceSymbol: ModuleReferenceSymbol) {
     val qualifiedName: String
 
     init {
-        qualifiedName = "${simpleName}_${uniqueIdentifier}"
+        qualifiedName = "$moduleReferenceSymbol.$simpleName"
     }
 
     override fun toString(): String = simpleName

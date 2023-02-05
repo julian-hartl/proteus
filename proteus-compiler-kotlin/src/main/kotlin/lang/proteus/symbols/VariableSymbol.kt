@@ -2,17 +2,18 @@ package lang.proteus.symbols
 
 import lang.proteus.binding.BoundExpression
 import lang.proteus.binding.BoundLiteralExpression
-import lang.proteus.syntax.parser.SyntaxTree
-import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
 
 internal sealed class VariableSymbol(
     name: String,
-    val type: TypeSymbol,
+    val specifiedType: TypeSymbol?,
+    val inferredType: TypeSymbol?,
     val isFinal: Boolean,
-    var constantValue: BoundExpression?,
-    syntaxTree: SyntaxTree,
-    uniqueIdentifier: String = syntaxTree.id.toString(),
-) : Symbol(uniqueIdentifier, name) {
+    val isConst: Boolean,
+    moduleReferenceSymbol: ModuleReferenceSymbol,
+) : Symbol(name, moduleReferenceSymbol) {
+
+    val type: TypeSymbol get() = specifiedType ?: inferredType!!
+
     override fun toString(): String {
         return "$simpleName: $type"
     }
@@ -28,40 +29,38 @@ internal sealed class VariableSymbol(
     val isGlobal: Boolean
         get() = this is GlobalVariableSymbol
 
-    val isConst: Boolean
-        get() = constantValue != null
-
     val declarationLiteral: String get() = if (isConst) "const" else if (isFinal) "val" else "var"
 }
 
 internal class GlobalVariableSymbol(
     name: String,
-    type: TypeSymbol,
+    specifiedType: TypeSymbol? = null,
+    inferredType: TypeSymbol? = null,
     isFinal: Boolean,
-    constantValue: BoundLiteralExpression<*>? = null,
-    val declarationSyntax: VariableDeclarationSyntax,
-    syntaxTree: SyntaxTree,
+    isConst: Boolean, moduleReferenceSymbol: ModuleReferenceSymbol,
 ) : VariableSymbol(
     name,
-    type,
+    specifiedType = specifiedType,
+    inferredType = inferredType,
     isFinal,
-    constantValue,
-    syntaxTree
+    isConst,
+    moduleReferenceSymbol,
 )
 
 internal open class LocalVariableSymbol(
-    name: String, type: TypeSymbol,
+    name: String,
+    specifiedType: TypeSymbol?,
+    inferredType: TypeSymbol?,
     isFinal: Boolean,
-    constantValue: BoundLiteralExpression<*>? = null,
-    val syntaxTree: SyntaxTree,
-    val enclosingFunction: FunctionSymbol,
+    isConst: Boolean,
+    moduleReferenceSymbol: ModuleReferenceSymbol,
 ) :
     VariableSymbol(
         name,
-        type,
+        specifiedType,
+        inferredType,
         isFinal,
-        constantValue,
-        syntaxTree,
-        uniqueIdentifier = enclosingFunction.qualifiedName
+        isConst,
+        moduleReferenceSymbol,
     )
 

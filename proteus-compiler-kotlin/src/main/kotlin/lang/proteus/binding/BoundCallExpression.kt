@@ -5,5 +5,5 @@ import lang.proteus.symbols.TypeSymbol
 
 internal data class BoundCallExpression(val function: FunctionSymbol, val arguments: List<BoundExpression>) : BoundExpression() {
     override val type: TypeSymbol
-        get() = function.returnType
+        get() = function.specifiedReturnType
 }

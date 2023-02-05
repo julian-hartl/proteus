@@ -35,11 +35,17 @@ internal enum class BoundBinaryOperatorKind {
     GreaterThan,
     GreaterThanOrEqual,
     TypeEquality,
+    Assignment,
+    AdditionAssignment,
+    SubtractionAssignment,
 }
 
 internal data class BoundBinaryOperator(
     val kind: BoundBinaryOperatorKind,
-    val operator: Operator, val leftType: TypeSymbol, val rightType: TypeSymbol, val resultType: TypeSymbol,
+    val operator: Operator,
+    val leftType: TypeSymbol,
+    val rightType: TypeSymbol,
+    val resultType: TypeSymbol,
     val requiresSameTypes: Boolean = false,
 ) : BoundOperator() {
 

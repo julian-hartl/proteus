@@ -170,7 +170,7 @@ internal class JvmBytecodeClass(private val qualifiedName: String) {
         val parameterDescriptor = buildParameterDescriptor(functionSymbol.parameters)
         descriptorBuilder.append(parameterDescriptor)
         descriptorBuilder.append(")")
-        val returnTypeDescriptor = buildTypeDescriptor(functionSymbol.returnType)
+        val returnTypeDescriptor = buildTypeDescriptor(functionSymbol.specifiedReturnType)
         descriptorBuilder.append(returnTypeDescriptor)
         return descriptorBuilder.toString()
     }

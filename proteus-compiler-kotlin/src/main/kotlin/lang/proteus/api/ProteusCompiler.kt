@@ -4,15 +4,19 @@ import lang.proteus.api.performance.CompilationPerformance
 import lang.proteus.api.performance.ComputationTime
 import lang.proteus.api.performance.ComputationTimeStopper
 import lang.proteus.api.performance.PerformancePrinter
+import lang.proteus.binding.Module
+import lang.proteus.diagnostics.Diagnostics
+import lang.proteus.diagnostics.MutableDiagnostics
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.metatdata.Metadata
 import lang.proteus.metatdata.Metadata.PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
+import lang.proteus.parser.CompilationUnit
+import lang.proteus.parser.Parser
 import lang.proteus.printing.ConsolePrinter
 import lang.proteus.printing.DiagnosticsPrinter
 import lang.proteus.printing.PrinterColor
+import lang.proteus.symbols.ModuleReferenceSymbol
 import lang.proteus.symbols.TypeSymbol
-import lang.proteus.syntax.parser.SyntaxTree
-import lang.proteus.text.SourceText
 import org.kohsuke.args4j.Argument
 import org.kohsuke.args4j.CmdLineException
 import org.kohsuke.args4j.CmdLineParser
@@ -60,50 +64,58 @@ internal class ProteusCompiler(
 
     fun compileFile(fileName: String) {
         computationTimeStopper.start()
-        val tree = SyntaxTree.load(fileName)
-        compileTree(tree, tree.sourceText)
+        val tree = Parser.load(fileName)
+        compileTree(tree, MutableDiagnostics(), fileName)
     }
 
     fun interpretFile(fileName: String): InterpretationResult {
         computationTimeStopper.start()
-        val tree = SyntaxTree.load(fileName)
-        return interpretTree(tree)
+        val tree = Parser.load(fileName)
+        return interpretTree(tree, MutableDiagnostics())
     }
 
     fun interpretText(text: String): InterpretationResult {
         computationTimeStopper.start()
-        val tree = SyntaxTree.parse(text)
-        return interpretTree(tree)
+        val tree = Parser.parse(text)
+        return interpretTree(tree, MutableDiagnostics())
     }
 
     private fun compileTree(
-        tree: SyntaxTree,
-        sourceText: SourceText,
+        compilationUnit: CompilationUnit,
+        diagnostics: Diagnostics,
+        fileName: String,
     ) {
-        if (tree.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
+        if (diagnostics.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(diagnostics)
             return
         }
+        val moduleReferenceSymbol = ModuleReferenceSymbol(
+            listOf(
+                fileName
+            ),
+        )
+        val module = Module(moduleReferenceSymbol, compilationUnit)
         val outputPath =
-            byteCodeOutPath ?: sourceText.absolutePath.replace(
+            byteCodeOutPath ?: moduleReferenceSymbol.name.replace(
                 Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT,
                 PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
             )
-        val compilation = Compilation.compile(tree)
+        val compilation = Compilation.compile(compilationUnit, module)
         val diagnostics = compilation.emit(
             outputPath
         )
-        if(diagnostics.hasErrors()) {
+        if (diagnostics.hasErrors()) {
             DiagnosticsPrinter.printDiagnostics(diagnostics)
             return
         }
     }
 
     private fun interpretTree(
-        tree: SyntaxTree,
+        tree: CompilationUnit,
+        diagnostics: Diagnostics,
     ): InterpretationResult {
-        if (tree.hasErrors()) {
-            DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
+        if (diagnostics.hasErrors()) {
+            DiagnosticsPrinter.printDiagnostics(diagnostics)
             return InterpretationResult(
                 tree,
                 null,
@@ -146,7 +158,7 @@ internal class ProteusCompiler(
         val value = compilationResult.value
         if (value != null) {
             consolePrinter.println()
-            val color = TypeSymbol.fromValueOrAny(value).getOutputColor()
+            val color = PrinterColor.WHITE
             consolePrinter.setColor(color)
             consolePrinter.println(value.toString())
         }

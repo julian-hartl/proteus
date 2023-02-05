@@ -1,6 +1,7 @@
 package lang.proteus.diagnostics
 
-import lang.proteus.binding.ImportGraphNode
+import lang.proteus.binding.Module
+import lang.proteus.binding.ModuleGraphNode
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.Symbol
 import lang.proteus.symbols.TypeSymbol
@@ -193,14 +194,14 @@ internal class DiagnosticsBag {
         report("Imported file '$filePath' not found", textLocation)
     }
 
-    fun reportCircularDependency(location: TextLocation, cycle: List<ImportGraphNode>) {
-        val cycleString = cycle.joinToString(" -> ") { it.tree.sourceText.absolutePath }
-        report("Circular dependency detected: $cycleString", location)
+    fun reportCircularDependency( cycle: List<Module>) {
+        val cycleString = cycle.joinToString(" -> ") { it.moduleReference.name }
+        report("Circular dependency detected: $cycleString", TextLocation())
     }
 
     fun invalidMainFunctionReturnType(mainFunction: FunctionSymbol, unit: TypeSymbol.Unit) {
         report(
-            "Invalid return type. Expected '${unit}', got '${mainFunction.returnType}'",
+            "Invalid return type. Expected '${unit}', got '${mainFunction.specifiedReturnType}'",
             mainFunction.declaration.location
         )
     }

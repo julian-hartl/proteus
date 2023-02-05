@@ -77,6 +77,10 @@ WS:                 [ \t\r\n\u000C]+ -> channel(HIDDEN);
 COMMENT:            '/*' .*? '*/'    -> channel(HIDDEN);
 LINE_COMMENT:       '//' ~[\r\n]*    -> channel(HIDDEN);
 
+// Modules
+
+MODULE_PATH_SEPARATOR:  '::';
+
 // Identifiers
 
 IDENTIFIER:         Letter LetterOrDigit*;

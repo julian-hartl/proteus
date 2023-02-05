@@ -9,10 +9,9 @@ import lang.proteus.emit.JVMEmitter
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
-import lang.proteus.syntax.parser.SyntaxTree
 
 internal class Compilation private constructor(
-    private val entryPointTree: SyntaxTree,
+    private val entryPointModule: lang.proteus.binding.Module,
     private val isInterpreting: Boolean,
 ) {
 
@@ -21,14 +20,14 @@ internal class Compilation private constructor(
     companion object {
 
         fun compile(
-            entryPointTree: SyntaxTree,
+            entryModule: lang.proteus.binding.Module,
 
             ): Compilation {
-            return Compilation(entryPointTree, isInterpreting = false)
+            return Compilation(entryModule, isInterpreting = false)
         }
 
         fun interpret(
-            entryPointTree: SyntaxTree,
+            entryPointTree: lang.proteus.binding.Module,
         ): Compilation {
             return Compilation(entryPointTree, isInterpreting = true)
         }
@@ -40,8 +39,8 @@ internal class Compilation private constructor(
             if (_globalScope == null) {
                 synchronized(this) {
                     if (_globalScope == null) {
-                        _globalScope = Binder.bindGlobalScope(null, entryPointTree.root)
-                        _globalScope!!.diagnostics.concat(entryPointTree.diagnostics)
+                        _globalScope = Binder.bindGlobalScope(null, entryPointModule)
+//                        _globalScope!!.diagnostics.concat(entryPointModule.)
                     }
                 }
             }
@@ -108,7 +107,7 @@ internal class Compilation private constructor(
     }
 
     private fun getProgram(): BoundProgram {
-        val program = Binder.bindProgram(globalScope, mainTree = entryPointTree, optimize = !isInterpreting)
+        val program = Binder.bindProgram(globalScope, module = entryPointModule, optimize = !isInterpreting)
         _globalScope = program.globalScope
         return program
     }
