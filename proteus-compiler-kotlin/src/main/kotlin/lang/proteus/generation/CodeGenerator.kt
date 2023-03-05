@@ -3,6 +3,7 @@ package lang.proteus.generation
 import lang.proteus.binding.*
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.GlobalVariableSymbol
+import lang.proteus.symbols.StructSymbol
 import lang.proteus.symbols.TypeSymbol
 import java.io.File
 import java.time.Instant
@@ -12,6 +13,7 @@ internal class CodeGenerator private constructor(
     private val functions: Set<FunctionSymbol>,
     private val globalVariables: Set<GlobalVariableSymbol>,
     private val globalVariableInitializers: Map<GlobalVariableSymbol, BoundExpression>,
+    private val structs: Set<StructSymbol> ,
 ) :
     BoundTreeRewriter() {
     private val codeBuilder: StringBuilder = StringBuilder()
@@ -25,6 +27,7 @@ internal class CodeGenerator private constructor(
                 functions = boundProgram.globalScope.functions,
                 globalVariables = boundProgram.globalScope.globalVariables,
                 globalVariableInitializers = boundProgram.variableInitializers,
+                structs = boundProgram.globalScope.structs,
             )
             return generator.generateCode()
         }
@@ -41,7 +44,18 @@ internal class CodeGenerator private constructor(
     private fun generateCode(): String {
         generateGlobalVariables(globalVariables)
         generateFunctionDeclarations(functions)
+        generateStructDeclarations(structs)
         return codeBuilder.toString()
+    }
+
+    private fun generateStructDeclarations(structs: Set<StructSymbol>) {
+        for (symbol in structs) {
+            codeBuilder.appendLine("struct ${symbol.qualifiedName} {")
+            for (field in symbol.members) {
+                codeBuilder.appendLine("    ${field.qualifiedName}: ${field.type.simpleName};")
+            }
+            codeBuilder.appendLine("}")
+        }
     }
 
     private fun generateGlobalVariables(globalVariables: Set<GlobalVariableSymbol>) {
@@ -215,6 +229,21 @@ internal class CodeGenerator private constructor(
         rewriteExpression(statement.expression)
         codeBuilder.append(";")
         return statement
+    }
+
+    override fun rewriteStructInitializationExpression(expression: BoundStructInitializationExpression): BoundExpression {
+        codeBuilder.append(expression.struct.qualifiedName)
+        codeBuilder.append(" {")
+        for ((index, field) in expression.members.withIndex()) {
+            codeBuilder.append(field.name)
+            codeBuilder.append(": ")
+            rewriteExpression(field.expression)
+            if (index < expression.members.size - 1) {
+                codeBuilder.append(", ")
+            }
+        }
+        codeBuilder.append("}")
+        return expression
     }
 
 }

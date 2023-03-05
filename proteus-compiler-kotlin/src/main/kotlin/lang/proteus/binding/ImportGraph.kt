@@ -2,9 +2,11 @@ package lang.proteus.binding
 
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.symbols.Symbol
+import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.GlobalVariableDeclarationSyntax
 import lang.proteus.syntax.parser.ImportStatementSyntax
+import lang.proteus.syntax.parser.StructDeclarationSyntax
 import lang.proteus.syntax.parser.SyntaxTree
 
 internal data class ImportGraphNode(
@@ -119,6 +121,10 @@ internal class ImportGraph {
                 }
 
                 is ImportStatementSyntax -> {}
+                is StructDeclarationSyntax -> {
+                    val structSymbol = binder.bindStructDeclaration(member, tree, defineSymbol = false)
+                    exportedSymbols.add(structSymbol)
+                }
             }
         }
         cachedExportedSymbols[tree] = exportedSymbols

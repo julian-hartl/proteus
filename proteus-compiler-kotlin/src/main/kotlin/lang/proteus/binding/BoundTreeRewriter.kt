@@ -1,7 +1,5 @@
 package lang.proteus.binding
 
-import lang.proteus.symbols.TypeSymbol
-
 internal abstract class BoundTreeRewriter {
 
     fun rewriteStatement(statement: BoundStatement): BoundStatement {
@@ -133,7 +131,33 @@ internal abstract class BoundTreeRewriter {
             is BoundErrorExpression -> rewriteErrorExpression(expression)
             is BoundCallExpression -> rewriteCallExpression(expression)
             is BoundConversionExpression -> rewriteConversionExpression(expression)
+            is BoundStructInitializationExpression -> rewriteStructInitializationExpression(expression)
+            is BoundMemberAccessExpression -> rewriteMemberAccessExpression(expression)
         }
+    }
+
+    private fun rewriteMemberAccessExpression(expression: BoundMemberAccessExpression): BoundExpression {
+        val expr = rewriteExpression(expression.expression)
+        if (expr != expression.expression) {
+            return BoundMemberAccessExpression(expr, expression.memberName, expression.type)
+        }
+        return expression
+    }
+
+    protected open fun rewriteStructInitializationExpression(expression: BoundStructInitializationExpression): BoundExpression {
+        val arguments = expression.members.map {
+            val expr = rewriteExpression(it.expression)
+            if (expr != it.expression) {
+                BoundStructMemberInitializationExpression(it.name, expr)
+            } else {
+                it
+            }
+
+        }
+        if (arguments == expression.members) {
+            return expression
+        }
+        return BoundStructInitializationExpression(expression.struct, arguments)
     }
 
     protected open fun rewriteConversionExpression(expression: BoundConversionExpression): BoundExpression {

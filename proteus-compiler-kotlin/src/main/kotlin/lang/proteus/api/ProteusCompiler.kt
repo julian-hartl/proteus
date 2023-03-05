@@ -46,7 +46,7 @@ internal class ProteusCompiler(
                 return
             }
             try {
-                compileFile(sourcePath)
+                interpretFile(sourcePath)
             } catch (e: Exception) {
                 e.printStackTrace()
                 println()
@@ -58,7 +58,7 @@ internal class ProteusCompiler(
 
     }
 
-    fun compileFile(fileName: String) {
+    private fun compileFile(fileName: String) {
         computationTimeStopper.start()
         val tree = SyntaxTree.load(fileName)
         compileTree(tree, tree.sourceText)

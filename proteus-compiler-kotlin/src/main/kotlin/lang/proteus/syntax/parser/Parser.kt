@@ -84,10 +84,87 @@ internal class Parser(
             is Keyword.Import -> parseImportStatement()
             is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
             is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
+            is Keyword.Struct -> parseStructDeclaration()
             else -> {
                 parseStatement()
             }
         }
+    }
+
+    private fun parseStructDeclaration(): MemberSyntax {
+        val structKeyword = matchToken(Keyword.Struct)
+        val identifier = matchToken(Token.Identifier)
+        val openBrace = matchToken(Token.OpenBrace)
+        val members = parseStructMembers()
+        val closeBrace = matchToken(Token.CloseBrace)
+        return StructDeclarationSyntax(
+            syntaxTree,
+            structKeyword,
+            identifier,
+            openBrace,
+            members,
+            closeBrace,
+        )
+    }
+
+    private fun parseStructMembers(): List<StructMemberSyntax> {
+        val members = mutableListOf<StructMemberSyntax>()
+        while (current.token != Token.CloseBrace && current.token != Token.EndOfFile) {
+            val start = current
+            val member = parseStructMember()
+            members.add(member)
+            if (current == start) {
+                nextToken()
+            }
+        }
+        return members
+    }
+
+    private fun parseStructMember(): StructMemberSyntax {
+        val identifier = matchToken(Token.Identifier)
+        val type = parseTypeClause()
+        val semiColon = matchToken(Token.SemiColon)
+        return StructMemberSyntax(syntaxTree, identifier, type, semiColon)
+    }
+
+    private fun parseStructInitialization(identifier: SyntaxToken<Token.Identifier>): StructInitializationExpressionSyntax {
+        val openBrace = matchToken(Token.OpenBrace)
+        val members = parseStructInitializationMembers()
+        val closeBrace = matchToken(Token.CloseBrace)
+        return StructInitializationExpressionSyntax(
+            syntaxTree,
+            identifier,
+            openBrace,
+            members,
+            closeBrace,
+        )
+    }
+
+    private fun parseStructInitializationMembers(): SeparatedSyntaxList<StructMemberInitializationSyntax> {
+
+        val membersAndSeparators = mutableListOf<SyntaxNode>()
+        while (current.token != Token.CloseBrace && current.token != Token.EndOfFile) {
+            val start = current
+            val member = parseStructInitializationMember()
+            membersAndSeparators.add(member)
+            if(current.token == Token.CloseBrace) {
+                break
+            }
+            val comma = matchToken(Token.Comma)
+            membersAndSeparators.add(comma)
+            if (current == start) {
+                nextToken()
+            }
+        }
+        return SeparatedSyntaxList(membersAndSeparators)
+
+    }
+
+    private fun parseStructInitializationMember(): StructMemberInitializationSyntax {
+        val identifier = matchToken(Token.Identifier)
+        val colon = matchToken(Token.Colon)
+        val expression = parseExpression()
+        return StructMemberInitializationSyntax(syntaxTree, identifier, colon, expression)
     }
 
     private fun parseImportStatement(): MemberSyntax {
@@ -384,6 +461,10 @@ internal class Parser(
                 return parseTypeCastExpression(left)
             }
 
+            if(current.token is Token.Dot) {
+                left = parseMemberAccessExpression(left)
+            }
+
             if (current.token is Token.SemiColon) {
                 break
             }
@@ -428,7 +509,7 @@ internal class Parser(
             }
 
             Token.Identifier -> {
-                return parseNameOrCallExpression()
+                return parseNameOrCallOrStructInitializationExpression()
             }
 
             Token.Number -> {
@@ -442,7 +523,7 @@ internal class Parser(
 
             else -> {
                 diagnosticsBag.reportUnexpectedToken(current.location, current.token, Token.Expression)
-                return parseNameOrCallExpression()
+                return parseNameOrCallOrStructInitializationExpression()
             }
         }
 
@@ -532,11 +613,17 @@ internal class Parser(
         return LiteralExpressionSyntax(token, value, syntaxTree)
     }
 
-    private fun parseNameOrCallExpression(): ExpressionSyntax {
+    private fun parseNameOrCallOrStructInitializationExpression(): ExpressionSyntax {
         val token = matchToken(Token.Identifier)
         if (current.token is Operator.OpenParenthesis
         ) {
             return parseCallExpression(token);
+        }
+        if (current.token is Token.OpenBrace) {
+            return parseStructInitialization(token)
+        }
+        if(current.token is Token.Dot){
+            return parseMemberAccessExpression(parseNameExpression(token))
         }
 
         return parseNameExpression(token)
@@ -546,7 +633,7 @@ internal class Parser(
         val openParenthesis = matchToken(Operator.OpenParenthesis)
         val arguments = parseArguments()
         val closeParenthesis = matchToken(Operator.CloseParenthesis)
-        if(syntaxTree.id == 0 && token.literal == "main" ) {
+        if (syntaxTree.id == 0 && token.literal == "main") {
             diagnosticsBag.reportCannotCallMain(token.location)
         }
         return CallExpressionSyntax(token, openParenthesis, arguments, closeParenthesis, syntaxTree)
@@ -573,6 +660,12 @@ internal class Parser(
         }
 
         return SeparatedSyntaxList(nodesAndSeparators)
+    }
+
+    private fun parseMemberAccessExpression(left: ExpressionSyntax): ExpressionSyntax {
+        val dotToken = matchToken(Token.Dot)
+        val name = matchToken(Token.Identifier)
+        return MemberAccessExpressionSyntax(syntaxTree, left, dotToken, name)
     }
 
     private fun parseNameExpression(token: SyntaxToken<Token.Identifier>) =

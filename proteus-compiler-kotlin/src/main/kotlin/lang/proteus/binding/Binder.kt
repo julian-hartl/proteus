@@ -56,20 +56,33 @@ internal class Binder(
 
             for ((tree, symbols) in symbolMap) {
                 for (symbol in symbols) {
-                    if (symbol is FunctionSymbol) {
-                        binder.scope.tryDeclareFunction(symbol, tree)
-                    } else if (symbol is VariableSymbol) {
-                        binder.scope.tryDeclareVariable(symbol, tree)
+                    when (symbol) {
+                        is FunctionSymbol -> {
+                            binder.scope.tryDeclareFunction(symbol, tree)
+                        }
+
+                        is VariableSymbol -> {
+                            binder.scope.tryDeclareVariable(symbol, tree)
+                        }
+
+                        is StructSymbol -> {
+                            binder.scope.tryDeclareStruct(symbol, tree)
+                        }
+
+                        else -> {
+                            throw Exception("Unexpected symbol type: ${symbol::class.simpleName}")
+                        }
                     }
                 }
             }
             diagnostics.addAll(binder.diagnostics)
             val variables = binder.scope.getDeclaredVariables()
             val functions = binder.scope.getDeclaredFunctions()
+            val structs = binder.scope.getDeclaredStructs()
             if (previous != null) {
                 diagnostics.addAll(previous.diagnostics)
             }
-            return BoundGlobalScope(previous, diagnostics.diagnostics, functions, variables)
+            return BoundGlobalScope(previous, diagnostics.diagnostics, functions, variables, structs)
         }
 
         private fun createParentScopes(scope: BoundGlobalScope?): BoundScope? {
@@ -92,6 +105,11 @@ internal class Binder(
                 for ((syntaxTree, functions) in previous.mappedFunctions) {
                     for (function in functions)
                         scope.tryDeclareFunction(function, syntaxTree)
+                }
+
+                for ((syntaxTree, structs) in previous.mappedStructs) {
+                    for (struct in structs)
+                        scope.tryDeclareStruct(struct, syntaxTree)
                 }
 
                 parent = scope
@@ -179,6 +197,41 @@ internal class Binder(
             }
             return mainFunction
         }
+    }
+
+    internal fun bindStructDeclaration(
+        structDeclaration: StructDeclarationSyntax,
+        tree: SyntaxTree,
+        defineSymbol: Boolean = true,
+    ): StructSymbol {
+        val name = structDeclaration.identifier.literal
+        val members = bindStructMembers(structDeclaration.members, tree)
+        val structSymbol = StructSymbol(structDeclaration, name, members, tree)
+        if (defineSymbol) {
+            if (scope.tryDeclareStruct(structSymbol, tree) == null) {
+                diagnosticsBag.reportStructAlreadyDeclared(structDeclaration.identifier.location, name)
+            }
+        }
+        return structSymbol
+    }
+
+    private fun bindStructMembers(
+        members: List<StructMemberSyntax>,
+        tree: SyntaxTree,
+    ): List<StructMemberSymbol> {
+        val seenMembers = mutableSetOf<String>()
+        val result = mutableListOf<StructMemberSymbol>()
+        for (member in members) {
+            val name = member.identifier.literal
+            if (!seenMembers.add(name)) {
+                diagnosticsBag.reportStructMemberAlreadyDeclared(member.identifier.location, name)
+                continue
+            }
+            val type = bindTypeClause(member.type)
+            val symbol = StructMemberSymbol(name, type, member, tree)
+            result.add(symbol)
+        }
+        return result
     }
 
     private data class ParameterInfo(
@@ -496,7 +549,83 @@ internal class Binder(
             is AssignmentExpressionSyntax -> bindAssignmentExpression(syntax)
             is CallExpressionSyntax -> bindCallExpression(syntax)
             is CastExpressionSyntax -> bindCastExpression(syntax)
+            is StructInitializationExpressionSyntax -> bindStructInitializationExpression(syntax)
+            is MemberAccessExpressionSyntax -> bindMemberAccessExpression(syntax)
         }
+    }
+
+    private fun bindMemberAccessExpression(syntax: MemberAccessExpressionSyntax): BoundExpression {
+        val expression = bindExpression(syntax.expression)
+        val memberName = syntax.identifier.literal
+        val member = lookUpMember(expression.type, memberName, syntax.syntaxTree)
+        if (member == null) {
+            diagnosticsBag.reportUndefinedMember(syntax.identifier.location, memberName, expression.type)
+            return BoundErrorExpression
+        }
+        return BoundMemberAccessExpression(expression, memberName, member.type)
+    }
+
+    private fun lookUpMember(type: TypeSymbol, memberName: String, tree: SyntaxTree): StructMemberSymbol? {
+        if (type is TypeSymbol.Struct) {
+            val struct = scope.tryLookupStruct(type.name, tree)
+            if (struct != null) {
+                for (member in struct.members) {
+                    if (member.name == memberName) {
+                        return member
+                    }
+                }
+                for (base in struct.members) {
+                    val member = lookUpMember(base.type, memberName, tree)
+                    if (member != null) {
+                        return member
+                    }
+                }
+            }
+
+        }
+        return null;
+    }
+
+    private fun bindStructInitializationExpression(syntax: StructInitializationExpressionSyntax): BoundExpression {
+        val structName = syntax.identifier.literal
+        val structSymbol = scope.tryLookupStruct(structName, syntax.syntaxTree)
+        if (structSymbol == null) {
+            diagnosticsBag.reportUndefinedStruct(syntax.identifier.location, structName)
+            return BoundErrorExpression
+        }
+        val arguments = bindStructMemberExpression(structSymbol, syntax.members)
+        return BoundStructInitializationExpression(structSymbol, arguments)
+    }
+
+    private fun bindStructMemberExpression(
+        struct: StructSymbol,
+        members: SeparatedSyntaxList<StructMemberInitializationSyntax>,
+    ): List<BoundStructMemberInitializationExpression> {
+        val membersMap = struct.members.associateBy { it.name }
+        val arguments = mutableListOf<BoundStructMemberInitializationExpression>()
+        val definedMembers = mutableSetOf<String>()
+        for (member in members) {
+            val memberName = member.identifier.literal
+            val memberSymbol = membersMap[memberName]
+            if (memberSymbol == null) {
+                diagnosticsBag.reportUndefinedStructMember(member.identifier.location, memberName, struct.name)
+                continue
+            }
+            val boundExpression = bindExpression(member.expression)
+            val convertedExpression = bindConversion(boundExpression, memberSymbol.type, member.expression.location)
+            arguments.add(BoundStructMemberInitializationExpression(memberSymbol.name, convertedExpression))
+            if (definedMembers.contains(memberName)) {
+                diagnosticsBag.reportStructMemberAlreadyInitialized(member.identifier.location, memberName, struct.name)
+            }
+            definedMembers.add(memberName)
+        }
+        for (member in struct.members) {
+            if (!definedMembers.contains(member.name)) {
+                diagnosticsBag.reportStructMemberNotInitialized(member.syntax.location, member.name, struct.name)
+            }
+        }
+        return arguments
+
     }
 
     private fun bindCastExpression(syntax: CastExpressionSyntax): BoundExpression {

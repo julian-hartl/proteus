@@ -1,6 +1,6 @@
 package lang.proteus.symbols
 
-sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) {
+sealed class TypeSymbol(name: kotlin.String, id: kotlin.String? = null) : Symbol(id ?: "proteus-built-in", name) {
 
     object Int : TypeSymbol("Int")
 
@@ -14,9 +14,13 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
     object Error : TypeSymbol("?")
     object Unit : TypeSymbol("Unit")
 
+    class Struct(val name: kotlin.String) : TypeSymbol(name, "struct")
+
     companion object {
 
-        val allTypes = TypeSymbol::class.sealedSubclasses.map { it.objectInstance!! }
+        val internalTypes = TypeSymbol::class.sealedSubclasses.filter {
+            it.objectInstance != null 
+        }.map { it.objectInstance!! }
 
         fun fromValueOrAny(value: kotlin.Any?): TypeSymbol {
             return when (value) {
@@ -29,7 +33,7 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
         }
 
         fun fromName(name: kotlin.String): TypeSymbol? {
-            return allTypes.firstOrNull { it.simpleName == name }
+            return internalTypes.firstOrNull { it.simpleName == name }
         }
 
         fun fromJavaType(javaType: java.lang.reflect.Type): TypeSymbol {
@@ -43,18 +47,6 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
         }
     }
 
-    fun getJavaClass(): Class<*> {
-        return when (this) {
-            Int -> java.lang.Integer.TYPE
-            Boolean -> java.lang.Boolean.TYPE
-            String -> java.lang.String::class.java
-            Type -> TypeSymbol::class.java
-            Any -> java.lang.Object::class.java
-            Error -> java.lang.Object::class.java
-            Unit -> java.lang.Void.TYPE
-        }
-    }
-
 
     fun isAssignableTo(symbol: TypeSymbol): kotlin.Boolean {
         return when (symbol) {
@@ -65,6 +57,7 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
             Error -> this is Error
             Any -> true
             Unit -> this is Unit
+            is Struct -> this is Struct && this.name == symbol.name
         }
     }
 

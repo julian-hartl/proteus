@@ -30,13 +30,20 @@ internal sealed class Token(open val literal: kotlin.String? = null) {
 
     object Arrow : Token("->")
 
+    object Dot : Token(".")
+
     object String : Token()
     object Annotation : Token()
     object GlobalStatement : Token()
     object FunctionDeclaration : Token()
+    object StructDeclaration : Token()
     object FunctionReturnType : Token()
     object Parameter : Token()
     object ImportStatement : Token()
+
+    object StructMember : Token()
+
+    object StructMemberInitialization : Token()
 
     fun toSyntaxToken(
         position: Int,
@@ -50,5 +57,7 @@ internal sealed class Token(open val literal: kotlin.String? = null) {
     override fun toString(): kotlin.String {
         return this::class.simpleName!!
     }
+
+
 
 }

@@ -137,9 +137,26 @@ internal class Evaluator(
             is BoundAssignmentExpression -> evaluateAssignmentExpression(expression)
             is BoundCallExpression -> evaluateCallExpression(expression)
             is BoundConversionExpression -> evaluateConversionExpression(expression)
+            is BoundStructInitializationExpression -> evaluateStructInitializationExpression(expression)
+            is BoundMemberAccessExpression -> evaluateMemberAccessExpression(expression)
             else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 
+    }
+
+    private fun evaluateMemberAccessExpression(expression: BoundMemberAccessExpression): Any? {
+        val value = evaluateExpression(expression.expression)!!
+        return (value as Map<*, *>)[expression.memberName]
+    }
+
+    private fun evaluateStructInitializationExpression(expression: BoundStructInitializationExpression): Any? {
+        val struct = expression.struct
+        val values = expression.members.map { evaluateExpression(it.expression)!! }
+        val stackFrame = mutableMapOf<String, Any>()
+        for ((index, field) in struct.members.withIndex()) {
+            stackFrame[field.name] = values[index]
+        }
+        return stackFrame
     }
 
     private fun evaluateConversionExpression(expression: BoundConversionExpression): Any {

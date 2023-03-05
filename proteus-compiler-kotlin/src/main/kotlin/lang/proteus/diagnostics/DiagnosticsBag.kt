@@ -247,5 +247,33 @@ internal class DiagnosticsBag {
         report("Expression is unused", location, diagnosticType = DiagnosticType.Warning)
     }
 
+    fun reportStructAlreadyDeclared(location: TextLocation, name: String) {
+        report("Struct '$name' already declared", location)
+    }
+
+    fun reportStructMemberAlreadyDeclared(location: TextLocation, name: String) {
+        report("Struct member '$name' already declared", location)
+    }
+
+    fun reportUndefinedStruct(location: TextLocation, structName: String) {
+        report("Undefined struct '$structName'", location)
+    }
+
+    fun reportUndefinedStructMember(location: TextLocation, memberName: String, name: String) {
+        report("Undefined struct member '$memberName' in struct '$name'", location)
+    }
+
+    fun reportStructMemberAlreadyInitialized(location: TextLocation, memberName: String, name: String) {
+        report("Struct member '$memberName' in struct '$name' already initialized", location)
+    }
+
+    fun reportStructMemberNotInitialized(location: TextLocation, name: String, structName: String) {
+        report("Struct member '$name' in struct '$structName' not initialized", location)
+    }
+
+    fun reportUndefinedMember(location: TextLocation, memberName: String, type: TypeSymbol) {
+        report("Undefined member '$memberName' in type '${type}'", location)
+    }
+
 
 }
