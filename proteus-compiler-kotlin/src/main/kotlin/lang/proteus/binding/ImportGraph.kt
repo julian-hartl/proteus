@@ -1,13 +1,10 @@
 package lang.proteus.binding
 
 import lang.proteus.diagnostics.DiagnosticsBag
+import lang.proteus.symbols.StructMemberSymbol
+import lang.proteus.symbols.StructSymbol
 import lang.proteus.symbols.Symbol
 import lang.proteus.syntax.parser.*
-import lang.proteus.syntax.parser.FunctionDeclarationSyntax
-import lang.proteus.syntax.parser.GlobalVariableDeclarationSyntax
-import lang.proteus.syntax.parser.ImportStatementSyntax
-import lang.proteus.syntax.parser.StructDeclarationSyntax
-import lang.proteus.syntax.parser.SyntaxTree
 
 internal data class ImportGraphNode(
     val tree: SyntaxTree,
@@ -70,14 +67,14 @@ internal class ImportGraph {
 
     private val cachedExportedSymbols = mutableMapOf<SyntaxTree, List<Symbol>>()
 
-    fun gatherImportedSymbols(binder: Binder, tree: SyntaxTree): Set<Symbol> {
+    fun gatherImportedSymbols( tree: SyntaxTree): Set<Symbol> {
         val importedSymbols = mutableSetOf<Symbol>()
         val symbolToTreeMap = mutableMapOf<Symbol, SyntaxTree>()
         val treeToImportStatement = mutableMapOf<SyntaxTree, ImportStatementSyntax>()
         val outgoingEdges = getOutgoingEdges(tree)
         for (edge in outgoingEdges) {
             val importedTree = edge.to.tree
-            val exportedSymbols = gatherExportedSymbols(binder, importedTree)
+            val exportedSymbols = gatherExportedSymbols(importedTree)
             for (symbol in exportedSymbols) {
                 symbolToTreeMap[symbol] = importedTree
             }
@@ -105,28 +102,42 @@ internal class ImportGraph {
         return importedSymbols
     }
 
-    fun gatherExportedSymbols(binder: Binder, tree: SyntaxTree): List<Symbol> {
+    fun gatherExportedSymbols(tree: SyntaxTree): List<Symbol> {
+        if (cachedExportedSymbols.containsKey(tree))
+            return cachedExportedSymbols[tree]!!
         val node = nodes[tree]!!
         val exportedSymbols = mutableListOf<Symbol>()
-        for (member in node.tree.root.members) {
+        val structMembers = mutableMapOf<StructSymbol, Set<StructMemberSymbol>>()
+        var binder = Binder(BoundScope(null), null, structMembers
+        )
+        for (member in node.tree.root.members.sortedBy {
+            when (it) {
+                is ImportStatementSyntax -> 0
+                is StructDeclarationSyntax -> 1
+                is FunctionDeclarationSyntax -> 2
+                is GlobalVariableDeclarationSyntax -> 3
+            }
+        }) {
             when (member) {
                 is FunctionDeclarationSyntax -> {
-                    val functionSymbol = binder.bindFunctionDeclaration(member, tree, defineSymbol = false)
+                    val functionSymbol = binder.bindFunctionDeclaration(member, tree)
                     exportedSymbols.add(functionSymbol)
                 }
 
                 is GlobalVariableDeclarationSyntax -> {
-                    val declaration = binder.bindVariableDeclaration(member.statement, defineSymbol = false)
+                    val declaration = binder.bindVariableDeclaration(member.statement)
                     exportedSymbols.add(declaration.variable)
                 }
 
                 is ImportStatementSyntax -> {}
                 is StructDeclarationSyntax -> {
-                    val structSymbol = binder.bindStructDeclaration(member, tree, defineSymbol = false)
+                    val structSymbol = binder.bindStructDeclaration(member, tree)
                     exportedSymbols.add(structSymbol)
+                    structMembers[structSymbol] = binder.bindStructMembers(member.members, tree).toSet()
                 }
             }
         }
+        diagnosticsBag.addAll(binder.diagnostics)
         cachedExportedSymbols[tree] = exportedSymbols
         return exportedSymbols
     }

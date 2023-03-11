@@ -7,7 +7,6 @@ import lang.proteus.syntax.parser.SyntaxTree
 internal class StructSymbol(
     val declaration: StructDeclarationSyntax,
     val name: String,
-    val members: List<StructMemberSymbol>,
     syntaxTree: SyntaxTree,
 ) : Symbol(
     syntaxTree.id.toString(), declaration.identifier.literal

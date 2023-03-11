@@ -67,9 +67,7 @@ internal class Parser(
             } else {
                 hasParsedOtherThanImport = true
             }
-            if (member !is MemberSyntax) {
-                diagnosticsBag.reportInvalidTopLevelStatement(member.location)
-            } else {
+            if (member != null) {
                 members.add(member)
             }
             if (current == start) {
@@ -79,14 +77,15 @@ internal class Parser(
         return members
     }
 
-    private fun parseMember(): SyntaxNode {
+    private fun parseMember(): MemberSyntax? {
         return when (current.token) {
             is Keyword.Import -> parseImportStatement()
             is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
             is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
             is Keyword.Struct -> parseStructDeclaration()
             else -> {
-                parseStatement()
+                diagnosticsBag.reportUnexpectedToken(current.location,  current.token,Token.GlobalStatement)
+                null
             }
         }
     }
@@ -226,7 +225,7 @@ internal class Parser(
 
     private fun parseFunctionReturnType(): FunctionReturnTypeSyntax {
         val arrow = matchToken(Token.Arrow)
-        val type = matchToken(Token.Type)
+        val type = parseType()
         return FunctionReturnTypeSyntax(arrow, type, syntaxTree)
     }
 
@@ -235,11 +234,15 @@ internal class Parser(
         val parameters = mutableListOf<SyntaxNode>()
         if (current.token != Operator.CloseParenthesis) {
             do {
+                var start = current
                 if (parameters.isNotEmpty()) {
                     parameters.add(matchToken(Token.Comma))
                 }
                 val parameter = parseParameter()
                 parameters.add(parameter)
+                if (current == start) {
+                    nextToken()
+                }
             } while (current.token != Operator.CloseParenthesis)
         }
         return SeparatedSyntaxList(parameters)
@@ -379,7 +382,7 @@ internal class Parser(
 
     private fun parseTypeClause(): TypeClauseSyntax {
         val colonToken = matchToken(Token.Colon)
-        val type = matchToken(Token.Type)
+        val type = parseType()
         return TypeClauseSyntax(colonToken, type, syntaxTree)
     }
 
@@ -437,9 +440,17 @@ internal class Parser(
         return CastExpressionSyntax(
             castExpression,
             matchToken(Keyword.As),
-            matchToken(Token.Type),
+            parseType(),
             syntaxTree
         )
+    }
+
+    private fun parseType(): SyntaxToken<Token.Identifier> {
+        if(current.token is Token.Identifier) {
+            val identifier =  matchToken(Token.Identifier)
+            return SyntaxToken(Token.Identifier,identifier.position, identifier.literal, identifier.span(), syntaxTree)
+        }
+        return matchToken(Token.Identifier)
     }
 
     private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {
@@ -463,6 +474,7 @@ internal class Parser(
 
             if(current.token is Token.Dot) {
                 left = parseMemberAccessExpression(left)
+                continue
             }
 
             if (current.token is Token.SemiColon) {
@@ -502,10 +514,6 @@ internal class Parser(
 
             Keyword.False, Keyword.True -> {
                 return parseBooleanLiteral()
-            }
-
-            Token.Type -> {
-                return parseTypeExpression()
             }
 
             Token.Identifier -> {

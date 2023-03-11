@@ -1,15 +1,19 @@
 package lang.proteus.evaluator
 
 import lang.proteus.binding.*
+import lang.proteus.symbols.*
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.GlobalVariableSymbol
 import lang.proteus.symbols.ProteusExternalFunction
+import lang.proteus.symbols.StructMemberSymbol
+import lang.proteus.symbols.StructSymbol
 import java.util.*
 
 internal class Evaluator(
     private val functionBodies: Map<FunctionSymbol, BoundBlockStatement>,
     private val mainFunction: FunctionSymbol,
     private val globalVariableInitializers: Map<GlobalVariableSymbol, BoundExpression>,
+    private val structMembers: Map<StructSymbol, Set<StructMemberSymbol>>,
 ) {
     private val locals: Stack<MutableMap<String, Any>> = Stack()
     private val globals: MutableMap<String, Any> = mutableMapOf()
@@ -152,8 +156,9 @@ internal class Evaluator(
     private fun evaluateStructInitializationExpression(expression: BoundStructInitializationExpression): Any? {
         val struct = expression.struct
         val values = expression.members.map { evaluateExpression(it.expression)!! }
+        val members = structMembers[struct]!!
         val stackFrame = mutableMapOf<String, Any>()
-        for ((index, field) in struct.members.withIndex()) {
+        for ((index, field) in members.withIndex()) {
             stackFrame[field.name] = values[index]
         }
         return stackFrame

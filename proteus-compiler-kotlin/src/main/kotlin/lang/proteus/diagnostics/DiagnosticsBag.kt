@@ -275,5 +275,9 @@ internal class DiagnosticsBag {
         report("Undefined member '$memberName' in type '${type}'", location)
     }
 
+    fun reportInvalidName(location: TextLocation) {
+        report("Invalid name", location)
+    }
+
 
 }

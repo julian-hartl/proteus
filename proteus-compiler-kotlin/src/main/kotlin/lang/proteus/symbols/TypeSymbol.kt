@@ -1,6 +1,9 @@
 package lang.proteus.symbols
 
-sealed class TypeSymbol(name: kotlin.String, id: kotlin.String? = null) : Symbol(id ?: "proteus-built-in", name) {
+import lang.proteus.emit.MemoryLayout
+
+sealed class TypeSymbol(name: kotlin.String) :
+    Symbol("type", name) {
 
     object Int : TypeSymbol("Int")
 
@@ -14,12 +17,14 @@ sealed class TypeSymbol(name: kotlin.String, id: kotlin.String? = null) : Symbol
     object Error : TypeSymbol("?")
     object Unit : TypeSymbol("Unit")
 
-    class Struct(val name: kotlin.String) : TypeSymbol(name, "struct")
+    data class Struct(val name: kotlin.String) : TypeSymbol(name)
+
+    data class Pointer(val type: TypeSymbol) : TypeSymbol(type.simpleName)
 
     companion object {
 
         val internalTypes = TypeSymbol::class.sealedSubclasses.filter {
-            it.objectInstance != null 
+            it.objectInstance != null
         }.map { it.objectInstance!! }
 
         fun fromValueOrAny(value: kotlin.Any?): TypeSymbol {
@@ -32,8 +37,8 @@ sealed class TypeSymbol(name: kotlin.String, id: kotlin.String? = null) : Symbol
             }
         }
 
-        fun fromName(name: kotlin.String): TypeSymbol? {
-            return internalTypes.firstOrNull { it.simpleName == name }
+        fun fromName(name: kotlin.String): TypeSymbol {
+            return internalTypes.firstOrNull { it.simpleName == name } ?: Struct(name)
         }
 
         fun fromJavaType(javaType: java.lang.reflect.Type): TypeSymbol {
@@ -57,8 +62,34 @@ sealed class TypeSymbol(name: kotlin.String, id: kotlin.String? = null) : Symbol
             Error -> this is Error
             Any -> true
             Unit -> this is Unit
-            is Struct -> this is Struct && this.name == symbol.name
+            is Struct -> this is Struct && this.qualifiedName == symbol.qualifiedName
+            is Pointer -> this is Pointer && this.type.isAssignableTo(symbol.type)
         }
+    }
+
+    override fun equals(other: kotlin.Any?): kotlin.Boolean {
+        return when (other) {
+            is TypeSymbol -> this.qualifiedName == other.qualifiedName
+            else -> false
+        }
+    }
+
+    fun ref(): TypeSymbol {
+        if(MemoryLayout.isStoredOnHeap(this)) {
+            return Pointer(this)
+        }
+        return this
+    }
+
+    fun deref(): TypeSymbol {
+        if(this is Pointer) {
+            return this.type
+        }
+        return this
+    }
+
+    fun isPointer(): kotlin.Boolean {
+        return this is Pointer
     }
 
 

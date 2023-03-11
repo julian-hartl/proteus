@@ -27,7 +27,7 @@ internal class CodeGenerator private constructor(
                 functions = boundProgram.globalScope.functions,
                 globalVariables = boundProgram.globalScope.globalVariables,
                 globalVariableInitializers = boundProgram.variableInitializers,
-                structs = boundProgram.globalScope.structs,
+                structs = boundProgram.globalScope.structs.toSet(),
             )
             return generator.generateCode()
         }
@@ -51,8 +51,8 @@ internal class CodeGenerator private constructor(
     private fun generateStructDeclarations(structs: Set<StructSymbol>) {
         for (symbol in structs) {
             codeBuilder.appendLine("struct ${symbol.qualifiedName} {")
-            for (field in symbol.members) {
-                codeBuilder.appendLine("    ${field.qualifiedName}: ${field.type.simpleName};")
+            for (field in symbol.declaration.members) {
+                codeBuilder.appendLine("    ${field.identifier.literal}: ${field.type.type.literal};")
             }
             codeBuilder.appendLine("}")
         }

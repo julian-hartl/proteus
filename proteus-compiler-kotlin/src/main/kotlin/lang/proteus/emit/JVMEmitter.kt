@@ -70,6 +70,14 @@ internal class JVMEmitter private constructor(
 
     }
 
+    override fun generateMemberAccessExpression(expression: BoundMemberAccessExpression) {
+        TODO("Not yet implemented")
+    }
+
+    override fun generateStructInitializationExpression(expression: BoundStructInitializationExpression) {
+
+    }
+
     override fun generateReturnStatement(statement: BoundReturnStatement) {
         val expression = statement.expression
         if (expression != null) {

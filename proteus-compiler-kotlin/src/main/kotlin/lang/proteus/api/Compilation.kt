@@ -6,6 +6,7 @@ import lang.proteus.binding.BoundGlobalScope
 import lang.proteus.binding.BoundProgram
 import lang.proteus.diagnostics.Diagnostics
 import lang.proteus.emit.JVMEmitter
+import lang.proteus.emit.ProteusByteCodeEmitter
 import lang.proteus.evaluator.EvaluationResult
 import lang.proteus.evaluator.Evaluator
 import lang.proteus.generation.CodeGenerator
@@ -14,6 +15,7 @@ import lang.proteus.syntax.parser.SyntaxTree
 internal class Compilation private constructor(
     private val entryPointTree: SyntaxTree,
     private val isInterpreting: Boolean,
+    private val emitterName: String? = null,
 ) {
 
     private var _globalScope: BoundGlobalScope? = null
@@ -22,9 +24,10 @@ internal class Compilation private constructor(
 
         fun compile(
             entryPointTree: SyntaxTree,
+            emitterName: String
 
             ): Compilation {
-            return Compilation(entryPointTree, isInterpreting = false)
+            return Compilation(entryPointTree, isInterpreting = false, emitterName )
         }
 
         fun interpret(
@@ -81,7 +84,12 @@ internal class Compilation private constructor(
         diagnostics.concat(program.diagnostics)
 
         computationTimeStopper.start()
-        val evaluator = Evaluator(functionBodies, mainFunction = program.mainFunction!!, variableDeclarations)
+        val evaluator = Evaluator(
+            functionBodies,
+            mainFunction = program.mainFunction!!,
+            variableDeclarations,
+            program.structMembers
+        )
         val value = evaluator.evaluate()
         val evaluationTime = computationTimeStopper.stop()
         return EvaluationResult(diagnostics, value, parseTime, evaluationTime, codeGenerationTime)
@@ -95,7 +103,7 @@ internal class Compilation private constructor(
             return diagnostics
         }
         val program = getProgram()
-        if(program.diagnostics.hasErrors()) {
+        if (program.diagnostics.hasErrors()) {
             return program.diagnostics
         }
         val generatedCode =
@@ -103,7 +111,12 @@ internal class Compilation private constructor(
                 program
             )
         CodeGenerator.emitGeneratedCode(generatedCode)
-        JVMEmitter.emit(program, outputPath)
+        if(emitterName == "jvm") {
+            JVMEmitter.emit(program, outputPath)
+        }
+        else if(emitterName == "pvm") {
+            ProteusByteCodeEmitter.emit(program, outputPath)
+        }
         return program.diagnostics
     }
 

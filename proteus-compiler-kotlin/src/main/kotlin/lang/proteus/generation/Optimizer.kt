@@ -143,7 +143,7 @@ internal class Optimizer private constructor() :
         if (rewrittenExpression == expression) {
             return expression
         }
-        return BoundConversionExpression(expression.type, expression, expression.conversion)
+        return BoundConversionExpression(expression.type, expression.expression, expression.conversion)
     }
 
     override fun rewriteExpressionStatement(statement: BoundExpressionStatement): BoundStatement {

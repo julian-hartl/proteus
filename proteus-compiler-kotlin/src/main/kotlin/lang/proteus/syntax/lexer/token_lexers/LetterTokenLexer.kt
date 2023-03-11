@@ -8,12 +8,20 @@ import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.SyntaxTree
 
 internal object LetterTokenLexer : TokenLexer() {
+    var length = 0
+
     override fun match(current: Char): Boolean {
-        return current.isLetter()
+        if(length == 0) {
+            length++
+            return current.isLetter()
+        }
+        length++
+        return current.isLetter() || current.isDigit() || current == '_'
     }
 
     override fun submit(start: Int, position: Int, literal: String, syntaxTree: SyntaxTree): TokenLexerResult {
         val token = syntaxToken(literal, start, syntaxTree)
+        length = 0
         return TokenLexerResult(token, literal.length)
     }
 
@@ -21,10 +29,6 @@ internal object LetterTokenLexer : TokenLexer() {
         literal: String,
         start: Int, syntaxTree: SyntaxTree,
     ): SyntaxToken<out Token> {
-        val type = TypeSymbol.fromName(literal)
-        if (type != null) {
-            return SyntaxToken.typeToken(start, literal, type, syntaxTree)
-        }
         val operator = Operators.fromLiteral(literal)
         if (operator != null) {
             return operator.toSyntaxToken(start, syntaxTree)

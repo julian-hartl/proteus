@@ -19,8 +19,8 @@ internal data class BoundGlobalScope(
     val variables: Set<VariableSymbol>
         get() = mappedVariables.flatMap { it.value }.distinctBy { it.qualifiedName }.toSet()
 
-    val structs: Set<StructSymbol>
-        get() = mappedStructs.flatMap { it.value }.distinctBy { it.qualifiedName }.toSet()
+    val structs: List<StructSymbol>
+        get() = mappedStructs.flatMap { it.value }.distinctBy { it.qualifiedName }
 
     val globalVariables: Set<GlobalVariableSymbol>
         get() = variables.filter { it.isGlobal }.map { it as GlobalVariableSymbol }.toSet()

@@ -11,8 +11,6 @@ internal sealed class Token(open val literal: kotlin.String? = null) {
     object Number : Token()
     object Bad : Token()
 
-    object Type : Token()
-
     object Expression : Token()
     object Statement : Token()
 
