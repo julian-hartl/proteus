@@ -434,7 +434,6 @@ internal class Binder(
             diagnosticsBag.reportCannotConvert(textLocation, expectedType, type)
             return BoundErrorExpression
         }
-
         return BoundConversionExpression(expectedType, boundExpression, conversion)
     }
 
@@ -667,7 +666,6 @@ internal class Binder(
             val externalFunction = ProteusExternalFunction.lookup(declaredFunction.declaration)
             if (externalFunction == null) {
                 diagnosticsBag.reportExternalFunctionNotFound(declaredFunction.declaration, syntax.location)
-                return BoundErrorExpression
             }
         }
         if (syntax.arguments.count < declaredFunction.parameters.size) {

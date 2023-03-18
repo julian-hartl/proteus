@@ -196,18 +196,38 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         for (argument in expression.arguments.reversed()) {
             generateExpression(argument)
         }
-        if (expression.function.declaration.isExternal) {
+        val function = expression.function
+        if (function.declaration.isExternal) {
+            if (function.simpleName == "free") {
 
-            codeBuilder.appendLine(api.ffcall(expression.function))
+                generateAsPointer = true
+                // todo: because the free function takes Any as an argument, it has an unknown size. Therefore, we need to somehow store the original type in the conversion.
+                generateExpression(expression.arguments[0])
+                generateAsPointer = false
+                codeBuilder.appendLine(
+                    api.free(
+                        expression.arguments[0].type
+                    )
+                )
+                return
+            }
+            else if(function.simpleName == "malloc") {
+                generateExpression(expression.arguments[0])
+                codeBuilder.appendLine(api.dhalloc())
+                return
+            }
+
+            codeBuilder.appendLine(api.ffcall(function))
 
         } else {
-            codeBuilder.appendLine(api.call(expression.function))
+            codeBuilder.appendLine(api.call(function))
         }
     }
 
     override fun generateConversionExpression(expression: BoundConversionExpression) {
         generateExpression(expression.expression)
         if (expression.conversion.isIdentity) return
+        if(expression.type.deref() is TypeSymbol.Any || expression.expression.type.deref() is TypeSymbol.Any) return
         when (expression.expression.type) {
             TypeSymbol.Int -> {
                 when (expression.type) {

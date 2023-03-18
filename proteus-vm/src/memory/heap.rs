@@ -47,7 +47,10 @@ impl Heap {
         }
     }
 
-    pub fn free(&mut self, start: usize, size: usize) {
+    pub fn free(&mut self, start: usize, size: usize) -> Result<(), String> {
+        if start + size > self.memory.len() {
+            return Err(format!("Cannot free memory at {} with size {}", start, size));
+        }
         self.free_list.push(FreeBlock { start, size });
         self.free_list.sort_by(|a, b| a.start.cmp(&b.start));
         let mut index = 0;
@@ -61,6 +64,7 @@ impl Heap {
                 index += 1;
             }
         }
+        Ok(())
     }
 
     pub fn load(&self, start: usize, size: usize) -> Result<&[u8], String> {

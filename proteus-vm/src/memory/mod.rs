@@ -117,6 +117,28 @@ impl Memory {
         self.stack_load(self.stack_pointer - offset - size, size)
     }
 
+    pub fn free(&mut self, address: usize, bytes: usize) -> Result<(), String> {
+        if self.is_heap_address(address) {
+            self.free_heap(address, bytes)
+        } else {
+            self.free_stack(address, bytes)
+        }
+    }
+
+    fn free_heap(&mut self, address: usize, bytes: usize) -> Result<(), String> {
+        let heap_address = address - self.heap_start();
+        self.heap.free(heap_address, bytes)
+    }
+
+    fn free_stack(&mut self, address: usize, bytes: usize) -> Result<(), String> {
+        if address + bytes > self.stack.len() {
+            Err(format!("SIGSEV: {} + {} > {}", address, bytes, self.stack.len()))
+        } else {
+            self.stack[address..address + bytes].iter_mut().for_each(|byte| *byte = 0);
+            Ok(())
+        }
+    }
+
 
     fn is_heap_address(&self, address: usize) -> bool {
         address >= self.stack.len()

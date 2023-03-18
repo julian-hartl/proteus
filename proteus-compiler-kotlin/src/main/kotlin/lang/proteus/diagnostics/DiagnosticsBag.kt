@@ -221,6 +221,7 @@ internal class DiagnosticsBag {
         report(
             "External function ${declaration.identifier.literal} not found",
             location,
+            DiagnosticType.Warning,
             hint = "Install the required library."
         )
     }

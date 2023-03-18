@@ -128,8 +128,9 @@ impl<'a> Evaluator<'a> {
             OpCode::STOREB => self.storeb(operand),
             OpCode::LOADA => self.loada(operand),
             OpCode::PUSHSP => self.pushsp(operand),
-            OpCode::RLOAD => self.rload(operand,offset),
-            OpCode::RSTORE => self.rstore(operand,offset),
+            OpCode::RLOAD => self.rload(operand, offset),
+            OpCode::RSTORE => self.rstore(operand, offset),
+            OpCode::DHALLOC => self.dhalloc()
         }
     }
 
@@ -148,9 +149,11 @@ impl<'a> Evaluator<'a> {
         Ok(())
     }
 
-    /// Free the element at the given index
+
     fn free(&mut self, index: u32) -> Result<(), Box<dyn Error>> {
-        unimplemented!()
+        let ptr = self.remove_top()?;
+        self.memory.free(ptr as usize, index as usize)?;
+        Ok(())
     }
 
 
@@ -374,6 +377,13 @@ impl<'a> Evaluator<'a> {
         Ok(())
     }
 
+    fn dhalloc(&mut self) -> Result<(), Box<dyn Error>> {
+        let bytes = self.remove_top()?;
+        let pointer = self.memory.allocate_heap(bytes as usize)?;
+        self.push(pointer as i32)?;
+        Ok(())
+    }
+
     fn load(&mut self, offset: i32, size: u32) -> Result<(), Box<dyn Error>> {
         let base_address = self.stack_frames.last().unwrap();
         let address: u32 = ((*base_address as i32) + offset) as u32;
@@ -402,7 +412,7 @@ impl<'a> Evaluator<'a> {
 
     fn rstore(&mut self, offset: i32, bytes: u32) -> Result<(), Box<dyn Error>> {
         let value = &self.remove_top_bytes(bytes)?;
-        let base_address = self.read_top()? ;
+        let base_address = self.read_top()?;
         let address = base_address + offset;
         self.memory.store(address as usize, &value)?;
         Ok(())

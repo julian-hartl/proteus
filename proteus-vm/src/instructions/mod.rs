@@ -40,6 +40,7 @@ pub enum OpCode {
     RSTORE = 0x62,
     PUSHSP = 0x70,
     HALLOC = 0x80,
+    DHALLOC = 0x81,
     FFCALL = 0x90,
     ITOA = 0x91,
     HALT = 0xFF,
