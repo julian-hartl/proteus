@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextLocation
 import lang.proteus.generation.Lowerer
-import lang.proteus.generation.Optimizer
+import lang.proteus.generation.ConstOptimizer
 import lang.proteus.symbols.*
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.parser.*
@@ -146,7 +146,7 @@ internal class Binder(
                 var optimizedBody = BoundBlockStatement(listOf())
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
-                    optimizedBody = if (optimize) Optimizer.optimize(loweredBody) else loweredBody
+                    optimizedBody = if (optimize) ConstOptimizer.optimize(loweredBody) else loweredBody
                     val graph = ControlFlowGraph.createAndOutput(optimizedBody)
                     if (!graph.allPathsReturn()) {
                         diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
@@ -176,7 +176,7 @@ internal class Binder(
                     val binder = Binder(parentScope ?: BoundScope(null), null, structMembers)
                     val initializer = variable.declarationSyntax.initializer
                     val boundInitializer = binder.bindExpression(initializer)
-                    val optimized = Optimizer.optimize(boundInitializer)
+                    val optimized = ConstOptimizer.optimize(boundInitializer)
                     variableInitializers[variable] = optimized
                     diagnostics.addAll(binder.diagnostics)
                 }

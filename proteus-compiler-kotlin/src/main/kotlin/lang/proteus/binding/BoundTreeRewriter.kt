@@ -138,7 +138,7 @@ internal abstract class BoundTreeRewriter {
 
 
 
-    private fun rewriteMemberAccessExpression(expression: BoundMemberAccessExpression): BoundExpression {
+    protected open fun rewriteMemberAccessExpression(expression: BoundMemberAccessExpression): BoundExpression {
         val expr = rewriteExpression(expression.expression)
         if (expr != expression.expression) {
             return BoundMemberAccessExpression(expr, expression.memberName, expression.type)

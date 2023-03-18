@@ -1,10 +1,10 @@
 package lang.proteus.symbols
 
-import lang.proteus.emit.MemoryLayout
-
 sealed class TypeSymbol(name: kotlin.String) :
     Symbol("type", name) {
 
+
+    object Unit : TypeSymbol("Unit")
     object Int : TypeSymbol("Int")
 
     object Boolean : TypeSymbol("Boolean")
@@ -15,7 +15,6 @@ sealed class TypeSymbol(name: kotlin.String) :
     object Any : TypeSymbol("Any")
 
     object Error : TypeSymbol("?")
-    object Unit : TypeSymbol("Unit")
 
     data class Struct(val name: kotlin.String) : TypeSymbol(name) {
         override fun toString(): kotlin.String {
@@ -31,9 +30,16 @@ sealed class TypeSymbol(name: kotlin.String) :
 
     companion object {
 
-        val internalTypes = TypeSymbol::class.sealedSubclasses.filter {
-            it.objectInstance != null
-        }.map { it.objectInstance!! }
+        private val internalTypes = lazy {
+            TypeSymbol::class.sealedSubclasses.filter {
+                try {
+                    it.objectInstance != null
+                } catch (e: Exception) {
+                    println("Warning: Could not load type ${it.simpleName}")
+                    false
+                }
+            }.map { it.objectInstance!! }
+        }
 
         fun fromValueOrAny(value: kotlin.Any?): TypeSymbol {
             return when (value) {
@@ -46,7 +52,7 @@ sealed class TypeSymbol(name: kotlin.String) :
         }
 
         fun fromName(name: kotlin.String): TypeSymbol {
-            return internalTypes.firstOrNull { it.simpleName == name } ?: Struct(name)
+            return internalTypes.value.firstOrNull { it.simpleName == name } ?: Struct(name)
         }
 
         fun fromJavaType(javaType: java.lang.reflect.Type): TypeSymbol {
