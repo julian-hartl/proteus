@@ -71,63 +71,6 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         generateBlockStatement(body)
     }
 
-    override fun generateDereferenceExpression(expression: BoundDereferenceExpression) {
-        // todo: implement
-        generateExpression(expression.expression)
-        codeBuilder.appendLine(
-            api.rload(
-                0,
-                MemoryLayout.pointerSize
-            )
-        )
-
-    }
-
-    override fun generateReferenceExpression(expression: BoundReferenceExpression) {
-        when (val referencedExpression = expression.expression) {
-            is BoundVariableExpression -> {
-                val variable = referencedExpression.variable
-                val offset = currentStackFrame.variables[variable] ?: globalVariables[variable]!!
-                codeBuilder.appendLine(api.loada(offset))
-            }
-
-            is BoundLiteralExpression<*>, is BoundUnaryExpression, is BoundBinaryExpression -> {
-                generateExpression(referencedExpression)
-                val sizeInBytes = if (referencedExpression is BoundLiteralExpression<*>) {
-                    when (referencedExpression.value) {
-                        is Int -> 4
-                        is Boolean -> 4
-                        is String -> referencedExpression.value.length + 1
-                        else -> throw Exception("Unexpected literal ${referencedExpression.value}")
-                    }
-                } else MemoryLayout.layout(
-                    referencedExpression.type,
-                    boundProgram.structMembers
-                ).sizeInBytes
-                codeBuilder.appendLine(
-                    "pushsp -$sizeInBytes"
-                )
-            }
-
-            is BoundMemberAccessExpression -> {
-                generateAsPointer = true
-                generateExpression(referencedExpression)
-                generateAsPointer = false
-
-            }
-
-            is BoundStructInitializationExpression -> {
-                generateAsPointer = true
-                generateExpression(referencedExpression)
-                generateAsPointer = false
-                codeBuilder.appendLine(api.rstore(referencedExpression.type))
-            }
-
-
-            else -> throw Exception("Unexpected expression $referencedExpression")
-        }
-    }
-
     private fun writeFunctionDeclaration(functionSymbol: FunctionSymbol) {
         writeComment("${functionSymbol.simpleName}(${functionSymbol.parameters.joinToString(", ") { it.type.simpleName }})")
     }
@@ -150,6 +93,11 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
     }
 
     override fun generateMemberAccessExpression(expression: BoundMemberAccessExpression) {
+        val (memberOffset, memberSize) = loadMember(expression)
+        codeBuilder.appendLine(api.rload(memberOffset, memberSize))
+    }
+
+    private fun loadMember(expression: BoundMemberAccessExpression): IntArray {
         generateAsPointer = true
         generateExpression(expression.expression)
         generateAsPointer = false
@@ -159,7 +107,7 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         val memberIndex = structMembers.indexOfFirst { it.simpleName == expression.memberName }
         val memberOffset = MemoryLayout.layoutStruct(struct, boundProgram.structMembers).offsetInBytes(memberIndex)
         val memberSize = MemoryLayout.layout(expression.type, boundProgram.structMembers).sizeInBytes
-        codeBuilder.appendLine(api.rload(memberOffset, memberSize))
+        return intArrayOf(memberOffset, memberSize)
     }
 
     override fun generateStructInitializationExpression(expression: BoundStructInitializationExpression) {
@@ -190,12 +138,29 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
     }
 
     override fun generateAssignmentExpression(expression: BoundAssignmentExpression) {
-        val index = stackFrames.peek().variables[expression.variable]!!
-        generateExpression(expression.expression)
+        when (val assigneeExpression = expression.assignee) {
+            is BoundAssignee.BoundMemberAssignee -> {
+                val (memberOffset, memberSize) = loadMember(assigneeExpression.expression)
+                generateExpression(expression.expression)
+                codeBuilder.appendLine(api.rstore(memberOffset, memberSize))
+            }
 
-        val memoryLayout = MemoryLayout.layout(expression.variable.type, boundProgram.structMembers)
-        val sizeInBytes = memoryLayout.sizeInBytes
-        codeBuilder.appendLine(api.store(index, sizeInBytes))
+            is BoundAssignee.BoundVariableAssignee -> {
+                val index = stackFrames.peek().variables[assigneeExpression.variable]!!
+                generateExpression(expression.expression)
+
+                val memoryLayout = MemoryLayout.layout(assigneeExpression.variable.type, boundProgram.structMembers)
+                val sizeInBytes = memoryLayout.sizeInBytes
+                codeBuilder.appendLine(api.store(index, sizeInBytes))
+            }
+
+            is BoundAssignee.BoundDereferenceAssignee -> {
+                generateExpression(assigneeExpression.referencing.expression)
+                generateExpression(expression.expression)
+                codeBuilder.appendLine(api.rstore(expression.type))
+            }
+        }
+
     }
 
     override fun generateBinaryExpression(expression: BoundBinaryExpression) {
@@ -329,6 +294,63 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
 
             BoundUnaryOperator.BoundUnaryNegationOperator -> {
                 codeBuilder.appendLine(api.ineg())
+            }
+
+            BoundUnaryOperator.BoundDereferenceOperator -> {
+                generateExpression(expression.operand)
+                codeBuilder.appendLine(
+                    api.rload(
+                        0,
+                        MemoryLayout.pointerSize
+                    )
+                )
+            }
+
+            BoundUnaryOperator.BoundReferenceOperator -> {
+                when (val referencedExpression = expression.operand) {
+                    is BoundVariableExpression -> {
+                        val variable = referencedExpression.variable
+                        val offset = currentStackFrame.variables[variable] ?: globalVariables[variable]!!
+                        codeBuilder.appendLine(api.loada(offset))
+                    }
+
+                    is BoundLiteralExpression<*>, is BoundUnaryExpression, is BoundBinaryExpression -> {
+                        generateExpression(referencedExpression)
+                        val sizeInBytes = if (referencedExpression is BoundLiteralExpression<*>) {
+                            when (referencedExpression.value) {
+                                is Int -> 4
+                                is Boolean -> 4
+                                is String -> referencedExpression.value.length + 1
+                                else -> throw Exception("Unexpected literal ${referencedExpression.value}")
+                            }
+                        } else MemoryLayout.layout(
+                            referencedExpression.type,
+                            boundProgram.structMembers
+                        ).sizeInBytes
+                        codeBuilder.appendLine(
+                            api.pushsp(
+                                -sizeInBytes
+                            )
+                        )
+                    }
+
+                    is BoundMemberAccessExpression -> {
+                        generateAsPointer = true
+                        generateExpression(referencedExpression)
+                        generateAsPointer = false
+
+                    }
+
+                    is BoundStructInitializationExpression -> {
+                        generateAsPointer = true
+                        generateExpression(referencedExpression)
+                        generateAsPointer = false
+                        codeBuilder.appendLine(api.rstore(referencedExpression.type))
+                    }
+
+
+                    else -> throw Exception("Unexpected expression $referencedExpression")
+                }
             }
 
             else -> throw Exception("Unexpected unary operator ${expression.operator}")

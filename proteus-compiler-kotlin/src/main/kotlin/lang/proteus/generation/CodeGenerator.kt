@@ -98,7 +98,7 @@ internal class CodeGenerator private constructor(
 
 
     override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
-        codeBuilder.append(node.variable.qualifiedName)
+        rewriteExpression(node.assignee.expression)
         codeBuilder.append(" ")
         codeBuilder.append(node.assignmentOperator.literal)
         codeBuilder.append(" ")

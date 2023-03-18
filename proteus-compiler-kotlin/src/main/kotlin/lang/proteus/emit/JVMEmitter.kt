@@ -70,13 +70,7 @@ internal class JVMEmitter private constructor(
 
     }
 
-    override fun generateDereferenceExpression(expression: BoundDereferenceExpression) {
-        TODO("Not yet implemented")
-    }
 
-    override fun generateReferenceExpression(expression: BoundReferenceExpression) {
-        TODO("Not yet implemented")
-    }
 
     override fun generateMemberAccessExpression(expression: BoundMemberAccessExpression) {
         TODO("Not yet implemented")
@@ -144,7 +138,7 @@ internal class JVMEmitter private constructor(
 
     override fun generateAssignmentExpression(expression: BoundAssignmentExpression) {
         generateExpression(expression.expression)
-        jvmClass.pop(expression.variable)
+        jvmClass.pop((expression.expression as BoundVariableExpression).variable)
     }
 
     override fun generateVariableExpression(expression: BoundVariableExpression) {

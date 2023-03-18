@@ -198,18 +198,20 @@ internal class Evaluator(
     }
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
-        val currentValue = if (expression.variable.isLocal) {
-            locals.peek()[expression.variable.qualifiedName]
-                ?: throw IllegalStateException("No locals found for ${expression.variable.simpleName}")
+        val variableExpression = expression.assignee.expression as BoundVariableExpression
+        val variable = variableExpression.variable
+        val currentValue = if (variable.isLocal) {
+            locals.peek()[variable.qualifiedName]
+                ?: throw IllegalStateException("No locals found for ${variable.simpleName}")
         } else {
-            globals[expression.variable.qualifiedName]
-                ?: throw IllegalStateException("No globals found for ${expression.variable.simpleName}")
+            globals[variable.qualifiedName]
+                ?: throw IllegalStateException("No globals found for ${variable.simpleName}")
         }
         val expressionValue = evaluateExpression(expression.expression)
-        if (expression.variable.isGlobal) {
-            globals[expression.variable.qualifiedName] = expressionValue!!
+        if (variable.isGlobal) {
+            globals[variable.qualifiedName] = expressionValue!!
         } else {
-            locals.peek()[expression.variable.qualifiedName] = expressionValue!!
+            locals.peek()[variable.qualifiedName] = expressionValue!!
         }
 
         return if (expression.returnAssignment) expressionValue else currentValue

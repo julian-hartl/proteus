@@ -69,14 +69,14 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
 
         val modifyFlagModification = BoundExpressionStatement(
             BoundAssignmentExpression(
-                modifyFlagDeclaration.variable,
+                BoundAssignee.BoundVariableAssignee(modifyFlagDeclaration.variable),
                 BoundLiteralExpression(true),
                 Operator.Equals,
                 returnAssignment = false
             )
         )
         val increment = BoundAssignmentExpression(
-            node.variable,
+            BoundAssignee.BoundVariableAssignee(node.variable),
             BoundLiteralExpression(1),
             Operator.PlusEquals,
             returnAssignment = false
@@ -251,11 +251,16 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         node: BoundAssignmentExpression,
         operator: Operator,
     ): BoundExpression {
-        val left = BoundVariableExpression(node.variable)
+        val left = rewriteExpression(node.assignee.expression)
         val right = node.expression
-        val operator = BoundBinaryOperator.bind(operator, node.variable.type, node.variable.type)
+        val operator = BoundBinaryOperator.bind(operator, left.type, right.type)
         val binaryExpression = BoundBinaryExpression(left, right, operator!!)
-        return BoundAssignmentExpression(node.variable, binaryExpression, Operator.Equals, node.returnAssignment)
+        return BoundAssignmentExpression(
+            BoundAssignee.fromExpression(left),
+            binaryExpression,
+            Operator.Equals,
+            node.returnAssignment
+        )
     }
 
     override fun rewriteBreakStatement(statement: BoundBreakStatement): BoundStatement {

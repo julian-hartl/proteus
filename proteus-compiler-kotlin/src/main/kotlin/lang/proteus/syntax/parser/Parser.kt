@@ -84,7 +84,7 @@ internal class Parser(
             is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
             is Keyword.Struct -> parseStructDeclaration()
             else -> {
-                diagnosticsBag.reportUnexpectedToken(current.location,  current.token,Token.GlobalStatement)
+                diagnosticsBag.reportUnexpectedToken(current.location, current.token, Token.GlobalStatement)
                 null
             }
         }
@@ -146,7 +146,7 @@ internal class Parser(
             val start = current
             val member = parseStructInitializationMember()
             membersAndSeparators.add(member)
-            if(current.token == Token.CloseBrace) {
+            if (current.token == Token.CloseBrace) {
                 break
             }
             val comma = matchToken(Token.Comma)
@@ -417,39 +417,6 @@ internal class Parser(
 
 
     private fun parseExpression(): ExpressionSyntax {
-        return parseReferenceExpression()
-    }
-
-    private fun parseReferenceExpression(): ExpressionSyntax {
-        if(current.token is Operator.Ampersand) {
-            val ampersand = matchToken(Operator.Ampersand)
-            val expression = parseReferenceExpression()
-            return ReferenceExpressionSyntax(ampersand, expression, syntaxTree)
-        }
-        return parseDereferenceExpression()
-    }
-
-    private fun parseDereferenceExpression(): ExpressionSyntax {
-        if(current.token is Operator.Asterisk) {
-            val asterisk = matchToken(Operator.Asterisk)
-            val expression = parseDereferenceExpression()
-            return DereferenceExpressionSyntax(asterisk, expression, syntaxTree)
-        }
-        return parseAssigmentExpression()
-    }
-
-    private fun parseAssigmentExpression(): ExpressionSyntax {
-        if (peek(0).token is Token.Identifier && peek(1).token is AssignmentOperator) {
-            val identifierToken = matchToken(Token.Identifier)
-            val assignmentOperator = matchOneToken(Operators.assignmentOperators, expect = Operator.Equals)
-            val expression = parseAssigmentExpression()
-            return AssignmentExpressionSyntax(
-                identifierToken,
-                assignmentOperator,
-                expression,
-                syntaxTree
-            )
-        }
         return parseBinaryExpression()
     }
 
@@ -491,10 +458,12 @@ internal class Parser(
                 return parseTypeCastExpression(left)
             }
 
-            if(current.token is Token.Dot) {
+            if (current.token is Token.Dot) {
                 left = parseMemberAccessExpression(left)
                 continue
             }
+
+
 
             if (current.token is Token.SemiColon) {
                 break
@@ -503,7 +472,10 @@ internal class Parser(
             if (precedence == 0 || precedence <= parentPrecedence) {
                 break
             }
-
+            if(current.token is AssignmentOperator) {
+                left = parseAssignmentExpression(left)
+                continue
+            }
             val operatorToken = nextToken()
             val right = parseBinaryExpression(precedence)
             left = BinaryExpressionSyntax(
@@ -515,6 +487,12 @@ internal class Parser(
         }
 
         return left
+    }
+
+    private fun parseAssignmentExpression(left: ExpressionSyntax): ExpressionSyntax {
+        val operatorToken = nextToken()
+        val right = parseExpression()
+        return AssignmentExpressionSyntax(left, operatorToken as SyntaxToken<AssignmentOperator>, right, syntaxTree)
     }
 
     private val currentOperator
@@ -649,7 +627,7 @@ internal class Parser(
         if (current.token is Token.OpenBrace) {
             return parseStructInitialization(token)
         }
-        if(current.token is Token.Dot){
+        if (current.token is Token.Dot) {
             return parseMemberAccessExpression(parseNameExpression(token))
         }
 

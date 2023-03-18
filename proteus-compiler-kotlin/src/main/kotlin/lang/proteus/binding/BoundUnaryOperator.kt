@@ -20,7 +20,9 @@ internal sealed class BoundUnaryOperator(
             BoundUnaryIdentityOperator,
             BoundUnaryNegationOperator,
             BoundUnaryNotOperator,
-            BoundUnaryTypeOfOperator
+            BoundUnaryTypeOfOperator,
+            BoundReferenceOperator,
+            BoundDereferenceOperator,
         )
 
         fun bind(operator: Operator, operandType: TypeSymbol): BoundUnaryOperator? {
@@ -33,5 +35,9 @@ internal sealed class BoundUnaryOperator(
     object BoundUnaryNegationOperator : BoundUnaryOperator(Operator.Minus, TypeSymbol.Int)
 
     object BoundUnaryTypeOfOperator : BoundUnaryOperator(Operator.TypeOf, TypeSymbol.Any, TypeSymbol.Type)
+
+    object BoundReferenceOperator : BoundUnaryOperator(Operator.Ampersand, TypeSymbol.Any, TypeSymbol.Pointer(TypeSymbol.Any))
+
+    object BoundDereferenceOperator : BoundUnaryOperator(Operator.Asterisk, TypeSymbol.Pointer(TypeSymbol.Any), TypeSymbol.Any)
 
 }

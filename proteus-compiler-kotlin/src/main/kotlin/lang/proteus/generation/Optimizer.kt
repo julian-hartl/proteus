@@ -104,11 +104,14 @@ internal class Optimizer private constructor() :
 
     override fun rewriteAssignmentExpression(node: BoundAssignmentExpression): BoundExpression {
         val expression = rewriteExpression(node.expression)
-        assignments[node.variable] = assignments[node.variable].orEmpty() + expression
+        if (node.assignee.expression is BoundVariableExpression) {
+            val variable = (node.assignee.expression as BoundVariableExpression).variable
+            assignments[variable] = assignments[variable].orEmpty() + expression
+        }
         if (expression == node.expression) {
             return node
         }
-        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator, node.returnAssignment)
+        return BoundAssignmentExpression(node.assignee, expression, node.assignmentOperator, node.returnAssignment)
     }
 
     override fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {

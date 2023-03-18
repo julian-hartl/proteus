@@ -10,6 +10,8 @@ internal object  UnaryExpressionEvaluator {
             BoundUnaryOperator.BoundUnaryNegationOperator -> -(operand as Int)
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
             BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.fromValueOrAny(operand)
+            BoundUnaryOperator.BoundDereferenceOperator -> TODO()
+            BoundUnaryOperator.BoundReferenceOperator -> TODO()
         }
     }
 }

@@ -133,26 +133,10 @@ internal abstract class BoundTreeRewriter {
             is BoundConversionExpression -> rewriteConversionExpression(expression)
             is BoundStructInitializationExpression -> rewriteStructInitializationExpression(expression)
             is BoundMemberAccessExpression -> rewriteMemberAccessExpression(expression)
-            is BoundReferenceExpression -> rewriteReferenceExpression(expression)
-            is BoundDereferenceExpression -> rewriteDereferenceExpression(expression)
         }
     }
 
-    protected open fun rewriteDereferenceExpression(expression: BoundDereferenceExpression): BoundExpression {
-        val expr = rewriteExpression(expression.expression)
-        if (expr != expression.expression) {
-            return BoundDereferenceExpression(expr)
-        }
-        return expression
-    }
 
-    protected open fun rewriteReferenceExpression(expression: BoundReferenceExpression): BoundExpression {
-        val rewritten = rewriteExpression(expression.expression)
-        if (rewritten == expression.expression) {
-            return expression
-        }
-        return BoundReferenceExpression(rewritten)
-    }
 
     private fun rewriteMemberAccessExpression(expression: BoundMemberAccessExpression): BoundExpression {
         val expr = rewriteExpression(expression.expression)
@@ -228,7 +212,15 @@ internal abstract class BoundTreeRewriter {
         val expression = rewriteExpression(node.expression)
         if (expression == node.expression)
             return node
-        return BoundAssignmentExpression(node.variable, expression, node.assignmentOperator, node.returnAssignment)
+        val assigneeExpression = rewriteExpression(node.assignee.expression)
+        if (assigneeExpression == node.assignee.expression)
+            return node
+        return BoundAssignmentExpression(
+            BoundAssignee.fromExpression(assigneeExpression),
+            expression,
+            node.assignmentOperator,
+            node.returnAssignment
+        )
     }
 
 }

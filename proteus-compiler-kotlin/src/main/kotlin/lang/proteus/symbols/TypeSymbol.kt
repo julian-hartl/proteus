@@ -25,7 +25,7 @@ sealed class TypeSymbol(name: kotlin.String) :
 
     data class Pointer(val type: TypeSymbol) : TypeSymbol(type.simpleName) {
         override fun toString(): kotlin.String {
-            return "$type*"
+            return "&$type"
         }
     }
 

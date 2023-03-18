@@ -543,36 +543,25 @@ internal class Binder(
             is CastExpressionSyntax -> bindCastExpression(syntax)
             is StructInitializationExpressionSyntax -> bindStructInitializationExpression(syntax)
             is MemberAccessExpressionSyntax -> bindMemberAccessExpression(syntax)
-            is ReferenceExpressionSyntax -> bindReferenceExpression(syntax)
-            is DereferenceExpressionSyntax -> bindDereferenceExpression(syntax)
         }
     }
 
-    private fun bindDereferenceExpression(syntax: DereferenceExpressionSyntax): BoundExpression {
-        val expression = bindExpression(syntax.expression)
-        val type = expression.type
-        if (type is TypeSymbol.Pointer) {
-            return BoundDereferenceExpression(expression)
-        }
-        diagnosticsBag.reportCannotDereference(syntax.expression.location, type)
-        return BoundErrorExpression
-    }
-
-    private fun bindReferenceExpression(syntax: ReferenceExpressionSyntax): BoundExpression {
-        val expression = bindExpression(syntax.expression)
-//        if(){
-//            diagnosticsBag.reportCannotReference(syntax.expression.location)
-//            return BoundErrorExpression
-//        }
-        return BoundReferenceExpression(expression)
-    }
 
     private fun bindMemberAccessExpression(syntax: MemberAccessExpressionSyntax): BoundExpression {
         val expression = bindExpression(syntax.expression)
         val memberName = syntax.identifier.literal
         val member = lookUpMember(expression.type, memberName, syntax.syntaxTree)
         if (member == null) {
-            diagnosticsBag.reportUndefinedMember(syntax.identifier.location, memberName, expression.type)
+            diagnosticsBag.reportUndefinedMember(
+                syntax.identifier.location,
+                memberName,
+                expression.type,
+                couldAssignWhenDereferenced = lookUpMember(
+                    expression.type.deref(),
+                    memberName,
+                    syntax.syntaxTree
+                ) != null
+            )
             return BoundErrorExpression
         }
         return BoundMemberAccessExpression(expression, memberName, member.type)
@@ -583,7 +572,7 @@ internal class Binder(
             if (type is TypeSymbol.Struct) {
                 val struct = scope.tryLookupStruct(type.name, tree)
                 if (struct != null) {
-                    val members = structMembers?.get(struct) ?: return@run  null
+                    val members = structMembers?.get(struct) ?: return@run null
                     for (member in members) {
                         if (member.name == memberName) {
                             return@run member
@@ -592,13 +581,13 @@ internal class Binder(
                     for (base in members) {
                         val member = lookUpMember(base.type, memberName, tree)
                         if (member != null) {
-                            return@run  member
+                            return@run member
                         }
                     }
                 }
 
             }
-            return@run  null;
+            return@run null;
         }
         return member
     }
@@ -719,24 +708,56 @@ internal class Binder(
 
     private fun bindAssignmentExpression(syntax: AssignmentExpressionSyntax): BoundExpression {
         val assignmentOperator = syntax.assignmentOperator.token
+        val assignee = bindExpression(syntax.assigneeExpression)
         val boundExpression = bindExpression(syntax.expression)
-        val variableName = syntax.identifierToken.literal
-        val declaredVariable = scope.tryLookupVariable(variableName, syntax.syntaxTree)
-        if (declaredVariable == null) {
-            diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, variableName)
+        if (assignee is BoundErrorExpression || boundExpression is BoundErrorExpression) {
             return BoundErrorExpression
         }
-        if (declaredVariable.isReadOnly) {
-            diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.identifierToken.location, declaredVariable)
+        val boundAssignee = try {
+            BoundAssignee.fromExpression(assignee)
+        } catch (e: Exception) {
+            diagnosticsBag.reportInvalidAssignmentTarget(syntax.assigneeExpression.location)
             return BoundErrorExpression
         }
-        val convertedExpression = bindConversion(boundExpression, declaredVariable.type, syntax.expression.location)
+
+        if (checkAssignmentTarget(boundAssignee, syntax)) return BoundErrorExpression
+
+        val convertedExpression =
+            bindConversion(boundExpression, boundAssignee.expression.type, syntax.expression.location)
         return BoundAssignmentExpression(
-            declaredVariable,
+            boundAssignee,
             convertedExpression,
             assignmentOperator,
             returnAssignment = true
         )
+    }
+
+    private fun checkAssignmentTarget(
+        boundAssignee: BoundAssignee<out BoundExpression>,
+        syntax: AssignmentExpressionSyntax,
+    ): Boolean {
+        when (boundAssignee) {
+            is BoundAssignee.BoundMemberAssignee -> {
+
+            }
+
+            is BoundAssignee.BoundVariableAssignee -> {
+                val variable = boundAssignee.variable
+                if (variable.isReadOnly) {
+                    diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.assigneeExpression.location, variable)
+                    return true
+                }
+            }
+
+            is BoundAssignee.BoundDereferenceAssignee -> {
+
+
+                checkAssignmentTarget(boundAssignee.referencing, syntax)
+
+
+            }
+        }
+        return false
     }
 
     private fun bindNameExpressionSyntax(syntax: NameExpressionSyntax): BoundExpression {
@@ -806,7 +827,7 @@ internal class Binder(
     }
 
 
-    private fun bindTypeLiteral(typeSyntax:TypeSyntax, location: TextLocation): TypeSymbol {
+    private fun bindTypeLiteral(typeSyntax: TypeSyntax, location: TextLocation): TypeSymbol {
         val type = TypeSymbol.fromName(typeSyntax.typeIdentifier.literal)
         if (type is TypeSymbol.Struct) {
             val struct = scope.tryLookupStruct(type.name, typeSyntax.syntaxTree)
@@ -815,13 +836,11 @@ internal class Binder(
                 return TypeSymbol.Error
             }
         }
-        if(typeSyntax.isPointer) {
+        if (typeSyntax.isPointer) {
             return type.ref()
         }
         return type
     }
-
-
 
 
 }

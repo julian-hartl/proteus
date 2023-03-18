@@ -271,8 +271,8 @@ internal class DiagnosticsBag {
         report("Struct member '$name' in struct '$structName' not initialized", location)
     }
 
-    fun reportUndefinedMember(location: TextLocation, memberName: String, type: TypeSymbol) {
-        report("Undefined member '$memberName' in type '${type}'", location)
+    fun reportUndefinedMember(location: TextLocation, memberName: String, type: TypeSymbol, couldAssignWhenDereferenced: Boolean) {
+        report("Undefined member '$memberName' in type '${type}'", location, hint = if (couldAssignWhenDereferenced) "Did you forget to dereference the type?" else null)
     }
 
     fun reportInvalidName(location: TextLocation) {
@@ -285,6 +285,10 @@ internal class DiagnosticsBag {
 
     fun reportCannotDereference(location: TextLocation, type: TypeSymbol) {
         report("Cannot dereference type '${type}'", location)
+    }
+
+    fun reportInvalidAssignmentTarget(location: TextLocation) {
+        report("Invalid assignment target", location)
     }
 
 
