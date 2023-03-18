@@ -17,9 +17,17 @@ sealed class TypeSymbol(name: kotlin.String) :
     object Error : TypeSymbol("?")
     object Unit : TypeSymbol("Unit")
 
-    data class Struct(val name: kotlin.String) : TypeSymbol(name)
+    data class Struct(val name: kotlin.String) : TypeSymbol(name) {
+        override fun toString(): kotlin.String {
+            return name
+        }
+    }
 
-    data class Pointer(val type: TypeSymbol) : TypeSymbol(type.simpleName)
+    data class Pointer(val type: TypeSymbol) : TypeSymbol(type.simpleName) {
+        override fun toString(): kotlin.String {
+            return "$type*"
+        }
+    }
 
     companion object {
 
@@ -69,16 +77,13 @@ sealed class TypeSymbol(name: kotlin.String) :
 
     override fun equals(other: kotlin.Any?): kotlin.Boolean {
         return when (other) {
-            is TypeSymbol -> this.qualifiedName == other.qualifiedName
+            is TypeSymbol -> this.qualifiedName == other.qualifiedName && this.isPointer() == other.isPointer()
             else -> false
         }
     }
 
     fun ref(): TypeSymbol {
-        if(MemoryLayout.isStoredOnHeap(this)) {
-            return Pointer(this)
-        }
-        return this
+        return Pointer(this)
     }
 
     fun deref(): TypeSymbol {
@@ -90,6 +95,17 @@ sealed class TypeSymbol(name: kotlin.String) :
 
     fun isPointer(): kotlin.Boolean {
         return this is Pointer
+    }
+
+    override fun toString(): kotlin.String {
+        return when (this) {
+            is Pointer -> "$type*"
+            else -> simpleName
+        }
+    }
+
+    override fun hashCode(): kotlin.Int {
+        return javaClass.hashCode()
     }
 
 

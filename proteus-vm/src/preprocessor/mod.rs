@@ -1,7 +1,5 @@
 use std::str::FromStr;
 
-use enum_index::EnumIndex;
-
 use crate::instructions::OpCode;
 use crate::preprocessor::symbol_table::SymbolTable;
 
@@ -41,15 +39,26 @@ impl PreProcessor {
         let lines = self.content.lines();
         let mut transpiled = String::new();
 
+        let mut label_buffer = Vec::new();
+        let mut instruction_counter = 0u32;
         for (index, line) in lines.enumerate() {
             if index > 0 {
                 transpiled.push_str("
             ");
             }
             let (line, label) = &self.process_line(line);
-            transpiled.push_str(line);
-            for label in label {
-                self.symbol_table.add_symbol(label.clone(), index as u32);
+            if line.is_empty() {
+                label_buffer.extend_from_slice(label);
+            } else {
+                transpiled.push_str(line);
+                for label in label {
+                    self.symbol_table.add_symbol(label.clone(), instruction_counter);
+                }
+                for label in &label_buffer {
+                    self.symbol_table.add_symbol(label.clone(), instruction_counter);
+                }
+                instruction_counter += 1;
+                label_buffer.clear();
             }
         }
         transpiled
@@ -70,7 +79,11 @@ impl PreProcessor {
 
     fn process_line(&self, line: &str) -> (String, Vec<String>) {
         let tokens = self.tokenize_line(line);
-        println!("Tokens: {:?}", tokens);
+        // only take tokens before ;
+        let tokens = tokens.into_iter().take_while(|token| match token {
+            Token::SemiColon => false,
+            _ => true,
+        }).collect::<Vec<Token>>();
         if tokens.is_empty() {
             return (String::new(), vec![]);
         }
@@ -81,10 +94,10 @@ impl PreProcessor {
             current += 2;
         }
 
-        let op_code = if let Token::Identifier(name) = &tokens[current] {
+        let op_code = if let Some(Token::Identifier(name)) = &tokens.get(current) {
             name
         } else {
-            panic!("Invalid opcode");
+            return (String::new(), labels);
         };
         let op_code: OpCode = OpCode::from_str(&op_code.to_uppercase()).expect(&*format!("Invalid opcode: {}", op_code));
 
@@ -168,13 +181,11 @@ impl PreProcessor {
             }
         }
 
-        println!("Transpiled: {}", transpiled);
-
         (transpiled, labels)
     }
 
     fn parse_label(&self, tokens: &[Token]) -> Option<String> {
-        if let Token::Identifier(label) = &tokens[0] {
+        if let Some(Token::Identifier(label)) = &tokens.get(0) {
             if let Some(token) = tokens.get(1) {
                 if let Token::Colon = token {
                     Some(label.clone())
@@ -249,6 +260,9 @@ impl PreProcessor {
                 ')' => {
                     tokens.push(Token::CloseParen);
                 }
+                ';' => {
+                    tokens.push(Token::SemiColon);
+                }
                 _ => {}
             }
         }
@@ -263,4 +277,5 @@ enum Token {
     Colon,
     OpenParen,
     CloseParen,
+    SemiColon,
 }

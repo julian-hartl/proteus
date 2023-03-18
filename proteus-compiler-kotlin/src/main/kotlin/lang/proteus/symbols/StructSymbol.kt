@@ -16,5 +16,11 @@ internal class StructMemberSymbol(
     val name: String,
     val type: TypeSymbol,
     val syntax: StructMemberSyntax,
-    syntaxTree: SyntaxTree,
-): Symbol(syntaxTree.id.toString(), name)
+    val syntaxTree: SyntaxTree,
+): Symbol(syntaxTree.id.toString(), name) {
+    fun copy(
+        name: String = this.name,
+        type: TypeSymbol = this.type,
+        syntax: StructMemberSyntax = this.syntax,
+    ) = StructMemberSymbol(name, type, syntax, syntaxTree)
+}

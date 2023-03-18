@@ -5,6 +5,7 @@ pub mod instruction;
 #[derive(EnumIndex, IndexEnum, Debug, EnumString)]
 #[repr(u32)]
 pub enum OpCode {
+    NOP = 0x00,
     LOAD = 0x01,
     STORE = 0x02,
     ALLOC = 0x03,
@@ -33,10 +34,11 @@ pub enum OpCode {
     INE = 0x24,
     SADD = 0x30,
     PUSHB = 0x40,
+    STOREB = 0x48,
+    LOADA = 0x60,
+    RLOAD = 0x61,
+    PUSHSP = 0x70,
     HALLOC = 0x80,
-    HLOAD = 0x81,
-    HSTORE = 0x82,
-    HSTOREB = 0x83,
     FFCALL = 0x90,
     ITOA = 0x91,
     HALT = 0xFF,

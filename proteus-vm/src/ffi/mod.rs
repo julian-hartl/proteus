@@ -4,7 +4,6 @@ pub struct FFIFunction {
     pub return_type: FFIType,
 }
 
-
 impl FFIFunction {
     pub fn new(name: &str, arguments: Vec<FFIType>, return_type: FFIType) -> Self {
         Self {
@@ -32,7 +31,7 @@ impl FFIFunction {
         }
     }
 
-    pub fn call(&self, arguments: Vec<FFIValue>) -> Result<FFIValue,String> {
+    pub fn call(&self, arguments: Vec<FFIValue>) -> Result<FFIValue, String> {
         match self.name.as_str() {
             "println" => {
                 let output = arguments.get(0).ok_or("Missing argument")?;
@@ -62,4 +61,3 @@ pub enum FFIValue {
     String(String),
     Void,
 }
-

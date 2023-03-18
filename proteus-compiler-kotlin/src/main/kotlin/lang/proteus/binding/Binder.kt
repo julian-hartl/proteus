@@ -3,13 +3,10 @@ package lang.proteus.binding
 import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextLocation
-import lang.proteus.emit.MemoryLayout
 import lang.proteus.generation.Lowerer
 import lang.proteus.generation.Optimizer
 import lang.proteus.symbols.*
-import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Keyword
-import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.*
 import lang.proteus.syntax.parser.statements.*
 import java.util.*
@@ -428,7 +425,7 @@ internal class Binder(
         textLocation: TextLocation,
         isCastExplicit: Boolean = false,
     ): BoundExpression {
-        val type = boundExpression.type.ref()
+        val type = boundExpression.type
         val conversion = Conversion.classify(type, expectedType)
         if (conversion.isIdentity) {
             return boundExpression
@@ -448,7 +445,7 @@ internal class Binder(
         val isConst = syntax.keyword is Keyword.Const
         val isFinal = isConst || syntax.keyword is Keyword.Val
         val typeClause = bindOptionalTypeClause(syntax.typeClauseSyntax)
-        val type = (typeClause ?: initializer.type).ref()
+        val type = (typeClause ?: initializer.type)
         val convertedInitializer = bindConversion(initializer, type, syntax.initializer.location)
         val symbol = if (function == null) GlobalVariableSymbol(
             syntax.identifier.literal,
@@ -484,6 +481,7 @@ internal class Binder(
             is BoundVariableExpression -> expression.variable.isConst
             is BoundUnaryExpression -> isExpressionConst(expression.operand)
             is BoundBinaryExpression -> isExpressionConst(expression.left) && isExpressionConst(expression.right)
+            is BoundConversionExpression -> isExpressionConst(expression.expression)
             else -> false
         }
     }
@@ -545,7 +543,28 @@ internal class Binder(
             is CastExpressionSyntax -> bindCastExpression(syntax)
             is StructInitializationExpressionSyntax -> bindStructInitializationExpression(syntax)
             is MemberAccessExpressionSyntax -> bindMemberAccessExpression(syntax)
+            is ReferenceExpressionSyntax -> bindReferenceExpression(syntax)
+            is DereferenceExpressionSyntax -> bindDereferenceExpression(syntax)
         }
+    }
+
+    private fun bindDereferenceExpression(syntax: DereferenceExpressionSyntax): BoundExpression {
+        val expression = bindExpression(syntax.expression)
+        val type = expression.type
+        if (type is TypeSymbol.Pointer) {
+            return BoundDereferenceExpression(expression)
+        }
+        diagnosticsBag.reportCannotDereference(syntax.expression.location, type)
+        return BoundErrorExpression
+    }
+
+    private fun bindReferenceExpression(syntax: ReferenceExpressionSyntax): BoundExpression {
+        val expression = bindExpression(syntax.expression)
+//        if(){
+//            diagnosticsBag.reportCannotReference(syntax.expression.location)
+//            return BoundErrorExpression
+//        }
+        return BoundReferenceExpression(expression)
     }
 
     private fun bindMemberAccessExpression(syntax: MemberAccessExpressionSyntax): BoundExpression {
@@ -560,26 +579,28 @@ internal class Binder(
     }
 
     private fun lookUpMember(type: TypeSymbol, memberName: String, tree: SyntaxTree): StructMemberSymbol? {
-        val dereferenced = type.deref()
-        if (dereferenced is TypeSymbol.Struct) {
-            val struct = scope.tryLookupStruct(dereferenced.name, tree)
-            if (struct != null) {
-                val members = structMembers?.get(struct) ?: return null
-                for (member in members) {
-                    if (member.name == memberName) {
-                        return member
+        val member = run {
+            if (type is TypeSymbol.Struct) {
+                val struct = scope.tryLookupStruct(type.name, tree)
+                if (struct != null) {
+                    val members = structMembers?.get(struct) ?: return@run  null
+                    for (member in members) {
+                        if (member.name == memberName) {
+                            return@run member
+                        }
+                    }
+                    for (base in members) {
+                        val member = lookUpMember(base.type, memberName, tree)
+                        if (member != null) {
+                            return@run  member
+                        }
                     }
                 }
-                for (base in members) {
-                    val member = lookUpMember(base.type, memberName, tree)
-                    if (member != null) {
-                        return member
-                    }
-                }
-            }
 
+            }
+            return@run  null;
         }
-        return null;
+        return member
     }
 
     private fun bindStructInitializationExpression(syntax: StructInitializationExpressionSyntax): BoundExpression {
@@ -610,7 +631,7 @@ internal class Binder(
                 continue
             }
             val boundExpression = bindExpression(member.expression)
-            val convertedExpression = bindConversion(boundExpression, memberSymbol.type.ref(), member.expression.location)
+            val convertedExpression = bindConversion(boundExpression, memberSymbol.type, member.expression.location)
             arguments.add(BoundStructMemberInitializationExpression(memberSymbol.name, convertedExpression))
             if (definedMembers.contains(memberName)) {
                 diagnosticsBag.reportStructMemberAlreadyInitialized(member.identifier.location, memberName, struct.name)
@@ -627,7 +648,7 @@ internal class Binder(
     }
 
     private fun bindCastExpression(syntax: CastExpressionSyntax): BoundExpression {
-        val type = bindTypeLiteral(syntax.typeToken, syntax.location)
+        val type = bindTypeLiteral(syntax.typeSyntax, syntax.location)
         if (type == TypeSymbol.Error) {
             return BoundErrorExpression
         }
@@ -687,11 +708,9 @@ internal class Binder(
             val argument: ExpressionSyntax = syntax.arguments.get(index)
             val boundArgument = bindExpression(argument)
             if (boundArgument.type == TypeSymbol.Error) return BoundErrorExpression
-            if (!boundArgument.type.deref().isAssignableTo(parameter.type.deref())) {
-                diagnosticsBag.reportCannotConvert(argument.location, parameter.type.deref(), boundArgument.type.deref())
-                return BoundErrorExpression
-            }
-            boundParameters.add(boundArgument)
+            val boundConversion = bindConversion(boundArgument, parameter.type, argument.location)
+            if (boundConversion.type == TypeSymbol.Error) return BoundErrorExpression
+            boundParameters.add(boundConversion)
         }
 
 
@@ -787,16 +806,19 @@ internal class Binder(
     }
 
 
-    private fun bindTypeLiteral(identifier: SyntaxToken<Token.Identifier>, location: TextLocation): TypeSymbol {
-        val type = TypeSymbol.fromName(identifier.literal)
+    private fun bindTypeLiteral(typeSyntax:TypeSyntax, location: TextLocation): TypeSymbol {
+        val type = TypeSymbol.fromName(typeSyntax.typeIdentifier.literal)
         if (type is TypeSymbol.Struct) {
-            val struct = scope.tryLookupStruct(type.name, identifier.syntaxTree)
+            val struct = scope.tryLookupStruct(type.name, typeSyntax.syntaxTree)
             if (struct == null) {
                 diagnosticsBag.reportUndefinedType(location, type.name)
                 return TypeSymbol.Error
             }
         }
-        return type.ref()
+        if(typeSyntax.isPointer) {
+            return type.ref()
+        }
+        return type
     }
 
 

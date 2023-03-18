@@ -62,7 +62,7 @@ internal class DiagnosticsBag {
 
     fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol) {
         if (actualType !is TypeSymbol.Error) {
-            report("Cannot convert type '${actualType}' to '${expectedType}'", textLocation)
+            report("Cannot convert type '${actualType}' to '${expectedType.toString()}'", textLocation)
         }
     }
 
@@ -277,6 +277,14 @@ internal class DiagnosticsBag {
 
     fun reportInvalidName(location: TextLocation) {
         report("Invalid name", location)
+    }
+
+    fun reportCannotReference(location: TextLocation) {
+        report("Cannot reference this symbol", location)
+    }
+
+    fun reportCannotDereference(location: TextLocation, type: TypeSymbol) {
+        report("Cannot dereference type '${type}'", location)
     }
 
 

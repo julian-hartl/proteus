@@ -74,19 +74,17 @@ impl Heap {
         if start + data.len() > self.memory.len() {
             return Err("Out of bounds".to_string());
         }
+        // check if is in free list
+        for block in self.free_list.iter() {
+            if start >= block.start && start + data.len() <= block.start + block.size {
+                return Err("Cannot store in free memory".to_string());
+            }
+        }
         self.memory[start..start + data.len()].copy_from_slice(data);
         Ok(())
     }
 
-    pub fn get_string(&self, start: usize) -> Result<String, String> {
-        let mut string = String::new();
-        let mut index = start;
-        while self.memory[index] != 0 {
-            string.push(self.memory[index] as char);
-            index += 1;
-        }
-        Ok(string)
-    }
+
 
     pub fn allocate_string(&mut self, string: &str) -> Result<usize, String> {
         let mut data = string.as_bytes().to_vec();

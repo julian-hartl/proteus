@@ -417,6 +417,24 @@ internal class Parser(
 
 
     private fun parseExpression(): ExpressionSyntax {
+        return parseReferenceExpression()
+    }
+
+    private fun parseReferenceExpression(): ExpressionSyntax {
+        if(current.token is Operator.Ampersand) {
+            val ampersand = matchToken(Operator.Ampersand)
+            val expression = parseReferenceExpression()
+            return ReferenceExpressionSyntax(ampersand, expression, syntaxTree)
+        }
+        return parseDereferenceExpression()
+    }
+
+    private fun parseDereferenceExpression(): ExpressionSyntax {
+        if(current.token is Operator.Asterisk) {
+            val asterisk = matchToken(Operator.Asterisk)
+            val expression = parseDereferenceExpression()
+            return DereferenceExpressionSyntax(asterisk, expression, syntaxTree)
+        }
         return parseAssigmentExpression()
     }
 
@@ -445,12 +463,13 @@ internal class Parser(
         )
     }
 
-    private fun parseType(): SyntaxToken<Token.Identifier> {
-        if(current.token is Token.Identifier) {
-            val identifier =  matchToken(Token.Identifier)
-            return SyntaxToken(Token.Identifier,identifier.position, identifier.literal, identifier.span(), syntaxTree)
+    private fun parseType(): TypeSyntax {
+        var pointerToken: SyntaxToken<Operator.Ampersand>? = null
+        if (current.token is Operator.Ampersand) {
+            pointerToken = matchToken(Operator.Ampersand)
         }
-        return matchToken(Token.Identifier)
+        val identifier = matchToken(Token.Identifier)
+        return TypeSyntax(pointerToken, identifier, syntaxTree)
     }
 
     private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {

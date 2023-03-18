@@ -37,19 +37,12 @@ data class MemoryLayout(
                 is TypeSymbol.Struct -> layoutStruct(structMemberMap.keys.first {
                     it.name == type.name
                 }, structMemberMap)
+                is TypeSymbol.Unit -> MemoryLayout(emptyList(), 0)
 
                 else -> MemoryLayout(listOf(4), 4)
             }
         }
 
         const val pointerSize = 4
-
-        fun isStoredOnHeap(type: TypeSymbol): Boolean {
-            return when (type) {
-                is TypeSymbol.Struct -> true
-                is TypeSymbol.String -> true
-                else -> false
-            }
-        }
     }
 }

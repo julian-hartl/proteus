@@ -52,7 +52,7 @@ internal class CodeGenerator private constructor(
         for (symbol in structs) {
             codeBuilder.appendLine("struct ${symbol.qualifiedName} {")
             for (field in symbol.declaration.members) {
-                codeBuilder.appendLine("    ${field.identifier.literal}: ${field.type.type.literal};")
+                codeBuilder.appendLine("    ${field.identifier.literal}: ${field.type.type.typeIdentifier.literal};")
             }
             codeBuilder.appendLine("}")
         }
@@ -85,7 +85,7 @@ internal class CodeGenerator private constructor(
                 codeBuilder.delete(codeBuilder.length - 2, codeBuilder.length)
             }
             codeBuilder.append(") ")
-            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.literal ?: "Unit"}")
+            codeBuilder.append("-> ${declaration.returnTypeClause?.type?.typeIdentifier?.literal ?: "Unit"}")
             val body = functionBodies[symbol]
             if (body != null) {
                 codeBuilder.append(" ")
