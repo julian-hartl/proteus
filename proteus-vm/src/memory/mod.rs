@@ -12,7 +12,7 @@ pub struct Memory {
 }
 
 const HEAP_SIZE: usize = 1024 * 1024;
-const STACK_SIZE: usize = 2048;
+const STACK_SIZE: usize = 8096;
 
 impl Memory {
     pub fn new() -> Self {

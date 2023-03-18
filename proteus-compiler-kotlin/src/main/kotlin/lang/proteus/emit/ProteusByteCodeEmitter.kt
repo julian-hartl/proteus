@@ -208,19 +208,19 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
                 }
             }
 
-            BoundBinaryOperatorKind.Subtraction -> codeBuilder.appendLine("isub")
-            BoundBinaryOperatorKind.Multiplication -> codeBuilder.appendLine("imul")
-            BoundBinaryOperatorKind.Division -> codeBuilder.appendLine("idiv")
-            BoundBinaryOperatorKind.LogicalAnd -> codeBuilder.appendLine("iand")
-            BoundBinaryOperatorKind.LogicalOr -> codeBuilder.appendLine("ior")
-            BoundBinaryOperatorKind.Equality -> codeBuilder.appendLine("ieq")
-            BoundBinaryOperatorKind.Inequality -> codeBuilder.appendLine("ine")
-            BoundBinaryOperatorKind.LessThan -> codeBuilder.appendLine("ilt")
-            BoundBinaryOperatorKind.LessThanOrEqual -> codeBuilder.appendLine("ile")
-            BoundBinaryOperatorKind.GreaterThan -> codeBuilder.appendLine("igt")
-            BoundBinaryOperatorKind.GreaterThanOrEqual -> codeBuilder.appendLine("ige")
-            BoundBinaryOperatorKind.Modulo -> codeBuilder.appendLine("imod")
-            BoundBinaryOperatorKind.LogicalXor -> codeBuilder.appendLine("ixor")
+            BoundBinaryOperatorKind.Subtraction -> codeBuilder.appendLine(api.isub())
+            BoundBinaryOperatorKind.Multiplication -> codeBuilder.appendLine(api.imul())
+            BoundBinaryOperatorKind.Division -> codeBuilder.appendLine(api.idiv())
+            BoundBinaryOperatorKind.LogicalAnd ->   codeBuilder.appendLine(api.iand())
+            BoundBinaryOperatorKind.LogicalOr -> codeBuilder.appendLine(api.ior())
+            BoundBinaryOperatorKind.Equality -> codeBuilder.appendLine(api.ieq())
+            BoundBinaryOperatorKind.Inequality -> codeBuilder.appendLine(api.ine())
+            BoundBinaryOperatorKind.LessThan -> codeBuilder.appendLine(api.ilt())
+            BoundBinaryOperatorKind.LessThanOrEqual -> codeBuilder.appendLine(api.ile())
+            BoundBinaryOperatorKind.GreaterThan -> codeBuilder.appendLine(api.igt())
+            BoundBinaryOperatorKind.GreaterThanOrEqual -> codeBuilder.appendLine(api.ige())
+            BoundBinaryOperatorKind.Modulo -> codeBuilder.appendLine(api.imod())
+            BoundBinaryOperatorKind.LogicalXor -> codeBuilder.appendLine(api.ixor())
             else -> throw Exception("Unexpected binary operator ${expression.operator.kind}")
         }
 
@@ -274,9 +274,9 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
             is TypeSymbol.String -> {
                 expression.value as String
                 for (char in expression.value) {
-                    codeBuilder.appendLine("pushb ${char.code}")
+                    codeBuilder.appendLine(api.pushb(char.code))
                 }
-                codeBuilder.appendLine("pushb 0")
+                codeBuilder.appendLine(api.push(0))
             }
 
             is TypeSymbol.Pointer -> {
@@ -318,11 +318,11 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         generateExpression(expression.operand)
         when (expression.operator) {
             BoundUnaryOperator.BoundUnaryNotOperator -> {
-                codeBuilder.appendLine("inot")
+                codeBuilder.appendLine(api.inot())
             }
 
             BoundUnaryOperator.BoundUnaryNegationOperator -> {
-                codeBuilder.appendLine("ineg")
+                codeBuilder.appendLine(api.ineg())
             }
 
             else -> throw Exception("Unexpected unary operator ${expression.operator}")
@@ -335,7 +335,7 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         if (variable.isGlobal) {
 
             val memoryAddress = globalVariables[variable]!!
-            codeBuilder.appendLine("push $memoryAddress")
+            codeBuilder.appendLine(api.push(memoryAddress))
 
         } else {
             if (generateAsPointer) {
@@ -362,12 +362,12 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
 
     override fun generateConditionalGotoStatement(statement: BoundConditionalGotoStatement) {
         generateExpression(statement.condition)
-        codeBuilder.appendLine("jz ${statement.label.name}")
+        codeBuilder.appendLine(api.jz(statement.label.name))
 
     }
 
     override fun generateGotoStatement(statement: BoundGotoStatement) {
-        codeBuilder.appendLine("jmp ${statement.label.name}")
+        codeBuilder.appendLine(api.jmp(statement.label.name))
     }
 
     override fun generateLabelStatement(statement: BoundLabelStatement) {
@@ -376,7 +376,7 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
 
     override fun generateNopStatement(statement: BoundNopStatement) {
 
-        codeBuilder.appendLine("nop")
+        codeBuilder.appendLine(api.nop())
 
     }
 
@@ -398,6 +398,6 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
     }
 
     private fun writeComment(comment: String) {
-        codeBuilder.appendLine("; $comment")
+//        codeBuilder.appendLine("; $comment")
     }
 }
