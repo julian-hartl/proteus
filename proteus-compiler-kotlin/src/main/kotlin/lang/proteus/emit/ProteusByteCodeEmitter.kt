@@ -38,12 +38,15 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         get() = stackFrames.peek()
 
     override fun generate(): String {
-        generateFunction(boundProgram.mainFunction!!)
-        for (functionSymbol in boundProgram.globalScope.functions.filter {
-            it.simpleName != "main"
-        }) {
+        writeComment("Global variables")
+        allocateGlobalVariables()
+
+        codeBuilder.appendLine(api.call(boundProgram.mainFunction!!))
+        codeBuilder.appendLine(api.halt())
+        for (functionSymbol in boundProgram.globalScope.functions) {
             generateFunction(functionSymbol)
         }
+
         return codeBuilder.toString()
     }
 
@@ -62,10 +65,6 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         writeFunctionDeclaration(functionSymbol)
 
         codeBuilder.append(api.beginStackFrame(functionSymbol))
-        if (functionSymbol.simpleName == "main") {
-            writeComment("Global variables")
-            allocateGlobalVariables()
-        }
         writeComment("Local variables")
         writeComment("Function body")
         generateBlockStatement(body)
@@ -125,15 +124,11 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
             generateExpression(statement.expression)
         }
         val frame = currentStackFrame
-        if (frame.functionSymbol.simpleName == "main") {
-            codeBuilder.appendLine(api.halt())
-        } else {
-            codeBuilder.appendLine(
-                api.iret(
-                    MemoryLayout.layout(frame.functionSymbol.returnType, boundProgram.structMembers).sizeInBytes
-                )
+        codeBuilder.appendLine(
+            api.iret(
+                MemoryLayout.layout(frame.functionSymbol.returnType, boundProgram.structMembers).sizeInBytes
             )
-        }
+        )
 
     }
 
