@@ -1,7 +1,5 @@
 use std::error::Error;
 
-
-
 pub mod heap;
 
 #[repr(C)]
@@ -36,14 +34,13 @@ impl Memory {
 
     fn stack_load(&self, address: usize, size: usize) -> Result<&[u8], String> {
         if address + size > self.stack.len() {
-            Err(format!("Stack overflow: {} + {} > {}", address, size, self.stack.len()))
+            Err(format!("SIGSEV: {} + {} > {}", address, size, self.stack_pointer))
         } else {
             Ok(&self.stack[address..address + size])
         }
     }
 
     pub fn store(&mut self, address: usize, value: &[u8]) -> Result<(), String> {
-
         if self.is_heap_address(address) {
             let heap_address = address - self.heap_start();
             self.heap.store(heap_address, value)
@@ -97,7 +94,9 @@ impl Memory {
 
     pub fn pop(&mut self, size: usize) -> Result<&[u8], String> {
         self.stack_pointer -= size;
-        self.stack_load(self.stack_pointer, size)
+        let address = self.stack_pointer;
+        let value = self.stack_load(address, size)?;
+        Ok(value)
     }
 
     pub fn pop_string(&mut self) -> Result<String, String> {

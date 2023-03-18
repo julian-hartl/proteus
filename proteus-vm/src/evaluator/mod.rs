@@ -129,6 +129,7 @@ impl<'a> Evaluator<'a> {
             OpCode::LOADA => self.loada(operand),
             OpCode::PUSHSP => self.pushsp(operand),
             OpCode::RLOAD => self.rload(operand,offset),
+            OpCode::RSTORE => self.rstore(operand,offset),
         }
     }
 
@@ -398,6 +399,15 @@ impl<'a> Evaluator<'a> {
         self.memory.store(address as usize, &value)?;
         Ok(())
     }
+
+    fn rstore(&mut self, offset: i32, bytes: u32) -> Result<(), Box<dyn Error>> {
+        let value = &self.remove_top_bytes(bytes)?;
+        let base_address = self.read_top()? ;
+        let address = base_address + offset;
+        self.memory.store(address as usize, &value)?;
+        Ok(())
+    }
+
     fn storeb(&mut self, offset: i32) -> Result<(), Box<dyn Error>> {
         let value = self.remove_top_byte()?;
         let base_address = self.read_top()?;

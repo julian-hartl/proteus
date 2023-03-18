@@ -37,6 +37,7 @@ pub enum OpCode {
     STOREB = 0x48,
     LOADA = 0x60,
     RLOAD = 0x61,
+    RSTORE = 0x62,
     PUSHSP = 0x70,
     HALLOC = 0x80,
     FFCALL = 0x90,

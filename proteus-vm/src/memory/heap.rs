@@ -70,6 +70,7 @@ impl Heap {
         Ok(&self.memory[start..start + size])
     }
 
+
     pub fn store(&mut self, start: usize, data: &[u8]) -> Result<(), String> {
         if start + data.len() > self.memory.len() {
             return Err("Out of bounds".to_string());

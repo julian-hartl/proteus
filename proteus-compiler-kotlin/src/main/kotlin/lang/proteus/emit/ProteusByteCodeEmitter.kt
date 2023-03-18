@@ -116,6 +116,13 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
 
             }
 
+            is BoundStructInitializationExpression -> {
+                generateAsPointer = true
+                generateExpression(referencedExpression)
+                generateAsPointer = false
+                codeBuilder.appendLine(api.rstore(referencedExpression.type))
+            }
+
 
             else -> throw Exception("Unexpected expression $referencedExpression")
         }
@@ -156,10 +163,9 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
     }
 
     override fun generateStructInitializationExpression(expression: BoundStructInitializationExpression) {
-        val memoryLayout = MemoryLayout.layoutStruct(expression.struct, structMemberMap = boundProgram.structMembers)
         if (generateAsPointer) {
             generateAsPointer = false
-            codeBuilder.appendLine("halloc ${memoryLayout.sizeInBytes}")
+            codeBuilder.appendLine(api.halloc(expression.type))
         }
         for (member in expression.members) {
             generateExpression(member.expression)
@@ -211,7 +217,7 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
             BoundBinaryOperatorKind.Subtraction -> codeBuilder.appendLine(api.isub())
             BoundBinaryOperatorKind.Multiplication -> codeBuilder.appendLine(api.imul())
             BoundBinaryOperatorKind.Division -> codeBuilder.appendLine(api.idiv())
-            BoundBinaryOperatorKind.LogicalAnd ->   codeBuilder.appendLine(api.iand())
+            BoundBinaryOperatorKind.LogicalAnd -> codeBuilder.appendLine(api.iand())
             BoundBinaryOperatorKind.LogicalOr -> codeBuilder.appendLine(api.ior())
             BoundBinaryOperatorKind.Equality -> codeBuilder.appendLine(api.ieq())
             BoundBinaryOperatorKind.Inequality -> codeBuilder.appendLine(api.ine())
