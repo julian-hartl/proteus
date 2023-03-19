@@ -1,0 +1,14 @@
+import "std/io";
+fn sum_recursive(n: Int) -> Int {
+    if n == 0 {
+        val test = n;
+        return 0;
+    }
+    return n + sum_recursive(n - 1);
+}
+
+fn main() {
+
+    println(sum_recursive(5));
+
+}

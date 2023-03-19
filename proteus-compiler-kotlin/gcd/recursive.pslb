@@ -1,0 +1,30 @@
+main_0: push 239281
+push 578902394
+call gcd_0
+halt
+gcd_0: load -3
+load -2
+ieq
+jz if_0_end
+load -2
+iret
+if_0_end: load -3
+load -2
+igt
+jz else_1
+load -3
+load -3
+load -2
+isub
+store -2
+call gcd_0
+iret
+jmp if_1_end
+else_1: load -2
+load -3
+isub
+store -3
+load -2
+call gcd_0
+iret
+if_1_end: iret
