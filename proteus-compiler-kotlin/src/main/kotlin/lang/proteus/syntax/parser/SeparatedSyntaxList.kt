@@ -2,10 +2,9 @@ package lang.proteus.syntax.parser
 
 import lang.proteus.syntax.lexer.SyntaxToken
 import lang.proteus.syntax.lexer.token.Token
-import kotlin.math.min
 
 internal data class SeparatedSyntaxList<T : SyntaxNode>(val separatorsAndNodes: List<SyntaxNode>) : Iterable<T> {
-    val count: Int = min(separatorsAndNodes.size, separatorsAndNodes.count() / 2 + 1)
+    val count: Int =  if(separatorsAndNodes.size % 2 == 0) separatorsAndNodes.size / 2 else (separatorsAndNodes.size + 1) / 2
 
     init {
         validate()
