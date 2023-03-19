@@ -47,7 +47,7 @@ class EvaluationTest {
         assertEquals(
             value,
             evaluationResult.value,
-            "Evaluation result should be $value, but was $evaluationResult"
+            "Evaluation result should be $value, but was ${evaluationResult.value}"
         )
     }
 
@@ -552,6 +552,17 @@ class EvaluationTest {
                 """.trimIndent(),
                 30
             ),
+
+            Arguments.of(
+                """
+                    fn main() {
+                        val test = &10;
+                        
+                        val a = *test;
+                    }
+                """.trimIndent(),
+                10
+            )
         )
 
     }

@@ -23,25 +23,18 @@ internal class CodeOptimizer {
         }
     }
 
-    private val optimizers = lazy {
+    private val optimizers = lazy<List<Optimizer>> {
         listOf(
             ConstantFolding(),
+            DeadCodeElimination(),
         )
     }
 
 
     private fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
         var lastStatement = statement
-        var lastSize = -1
-        while (true) {
-            for (optimizer in optimizers.value) {
-                lastStatement = optimizer.optimize(lastStatement)
-            }
-            val size = lastStatement.statements.size
-            if (size == lastSize) {
-                break
-            }
-            lastSize = size
+        for (optimizer in optimizers.value) {
+            lastStatement = optimizer.optimize(lastStatement)
         }
         return lastStatement
     }

@@ -145,8 +145,8 @@ internal class Binder(
                 val body = binder.bindBlockStatement(functionBody)
                 var optimizedBody = BoundBlockStatement(listOf())
                 if (!binder.hasErrors()) {
-                    val loweredBody = Lowerer.lower(body)
-                    optimizedBody = if (optimize) CodeOptimizer.optimize(loweredBody) else loweredBody
+                    optimizedBody = if (optimize) CodeOptimizer.optimize(body) else body
+                    optimizedBody = Lowerer.lower(optimizedBody)
                     val graph = ControlFlowGraph.createAndOutput(optimizedBody)
                     if (!graph.allPathsReturn()) {
                         diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)

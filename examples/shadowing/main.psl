@@ -8,5 +8,5 @@ fn getA() -> Int {
 
 fn main() {
     val a = getA();
-    println(a as String);
+    println(&a);
 }

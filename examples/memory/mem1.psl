@@ -16,7 +16,7 @@ fn main() {
     println((*foo).a);
     println((*foo).b);
 
-    var test: &Foo = malloc(5);
+    var test: &Foo = malloc(8);
     test = &Foo{a: 1, b: 2};
 
     println((*test).a);
