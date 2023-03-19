@@ -512,7 +512,46 @@ class EvaluationTest {
                         val sum = sum(90);
                     }
                 """.trimIndent(), 4095
-            )
+            ),
+
+            Arguments.of(
+                """
+                    struct Test {
+                        a: Int;
+                        b: Int;
+                    }
+                    
+                    fn main() {
+                        val test = Test {
+                            a: 10,
+                            b: 20,
+                        };
+                        val a = test.a;
+                        val b = test.b;
+                    }
+                """.trimIndent(),
+                20
+            ),
+
+            Arguments.of(
+                """
+                    struct Test {
+                        a: Int;
+                        b: Int;
+                    }
+                    
+                    fn main() {
+                        val test = Test {
+                            a: 10,
+                            b: 20,
+                        };
+                        test.b = 30;
+                        val a = test.a;
+                        val b = test.b;
+                    }
+                """.trimIndent(),
+                30
+            ),
         )
 
     }
@@ -734,6 +773,8 @@ class EvaluationTest {
         """.trimIndent()
         assertDiagnostics(text, diagnostics, wrapInMain = false)
     }
+
+
 
     private fun assertDiagnostics(text: String, diagnosticText: String, wrapInMain: Boolean = true) {
         val wrappedText = if (wrapInMain) """

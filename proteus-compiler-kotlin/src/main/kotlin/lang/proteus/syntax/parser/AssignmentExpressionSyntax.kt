@@ -5,11 +5,9 @@ import lang.proteus.syntax.lexer.token.AssignmentOperator
 import lang.proteus.syntax.lexer.token.Token
 
 internal class AssignmentExpressionSyntax(
-    val identifierToken: SyntaxToken<Token.Identifier>,
+    val assigneeExpression : ExpressionSyntax,
     val assignmentOperator: SyntaxToken<AssignmentOperator>,
     val expression: ExpressionSyntax, syntaxTree: SyntaxTree,
 ) : ExpressionSyntax(
     syntaxTree
-) {
-
-}
+)

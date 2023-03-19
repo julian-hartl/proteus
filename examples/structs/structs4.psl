@@ -1,0 +1,38 @@
+import "std/io";
+
+struct Foo {
+    x: Int;
+    y: Int;
+}
+fn reassignPointerReference(foo: &Foo) {
+    *foo = Foo { x: 10, y: 4 };
+}
+
+fn main() {
+
+    val foo = Foo { x: 1, y: 2 };
+    println(foo.x);
+    modifyByValue(foo);
+    println(foo.x);
+    modifyByReference(&foo);
+    println(foo.x);
+    reassignPointer(&foo);
+    println(foo.x);
+    reassignPointerReference(&foo);
+    println(foo.x);
+
+}
+
+fn modifyByValue(foo: Foo) {
+    foo.x = 3;
+}
+
+fn modifyByReference(foo: &Foo) {
+    (*foo).x = 3;
+}
+
+fn reassignPointer(foo: &Foo) {
+    foo = &Foo { x: 10, y: 4 };
+}
+
+

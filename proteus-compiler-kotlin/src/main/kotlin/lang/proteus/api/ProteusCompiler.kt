@@ -23,11 +23,14 @@ internal class ProteusCompiler(
     private val outputGeneratedCode: Boolean = true,
 ) {
 
-    @Option(name = "-o", usage = "The path of the output java byte code file")
+    @Option(name = "-o", usage = "The path of the output file")
     private var byteCodeOutPath: String? = null
 
     @Argument(metaVar = "source", usage = "The path of the source file", required = true)
     private var sourcePath = ""
+
+    @Option(name = "-e", usage = "The emitter to use", depends = ["-o"])
+    private var emitterName: String? = null
 
     private val variables = mutableMapOf<String, Any>()
 
@@ -41,12 +44,12 @@ internal class ProteusCompiler(
                 println("The source file must be a .psl file")
                 return
             }
-            if (byteCodeOutPath?.endsWith(PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT) == false) {
-                println("The output file must be a $PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT file")
-                return
-            }
             try {
-                compileFile(sourcePath)
+                if(emitterName != null) {
+                    compileFile(sourcePath, emitterName!!)
+                }else {
+                    interpretFile(sourcePath)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 println()
@@ -58,10 +61,10 @@ internal class ProteusCompiler(
 
     }
 
-    fun compileFile(fileName: String) {
+    private fun compileFile(fileName: String, emitterName: String) {
         computationTimeStopper.start()
         val tree = SyntaxTree.load(fileName)
-        compileTree(tree, tree.sourceText)
+        compileTree(tree, tree.sourceText, emitterName)
     }
 
     fun interpretFile(fileName: String): InterpretationResult {
@@ -79,6 +82,7 @@ internal class ProteusCompiler(
     private fun compileTree(
         tree: SyntaxTree,
         sourceText: SourceText,
+        emitterName: String
     ) {
         if (tree.hasErrors()) {
             DiagnosticsPrinter.printDiagnostics(tree.diagnostics)
@@ -89,7 +93,7 @@ internal class ProteusCompiler(
                 Metadata.PROTEUS_FILE_EXTENSION_WITH_DOT,
                 PROTEUS_FILE_OUTPUT_EXTENSION_WITH_DOT
             )
-        val compilation = Compilation.compile(tree)
+        val compilation = Compilation.compile(tree, emitterName)
         val diagnostics = compilation.emit(
             outputPath
         )

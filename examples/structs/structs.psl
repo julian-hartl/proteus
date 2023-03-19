@@ -1,0 +1,24 @@
+import "std/io";
+
+struct Test {
+    z: Int;
+}
+
+val a = Test { z: 9 };
+val c = test(a);
+
+fn test(b: Test) -> Test {
+    return b;
+}
+
+fn main() {
+
+    val test = Test { z: 10 };
+
+    val e = "a = " + a.z;
+    println(&e);
+
+val f = "c = " + c.z;
+    println(&f);
+
+}

@@ -2,17 +2,21 @@ package lang.proteus.binding
 
 import lang.proteus.symbols.TypeSymbol
 
-internal sealed class Conversion() {
+internal sealed class Conversion {
     companion object {
         fun classify(from: TypeSymbol, to: TypeSymbol): Conversion {
-            if (from == to) return IdentityConversion
-            if (from.isAssignableTo(to)) return ImplicitConversion
-            if (from == TypeSymbol.Boolean || from == TypeSymbol.Int) {
-                if (to == TypeSymbol.String) return ExplicitConversion
+            if (from is TypeSymbol.Pointer && to is TypeSymbol.Pointer) {
+                return classify(from.type, to.type)
             }
+            if (from == to) return IdentityConversion
+            if (to == TypeSymbol.Any) return ImplicitConversion
+            if (from == TypeSymbol.Any) return ImplicitConversion
+            if (from.isAssignableTo(to)) return ImplicitConversion
+            if (to == TypeSymbol.String) return ImplicitConversion
             if (from == TypeSymbol.String) {
                 if (to == TypeSymbol.Boolean || to == TypeSymbol.Int) return ExplicitConversion
             }
+
             return NoConversion
         }
     }

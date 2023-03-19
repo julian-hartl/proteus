@@ -1,0 +1,18 @@
+import "std/io";
+
+fn main() {
+
+    val test = 1;
+    val isInt = test is Int;
+
+    println(&isInt);
+
+    val typeOfTest = typeof test;
+
+    println(&typeOfTest);
+
+    println(&(typeOfTest == Int));
+
+    println(&"This is the end of the program");
+
+}

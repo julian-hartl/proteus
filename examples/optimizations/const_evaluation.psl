@@ -1,0 +1,15 @@
+import "std/io";
+fn main() {
+    var x= 0;
+
+    x += 1;
+
+    x = calc(x);
+
+   println(x);
+
+}
+
+fn calc(x: Int) -> Int {
+    return x + 1;
+}

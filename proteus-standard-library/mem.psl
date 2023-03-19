@@ -1,0 +1,2 @@
+external fn free(ptr: &Any);
+external fn malloc(size: Int) -> &Any;

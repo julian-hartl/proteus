@@ -1,10 +1,14 @@
-
+import "std/io";
 fn sum(n: Int) -> Int {
-    var i = n;
     var result = 0;
-    while true {
-        if i == 0 return result;
-        result += result + i;
-        i -= 1;
+    var i = n;
+    while i > 0 {
+        result = result + i;
+        i = i - 1;
     }
+    return result;
+}
+
+fn main() {
+    sum(10000);
 }

@@ -67,9 +67,7 @@ internal class Parser(
             } else {
                 hasParsedOtherThanImport = true
             }
-            if (member !is MemberSyntax) {
-                diagnosticsBag.reportInvalidTopLevelStatement(member.location)
-            } else {
+            if (member != null) {
                 members.add(member)
             }
             if (current == start) {
@@ -79,15 +77,94 @@ internal class Parser(
         return members
     }
 
-    private fun parseMember(): SyntaxNode {
+    private fun parseMember(): MemberSyntax? {
         return when (current.token) {
             is Keyword.Import -> parseImportStatement()
             is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
             is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
+            is Keyword.Struct -> parseStructDeclaration()
             else -> {
-                parseStatement()
+                val statement = parseStatement()
+                diagnosticsBag.reportInvalidTopLevelStatement(statement.location)
+                return null
             }
         }
+    }
+
+    private fun parseStructDeclaration(): MemberSyntax {
+        val structKeyword = matchToken(Keyword.Struct)
+        val identifier = matchToken(Token.Identifier)
+        val openBrace = matchToken(Token.OpenBrace)
+        val members = parseStructMembers()
+        val closeBrace = matchToken(Token.CloseBrace)
+        return StructDeclarationSyntax(
+            syntaxTree,
+            structKeyword,
+            identifier,
+            openBrace,
+            members,
+            closeBrace,
+        )
+    }
+
+    private fun parseStructMembers(): List<StructMemberSyntax> {
+        val members = mutableListOf<StructMemberSyntax>()
+        while (current.token != Token.CloseBrace && current.token != Token.EndOfFile) {
+            val start = current
+            val member = parseStructMember()
+            members.add(member)
+            if (current == start) {
+                nextToken()
+            }
+        }
+        return members
+    }
+
+    private fun parseStructMember(): StructMemberSyntax {
+        val identifier = matchToken(Token.Identifier)
+        val type = parseTypeClause()
+        val semiColon = matchToken(Token.SemiColon)
+        return StructMemberSyntax(syntaxTree, identifier, type, semiColon)
+    }
+
+    private fun parseStructInitialization(identifier: SyntaxToken<Token.Identifier>): StructInitializationExpressionSyntax {
+        val openBrace = matchToken(Token.OpenBrace)
+        val members = parseStructInitializationMembers()
+        val closeBrace = matchToken(Token.CloseBrace)
+        return StructInitializationExpressionSyntax(
+            syntaxTree,
+            identifier,
+            openBrace,
+            members,
+            closeBrace,
+        )
+    }
+
+    private fun parseStructInitializationMembers(): SeparatedSyntaxList<StructMemberInitializationSyntax> {
+
+        val membersAndSeparators = mutableListOf<SyntaxNode>()
+        while (current.token != Token.CloseBrace && current.token != Token.EndOfFile) {
+            val start = current
+            val member = parseStructInitializationMember()
+            membersAndSeparators.add(member)
+            if (current.token == Token.CloseBrace) {
+                break
+            }
+            val comma = matchToken(Token.Comma)
+            membersAndSeparators.add(comma)
+            if (current == start) {
+                nextToken()
+            }
+        }
+        return SeparatedSyntaxList(membersAndSeparators)
+
+    }
+
+    private fun parseStructInitializationMember(): StructMemberInitializationSyntax {
+        val identifier = matchToken(Token.Identifier)
+        val colon = matchToken(Token.Colon)
+        val expression = parseExpression()
+        return StructMemberInitializationSyntax(syntaxTree, identifier, colon, expression)
     }
 
     private fun parseImportStatement(): MemberSyntax {
@@ -149,7 +226,7 @@ internal class Parser(
 
     private fun parseFunctionReturnType(): FunctionReturnTypeSyntax {
         val arrow = matchToken(Token.Arrow)
-        val type = matchToken(Token.Type)
+        val type = parseType()
         return FunctionReturnTypeSyntax(arrow, type, syntaxTree)
     }
 
@@ -158,11 +235,15 @@ internal class Parser(
         val parameters = mutableListOf<SyntaxNode>()
         if (current.token != Operator.CloseParenthesis) {
             do {
+                var start = current
                 if (parameters.isNotEmpty()) {
                     parameters.add(matchToken(Token.Comma))
                 }
                 val parameter = parseParameter()
                 parameters.add(parameter)
+                if (current == start) {
+                    nextToken()
+                }
             } while (current.token != Operator.CloseParenthesis)
         }
         return SeparatedSyntaxList(parameters)
@@ -302,7 +383,7 @@ internal class Parser(
 
     private fun parseTypeClause(): TypeClauseSyntax {
         val colonToken = matchToken(Token.Colon)
-        val type = matchToken(Token.Type)
+        val type = parseType()
         return TypeClauseSyntax(colonToken, type, syntaxTree)
     }
 
@@ -337,21 +418,6 @@ internal class Parser(
 
 
     private fun parseExpression(): ExpressionSyntax {
-        return parseAssigmentExpression()
-    }
-
-    private fun parseAssigmentExpression(): ExpressionSyntax {
-        if (peek(0).token is Token.Identifier && peek(1).token is AssignmentOperator) {
-            val identifierToken = matchToken(Token.Identifier)
-            val assignmentOperator = matchOneToken(Operators.assignmentOperators, expect = Operator.Equals)
-            val expression = parseAssigmentExpression()
-            return AssignmentExpressionSyntax(
-                identifierToken,
-                assignmentOperator,
-                expression,
-                syntaxTree
-            )
-        }
         return parseBinaryExpression()
     }
 
@@ -360,9 +426,18 @@ internal class Parser(
         return CastExpressionSyntax(
             castExpression,
             matchToken(Keyword.As),
-            matchToken(Token.Type),
+            parseType(),
             syntaxTree
         )
+    }
+
+    private fun parseType(): TypeSyntax {
+        var pointerToken: SyntaxToken<Operator.Ampersand>? = null
+        if (current.token is Operator.Ampersand) {
+            pointerToken = matchToken(Operator.Ampersand)
+        }
+        val identifier = matchToken(Token.Identifier)
+        return TypeSyntax(pointerToken, identifier, syntaxTree)
     }
 
     private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {
@@ -384,6 +459,13 @@ internal class Parser(
                 return parseTypeCastExpression(left)
             }
 
+            if (current.token is Token.Dot) {
+                left = parseMemberAccessExpression(left)
+                continue
+            }
+
+
+
             if (current.token is Token.SemiColon) {
                 break
             }
@@ -391,7 +473,10 @@ internal class Parser(
             if (precedence == 0 || precedence <= parentPrecedence) {
                 break
             }
-
+            if(current.token is AssignmentOperator) {
+                left = parseAssignmentExpression(left)
+                continue
+            }
             val operatorToken = nextToken()
             val right = parseBinaryExpression(precedence)
             left = BinaryExpressionSyntax(
@@ -403,6 +488,12 @@ internal class Parser(
         }
 
         return left
+    }
+
+    private fun parseAssignmentExpression(left: ExpressionSyntax): ExpressionSyntax {
+        val operatorToken = nextToken()
+        val right = parseExpression()
+        return AssignmentExpressionSyntax(left, operatorToken as SyntaxToken<AssignmentOperator>, right, syntaxTree)
     }
 
     private val currentOperator
@@ -423,12 +514,8 @@ internal class Parser(
                 return parseBooleanLiteral()
             }
 
-            Token.Type -> {
-                return parseTypeExpression()
-            }
-
             Token.Identifier -> {
-                return parseNameOrCallExpression()
+                return parseNameOrCallOrStructInitializationExpression()
             }
 
             Token.Number -> {
@@ -442,7 +529,7 @@ internal class Parser(
 
             else -> {
                 diagnosticsBag.reportUnexpectedToken(current.location, current.token, Token.Expression)
-                return parseNameOrCallExpression()
+                return parseNameOrCallOrStructInitializationExpression()
             }
         }
 
@@ -532,11 +619,17 @@ internal class Parser(
         return LiteralExpressionSyntax(token, value, syntaxTree)
     }
 
-    private fun parseNameOrCallExpression(): ExpressionSyntax {
+    private fun parseNameOrCallOrStructInitializationExpression(): ExpressionSyntax {
         val token = matchToken(Token.Identifier)
         if (current.token is Operator.OpenParenthesis
         ) {
             return parseCallExpression(token);
+        }
+        if (current.token is Token.OpenBrace) {
+            return parseStructInitialization(token)
+        }
+        if (current.token is Token.Dot) {
+            return parseMemberAccessExpression(parseNameExpression(token))
         }
 
         return parseNameExpression(token)
@@ -546,7 +639,7 @@ internal class Parser(
         val openParenthesis = matchToken(Operator.OpenParenthesis)
         val arguments = parseArguments()
         val closeParenthesis = matchToken(Operator.CloseParenthesis)
-        if(syntaxTree.id == 0 && token.literal == "main" ) {
+        if (syntaxTree.id == 0 && token.literal == "main") {
             diagnosticsBag.reportCannotCallMain(token.location)
         }
         return CallExpressionSyntax(token, openParenthesis, arguments, closeParenthesis, syntaxTree)
@@ -573,6 +666,12 @@ internal class Parser(
         }
 
         return SeparatedSyntaxList(nodesAndSeparators)
+    }
+
+    private fun parseMemberAccessExpression(left: ExpressionSyntax): ExpressionSyntax {
+        val dotToken = matchToken(Token.Dot)
+        val name = matchToken(Token.Identifier)
+        return MemberAccessExpressionSyntax(syntaxTree, left, dotToken, name)
     }
 
     private fun parseNameExpression(token: SyntaxToken<Token.Identifier>) =

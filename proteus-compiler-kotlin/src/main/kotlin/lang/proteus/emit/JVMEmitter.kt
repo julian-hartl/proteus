@@ -70,6 +70,15 @@ internal class JVMEmitter private constructor(
 
     }
 
+
+    override fun generateMemberAccessExpression(expression: BoundMemberAccessExpression) {
+        TODO("Not yet implemented")
+    }
+
+    override fun generateStructInitializationExpression(expression: BoundStructInitializationExpression) {
+
+    }
+
     override fun generateReturnStatement(statement: BoundReturnStatement) {
         val expression = statement.expression
         if (expression != null) {
@@ -128,7 +137,7 @@ internal class JVMEmitter private constructor(
 
     override fun generateAssignmentExpression(expression: BoundAssignmentExpression) {
         generateExpression(expression.expression)
-        jvmClass.pop(expression.variable)
+        jvmClass.pop((expression.expression as BoundVariableExpression).variable)
     }
 
     override fun generateVariableExpression(expression: BoundVariableExpression) {

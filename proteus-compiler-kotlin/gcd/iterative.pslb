@@ -1,0 +1,22 @@
+main_0: push 239281
+push 578902394
+call gcd_0
+halt
+gcd_0: alloc 1 
+push 0
+store 0
+while_0_condition: push 0
+load -3
+ine
+jz while_0_end
+load -3
+store 0
+load -3
+load -2
+imod
+store -3
+load 0
+store -2
+jmp while_0_condition
+while_0_end: load -2
+iret

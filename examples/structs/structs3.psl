@@ -1,0 +1,23 @@
+import "std/io";
+
+
+struct ILiveOnHeap {
+    x: Int;
+    y: Int;
+    z: Int;
+}
+
+fn main() {
+
+    val heap = &ILiveOnHeap {
+        x: 1,
+        y: 2,
+        z: 3
+    };
+
+    println((*heap).x);
+    println((*heap).y);
+    println((*heap).z);
+
+}
+

@@ -9,7 +9,8 @@ internal sealed class Operator(
     val isUnaryOperator: Boolean = false,
     val isBinaryOperator: Boolean = false,
     val isAssignmentOperator: Boolean = false,
-    val isComparisonOperator: Boolean = false
+    val isComparisonOperator: Boolean = false,
+    val unaryPrecedence: Int? = null,
 ) : Token() {
 
     fun toSyntaxToken(position: Int, syntaxTree: SyntaxTree): SyntaxToken<Operator> {
@@ -17,14 +18,14 @@ internal sealed class Operator(
     }
 
     fun unaryPrecedence(): Int {
-        return if (isUnaryOperator) this.precedence else 0
+        return if (isUnaryOperator) this.unaryPrecedence ?: this.precedence else 0
     }
 
-    object Plus : UnaryAndBinaryOperator("+", 1)
+    object Plus : UnaryAndBinaryOperator("+", 1,1)
 
-    object Minus : UnaryAndBinaryOperator("-", 1)
+    object Minus : UnaryAndBinaryOperator("-", 1,1)
 
-    object Asterisk : BinaryOperator("*", 2)
+    object Asterisk : UnaryAndBinaryOperator("*", 2, 1)
 
     object Slash : BinaryOperator("/", 2)
     object Percent : BinaryOperator("%", 2)
@@ -32,7 +33,7 @@ internal sealed class Operator(
     object DoubleGreaterThan : BinaryOperator(">>", 3)
     object DoubleLessThan : BinaryOperator("<<", 3)
 
-    object Ampersand : BinaryOperator("&", 3)
+    object Ampersand : UnaryAndBinaryOperator("&", 3, 1)
 
     object Pipe : BinaryOperator("|", 3)
     object Circumflex : BinaryOperator("^", 3)

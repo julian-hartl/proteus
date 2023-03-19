@@ -27,9 +27,6 @@ internal class SyntaxToken<T : Token>(
             return SyntaxToken(Token.EndOfFile, position, "", null, syntaxTree)
         }
 
-        fun typeToken(position: Int, literal: String, type: TypeSymbol, syntaxTree: SyntaxTree): SyntaxToken<Token> {
-            return Token.Type.toSyntaxToken(position, literal, value = type, syntaxTree = syntaxTree)
-        }
 
         fun identifierToken(position: Int, literal: String, syntaxTree: SyntaxTree): SyntaxToken<Token.Identifier> {
             return Token.Identifier.toSyntaxToken(

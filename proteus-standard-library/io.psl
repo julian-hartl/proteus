@@ -1,2 +1,2 @@
-external fn println(s: String) -> Unit;
+external fn println(s: &String) -> Unit;
 external fn print(s: String) -> Unit;

@@ -1,13 +1,15 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.*
 import lang.proteus.symbols.FunctionSymbol
-import lang.proteus.symbols.Symbol
+import lang.proteus.symbols.StructSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 
 internal class BoundScope internal constructor(val parent: BoundScope?) {
     private val variableScope: SymbolScope<VariableSymbol> = SymbolScope(parent?.variableScope)
     private val functionScope: SymbolScope<FunctionSymbol> = SymbolScope(parent?.functionScope)
+    private val structScope: SymbolScope<StructSymbol> = SymbolScope(parent?.structScope)
 
     fun getDeclaredVariables(): Map<SyntaxTree, Set<VariableSymbol>> = variableScope.getAllSymbols()
 
@@ -30,6 +32,24 @@ internal class BoundScope internal constructor(val parent: BoundScope?) {
 
     fun tryLookupFunction(function: String, syntaxTree: SyntaxTree): FunctionSymbol? {
         return functionScope.tryLookup(function, syntaxTree)
+    }
+
+    fun getDeclaredStructs(): Map<SyntaxTree, Set<StructSymbol>> = structScope.getAllSymbols()
+
+    fun tryDeclareStruct(struct: StructSymbol, syntaxTree: SyntaxTree): StructSymbol? {
+        return structScope.tryDeclare(struct, syntaxTree)
+    }
+
+    fun tryLookupStruct(struct: String, syntaxTree: SyntaxTree): StructSymbol? {
+        return structScope.tryLookup(struct, syntaxTree)
+    }
+
+    fun tryLookup(symbol: String, syntaxTree: SyntaxTree): Symbol? {
+        return tryLookupType(symbol, syntaxTree) ?: tryLookupVariable(symbol, syntaxTree) ?: tryLookupFunction(symbol, syntaxTree) ?: tryLookupStruct(symbol, syntaxTree)
+    }
+
+    fun tryLookupType(symbol: String, syntaxTree: SyntaxTree): Symbol? {
+        return TypeSymbol.fromName(symbol)
     }
 
 }

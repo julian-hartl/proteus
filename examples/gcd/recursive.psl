@@ -1,0 +1,17 @@
+fn gcd(a: Int, b: Int) -> Int {
+   if (a == b)
+               return a;
+
+           if (a > b) {
+           a -= b;
+               return gcd(a, b);
+               }
+           else {
+              b -= a;
+               return gcd(a , b);
+               }
+}
+
+fn main() {
+    gcd(578902394, 239281);
+}

@@ -69,14 +69,14 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
 
         val modifyFlagModification = BoundExpressionStatement(
             BoundAssignmentExpression(
-                modifyFlagDeclaration.variable,
+                BoundAssignee.BoundVariableAssignee(modifyFlagDeclaration.variable),
                 BoundLiteralExpression(true),
                 Operator.Equals,
                 returnAssignment = false
             )
         )
         val increment = BoundAssignmentExpression(
-            node.variable,
+            BoundAssignee.BoundVariableAssignee(node.variable),
             BoundLiteralExpression(1),
             Operator.PlusEquals,
             returnAssignment = false
@@ -251,11 +251,16 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         node: BoundAssignmentExpression,
         operator: Operator,
     ): BoundExpression {
-        val left = BoundVariableExpression(node.variable)
+        val left = rewriteExpression(node.assignee.expression)
         val right = node.expression
-        val operator = BoundBinaryOperator.bind(operator, node.variable.type, node.variable.type)
+        val operator = BoundBinaryOperator.bind(operator, left.type, right.type)
         val binaryExpression = BoundBinaryExpression(left, right, operator!!)
-        return BoundAssignmentExpression(node.variable, binaryExpression, Operator.Equals, node.returnAssignment)
+        return BoundAssignmentExpression(
+            BoundAssignee.fromExpression(left),
+            binaryExpression,
+            Operator.Equals,
+            node.returnAssignment
+        )
     }
 
     override fun rewriteBreakStatement(statement: BoundBreakStatement): BoundStatement {
@@ -269,5 +274,31 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         val continueLabel = loop.continueLabel
         val result = BoundGotoStatement(continueLabel)
         return rewriteStatement(result)
+    }
+
+    override fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {
+        val left = rewriteExpression(node.left)
+        val right = rewriteExpression(node.right)
+        val operator = node.operator
+        if (operator.kind == BoundBinaryOperatorKind.TypeEquality) {
+            right as BoundTypeExpression
+            val leftTypeAsString = rewriteExpression(BoundLiteralExpression(left.type.qualifiedName))
+            val rightTypeAsString = rewriteExpression(BoundLiteralExpression(right.symbol.qualifiedName))
+            val equalityOperator =
+                BoundBinaryOperator.bind(Operator.DoubleEquals, leftTypeAsString.type, rightTypeAsString.type)
+                    ?: throw IllegalStateException("Cannot bind operator")
+            val typeEquality = BoundBinaryExpression(
+                leftTypeAsString,
+                rightTypeAsString,
+                equalityOperator,
+            )
+            return rewriteBinaryExpression(
+                typeEquality
+            )
+        }
+        if (left != node.left || right != node.right) {
+            return BoundBinaryExpression(left, right, operator);
+        }
+        return node
     }
 }

@@ -1,7 +1,10 @@
 package lang.proteus.symbols
 
-sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) {
+sealed class TypeSymbol(name: kotlin.String) :
+    Symbol("type", name) {
 
+
+    object Unit : TypeSymbol("Unit")
     object Int : TypeSymbol("Int")
 
     object Boolean : TypeSymbol("Boolean")
@@ -12,11 +15,31 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
     object Any : TypeSymbol("Any")
 
     object Error : TypeSymbol("?")
-    object Unit : TypeSymbol("Unit")
+
+    data class Struct(val name: kotlin.String) : TypeSymbol(name) {
+        override fun toString(): kotlin.String {
+            return name
+        }
+    }
+
+    data class Pointer(val type: TypeSymbol) : TypeSymbol(type.simpleName) {
+        override fun toString(): kotlin.String {
+            return "&$type"
+        }
+    }
 
     companion object {
 
-        val allTypes = TypeSymbol::class.sealedSubclasses.map { it.objectInstance!! }
+        private val internalTypes = lazy {
+            TypeSymbol::class.sealedSubclasses.filter {
+                try {
+                    it.objectInstance != null
+                } catch (e: Exception) {
+                    println("Warning: Could not load type ${it.simpleName}")
+                    false
+                }
+            }.map { it.objectInstance!! }
+        }
 
         fun fromValueOrAny(value: kotlin.Any?): TypeSymbol {
             return when (value) {
@@ -29,7 +52,7 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
         }
 
         fun fromName(name: kotlin.String): TypeSymbol? {
-            return allTypes.firstOrNull { it.simpleName == name }
+            return internalTypes.value.firstOrNull { it.simpleName == name }
         }
 
         fun fromJavaType(javaType: java.lang.reflect.Type): TypeSymbol {
@@ -43,18 +66,6 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
         }
     }
 
-    fun getJavaClass(): Class<*> {
-        return when (this) {
-            Int -> java.lang.Integer.TYPE
-            Boolean -> java.lang.Boolean.TYPE
-            String -> java.lang.String::class.java
-            Type -> TypeSymbol::class.java
-            Any -> java.lang.Object::class.java
-            Error -> java.lang.Object::class.java
-            Unit -> java.lang.Void.TYPE
-        }
-    }
-
 
     fun isAssignableTo(symbol: TypeSymbol): kotlin.Boolean {
         return when (symbol) {
@@ -65,7 +76,42 @@ sealed class TypeSymbol( name: kotlin.String) : Symbol("proteus-built-in",name) 
             Error -> this is Error
             Any -> true
             Unit -> this is Unit
+            is Struct -> this is Struct && this.qualifiedName == symbol.qualifiedName
+            is Pointer -> this is Pointer && this.type.isAssignableTo(symbol.type)
         }
+    }
+
+    override fun equals(other: kotlin.Any?): kotlin.Boolean {
+        return when (other) {
+            is TypeSymbol -> this.qualifiedName == other.qualifiedName && this.isPointer() == other.isPointer()
+            else -> false
+        }
+    }
+
+    fun ref(): TypeSymbol {
+        return Pointer(this)
+    }
+
+    fun deref(): TypeSymbol {
+        if(this is Pointer) {
+            return this.type
+        }
+        return this
+    }
+
+    fun isPointer(): kotlin.Boolean {
+        return this is Pointer
+    }
+
+    override fun toString(): kotlin.String {
+        return when (this) {
+            is Pointer -> "$type*"
+            else -> simpleName
+        }
+    }
+
+    override fun hashCode(): kotlin.Int {
+        return javaClass.hashCode()
     }
 
 

@@ -17,9 +17,17 @@ internal abstract class Emitter<Output>(val boundProgram: BoundProgram) {
             is BoundLiteralExpression<*> -> generateLiteralExpression(expression)
             is BoundUnaryExpression -> generateUnaryExpression(expression)
             is BoundVariableExpression -> generateVariableExpression(expression)
+            is BoundStructInitializationExpression -> generateStructInitializationExpression(expression)
+            is BoundMemberAccessExpression -> generateMemberAccessExpression(expression)
             else -> throw Exception("Unexpected expression: $expression")
         }
     }
+
+
+    protected abstract fun generateMemberAccessExpression(expression: BoundMemberAccessExpression)
+
+    protected abstract fun generateStructInitializationExpression(expression: BoundStructInitializationExpression)
+
 
     fun generateStatement(statement: BoundStatement) {
         when (statement) {
@@ -41,9 +49,9 @@ internal abstract class Emitter<Output>(val boundProgram: BoundProgram) {
         }
     }
 
-     fun generateExpressionStatement(statement: BoundExpressionStatement) {
+    fun generateExpressionStatement(statement: BoundExpressionStatement) {
         generateExpression(statement.expression)
-     }
+    }
 
     abstract fun generateReturnStatement(statement: BoundReturnStatement)
 

@@ -60,9 +60,9 @@ internal class DiagnosticsBag {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
-    fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol) {
+    fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol, hint: String? = null) {
         if (actualType !is TypeSymbol.Error) {
-            report("Cannot convert type '${actualType}' to '${expectedType}'", textLocation)
+            report("Cannot convert type '${actualType}' to '$expectedType'", textLocation, hint = hint)
         }
     }
 
@@ -221,6 +221,7 @@ internal class DiagnosticsBag {
         report(
             "External function ${declaration.identifier.literal} not found",
             location,
+            DiagnosticType.Warning,
             hint = "Install the required library."
         )
     }
@@ -245,6 +246,58 @@ internal class DiagnosticsBag {
 
     fun reportUnusedExpression(location: TextLocation) {
         report("Expression is unused", location, diagnosticType = DiagnosticType.Warning)
+    }
+
+    fun reportStructAlreadyDeclared(location: TextLocation, name: String) {
+        report("Struct '$name' already declared", location)
+    }
+
+    fun reportStructMemberAlreadyDeclared(location: TextLocation, name: String) {
+        report("Struct member '$name' already declared", location)
+    }
+
+    fun reportUndefinedStruct(location: TextLocation, structName: String) {
+        report("Undefined struct '$structName'", location)
+    }
+
+    fun reportUndefinedStructMember(location: TextLocation, memberName: String, name: String) {
+        report("Undefined struct member '$memberName' in struct '$name'", location)
+    }
+
+    fun reportStructMemberAlreadyInitialized(location: TextLocation, memberName: String, name: String) {
+        report("Struct member '$memberName' in struct '$name' already initialized", location)
+    }
+
+    fun reportStructMemberNotInitialized(location: TextLocation, name: String, structName: String) {
+        report("Struct member '$name' in struct '$structName' not initialized", location)
+    }
+
+    fun reportUndefinedMember(location: TextLocation, memberName: String, type: TypeSymbol, couldAssignWhenDereferenced: Boolean) {
+        report("Undefined member '$memberName' in type '${type}'", location, hint = if (couldAssignWhenDereferenced) "Did you forget to dereference the type?" else null)
+    }
+
+    fun reportInvalidName(location: TextLocation) {
+        report("Invalid name", location)
+    }
+
+    fun reportCannotReference(location: TextLocation) {
+        report("Cannot reference this symbol", location)
+    }
+
+    fun reportCannotDereference(location: TextLocation, type: TypeSymbol) {
+        report("Cannot dereference type '${type}'", location)
+    }
+
+    fun reportInvalidAssignmentTarget(location: TextLocation) {
+        report("Invalid assignment target", location)
+    }
+
+    fun reportCannotReferenceFunction(location: TextLocation, name: String) {
+        report("Cannot reference function '$name'", location)
+    }
+
+    fun reportCannotReferenceStructMember(location: TextLocation, name: String) {
+        report("Cannot reference struct member '$name'", location)
     }
 
 

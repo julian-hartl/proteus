@@ -22,7 +22,7 @@ class BinderTest {
         )
         val scope = BoundScope(null)
 
-        binder = Binder(scope, null)
+        binder = Binder(scope, null, null)
         binder.bindStatement(parseResult.expression)
     }
 
@@ -39,202 +39,211 @@ class BinderTest {
             is GlobalVariableDeclarationSyntax -> member.statement
             is FunctionDeclarationSyntax -> member.body!!
             is ImportStatementSyntax -> TODO()
+            is StructDeclarationSyntax -> TODO()
         }
         return ParseExpressionResult(statement, compilationUnitSyntax.syntaxTree)
+    }
+
+    private fun assertHasNoErrors() {
+        assertTrue(!binder.hasErrors(), "Expected no errors, but got ${binder.diagnostics}")
+    }
+
+    private fun assertHasErrors() {
+        assertTrue(binder.hasErrors(), "Expected errors, but got none")
     }
 
     @Test
     fun shouldHaveErrorWhenMultiplyingBooleans() {
         useExpression("true * false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenAddingBooleans() {
         useExpression("true + false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenSubtractingBooleans() {
         useExpression("true - false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenDividingBooleans() {
         useExpression("true / false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenMultiplyingBooleanWithNumber() {
         useExpression("true * 1")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldNotHaveErrorWhenMultiplyingNumbers() {
         useExpression("1 * 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenUsingBangOperatorOnNonBoolean() {
         useExpression("not 1")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldNotHaveErrorWhenUsingBangOperatorOnBoolean() {
         useExpression("not true")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldHaveErrorsWhenUsingLessThanOnNonNumbers() {
         useExpression("true < false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldNotHaveErrorsWhenUsingLessThanOnNumbers() {
         useExpression("1 < 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldHaveErrorsWhenUsingGreaterThanOnNonNumbers() {
         useExpression("true > false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldNotHaveErrorsWhenUsingGreaterThanOnNumbers() {
         useExpression("1 > 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldNotHaveErrorsWhenUsingGreaterThanOrEqualsOnNumbers() {
         useExpression("1 >= 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldNotHaveErrorsWhenUsingLessThanOrEqualsOnNumbers() {
         useExpression("1 <= 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldNotHaveErrorsWhenUsingEqualsOnNumbers() {
         useExpression("1 == 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldHaveErrorsWhenUsingEqualsOnDifferentTypes() {
         useExpression("1 == true")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenUsingLessThanOrEqualsOnNonNumbers() {
         useExpression("true <= false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenUsingGreaterThanOrEqualsOnNonNumbers() {
         useExpression("true >= false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldHaveErrorWhenUsingPowOperatorOnNonNumbers() {
         useExpression("true ** false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldNotHaveErrorWhenUsingPowOperatorOnNumbers() {
         useExpression("1 ** 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun xorShouldNotHaveErrorWhenUsingOnBooleans() {
         useExpression("true xor false")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun xorShouldHaveErrorWhenUsingOnNonBooleans() {
         useExpression("1 xor 2")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun bitwiseXorShouldNotHaveErrorWhenUsingOnNumbers() {
         useExpression("1 ^ 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun bitwiseXorShouldHaveErrorWhenUsingOnNonNumbers() {
         useExpression("true ^ false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun leftShiftShouldNotHaveErrorWhenUsingOnNumbers() {
         useExpression("1 << 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun leftShiftShouldHaveErrorWhenUsingOnNonNumbers() {
         useExpression("true << false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun rightShiftShouldNotHaveErrorWhenUsingOnNumbers() {
         useExpression("1 >> 2")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun rightShiftShouldHaveErrorWhenUsingOnNonNumbers() {
         useExpression("true >> false")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
 
     @Test
     fun shouldHaveErrorWhenUsingIsOperatorOnValueAndValue() {
         useExpression("1 is 2")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldNotHaveErrorWhenUsingIsOperatorOnValueAndType() {
         useExpression("1 is Int")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun isShouldHaveErrorWhenUsedOnNonExistentType() {
         useExpression("1 is NonExistentType")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
 
     @Test
     fun shouldNotAllowAssignmentToLiteral() {
         useExpression("1 = 1")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -245,7 +254,7 @@ class BinderTest {
             a = 2
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
 
@@ -257,19 +266,19 @@ class BinderTest {
             a = true
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldAllowTypeOfOnValue() {
         useExpression("typeof 1")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldAllowTypeOfOnType() {
         useExpression("typeof Int")
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -280,7 +289,7 @@ class BinderTest {
             typeof a;
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -291,13 +300,13 @@ class BinderTest {
             typeof a == typeof 2;
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
     fun shouldNotAllowAssignmentToNonExistentVariable() {
         useExpression("nonExistentVariable = 1")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -308,7 +317,7 @@ class BinderTest {
             a = 2
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -321,7 +330,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -336,7 +345,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -351,7 +360,7 @@ class BinderTest {
 }
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -368,7 +377,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -385,7 +394,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
 
@@ -402,7 +411,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -415,7 +424,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -428,7 +437,7 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -441,13 +450,13 @@ class BinderTest {
             }
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
     fun shouldReportErrorWhenUsingFunctionWithWrongNumberOfArguments() {
         useExpression("print();")
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -459,7 +468,7 @@ class BinderTest {
         """.trimIndent(),
             inMain = true
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
     @Test
@@ -472,7 +481,7 @@ class BinderTest {
             inMain = true
         )
         println(binder.diagnostics)
-        assertTrue(!binder.hasErrors())
+        assertHasNoErrors()
     }
 
     @Test
@@ -486,7 +495,7 @@ class BinderTest {
             
         """.trimIndent()
         )
-        assertTrue(binder.hasErrors())
+        assertHasErrors()
     }
 
 

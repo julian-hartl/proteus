@@ -131,8 +131,9 @@ internal data class BoundBinaryOperator(
 
         fun bind(operator: Operator, leftType: TypeSymbol, rightType: TypeSymbol): BoundBinaryOperator? {
             return operators.firstOrNull {
+                if(it.operator != operator) return@firstOrNull false
                 val isSuited =
-                    it.operator == operator && leftType.isAssignableTo(it.leftType) && rightType.isAssignableTo(
+                    leftType.isAssignableTo(it.leftType) && rightType.isAssignableTo(
                         it.rightType
                     )
                 if (isSuited && it.requiresSameTypes) {

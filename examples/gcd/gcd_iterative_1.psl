@@ -1,0 +1,13 @@
+fn gcd(a: Int, b: Int) -> Int {
+    var temp = 0;
+            while (b != 0) {
+                temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+}
+
+fn main() {
+    gcd(578902394, 239281);
+}

@@ -47,6 +47,7 @@ internal sealed class Keyword(override val literal: kotlin.String) : Token() {
     internal object Return : Keyword("return")
     internal object Import : Keyword("import")
     internal object External : Keyword("external")
+    internal object Struct : Keyword("struct")
 
 }
 

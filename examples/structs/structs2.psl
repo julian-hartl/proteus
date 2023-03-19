@@ -1,0 +1,27 @@
+import "std/io";
+
+struct Point {
+    x: Int;
+    y: Int;
+}
+
+fn main() {
+
+    val p = Point { x: 1, y: 2 };
+    callByValue(p);
+    callByReference(&p);
+    test(7);
+
+}
+
+fn test(a: Int) {
+    println(a);
+}
+
+fn callByReference(p: &Point) {
+    println((*p).x);
+}
+
+fn callByValue(p: Point) {
+    println(p.x);
+}

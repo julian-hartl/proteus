@@ -1,5 +1,7 @@
 package lang.proteus.binding
+
 import lang.proteus.symbols.TypeSymbol
+
 internal sealed class BoundExpression : BoundNode() {
     abstract val type: TypeSymbol
 }
@@ -24,7 +26,15 @@ internal class BoundUnaryExpression(val operand: BoundExpression, val operator: 
     BoundExpression() {
 
     override val type: TypeSymbol
-        get() = operator.resultType
+        get() = when (operator) {
+            BoundUnaryOperator.BoundUnaryIdentityOperator -> operand.type
+            BoundUnaryOperator.BoundUnaryNegationOperator -> operand.type
+            BoundUnaryOperator.BoundUnaryNotOperator -> operand.type
+            BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.Type
+            BoundUnaryOperator.BoundDereferenceOperator -> (operand.type as TypeSymbol.Pointer).type
+            BoundUnaryOperator.BoundReferenceOperator -> TypeSymbol.Pointer(operand.type)
+        }
+
 
 }
 
