@@ -130,7 +130,8 @@ impl<'a> Evaluator<'a> {
             OpCode::PUSHSP => self.pushsp(operand),
             OpCode::RLOAD => self.rload(operand, offset),
             OpCode::RSTORE => self.rstore(operand, offset),
-            OpCode::DHALLOC => self.dhalloc()
+            OpCode::DHALLOC => self.dhalloc(),
+            OpCode::BTOA => self.btoa(),
         }
     }
 
@@ -471,8 +472,29 @@ impl<'a> Evaluator<'a> {
     fn itoa(&mut self) -> Result<(), Box<dyn Error>> {
         let value = self.remove_top()?;
         let string = value.to_string();
+        self.push_string_as_ptr(&string)?;
+        Ok(())
+    }
+
+    fn btoa(&mut self) -> Result<(), Box<dyn Error>> {
+        let value = self.remove_top();
+        let string = match value {
+            Ok(value) => {
+                if value == 0 {
+                    "false"
+                } else {
+                    "true"
+                }
+            }
+            Err(_) => "true",
+        };
+        self.push_string_as_ptr(string)?;
+        Ok(())
+    }
+
+    fn push_string_as_ptr(&mut self, string: &str) -> Result<(), Box<dyn Error>> {
         let start = self.memory.stack_pointer;
-        self.memory.push_string(&string)?;
+        self.memory.push_string(string)?;
         self.push(start as i32)?;
         Ok(())
     }

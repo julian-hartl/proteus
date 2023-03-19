@@ -4,10 +4,11 @@ import lang.proteus.symbols.TypeSymbol
 
 object TypeConverter {
     fun convert(value: Any, type: TypeSymbol): Any {
-        if(type is TypeSymbol.Struct) {
+        val deref = type.deref()
+        if(deref is TypeSymbol.Struct) {
             return value
         }
-        return when (type) {
+        return when (deref) {
             TypeSymbol.Int -> Integer.parseInt(value.toString())
             TypeSymbol.Boolean -> parseBoolean(value.toString())
             TypeSymbol.String -> value.toString()

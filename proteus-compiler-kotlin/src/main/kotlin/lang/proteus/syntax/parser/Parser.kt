@@ -84,8 +84,9 @@ internal class Parser(
             is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
             is Keyword.Struct -> parseStructDeclaration()
             else -> {
-                diagnosticsBag.reportUnexpectedToken(current.location, current.token, Token.GlobalStatement)
-                null
+                val statement = parseStatement()
+                diagnosticsBag.reportInvalidTopLevelStatement(statement.location)
+                return null
             }
         }
     }

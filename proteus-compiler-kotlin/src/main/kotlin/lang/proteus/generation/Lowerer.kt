@@ -275,4 +275,30 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
         val result = BoundGotoStatement(continueLabel)
         return rewriteStatement(result)
     }
+
+    override fun rewriteBinaryExpression(node: BoundBinaryExpression): BoundExpression {
+        val left = rewriteExpression(node.left)
+        val right = rewriteExpression(node.right)
+        val operator = node.operator
+        if (operator.kind == BoundBinaryOperatorKind.TypeEquality) {
+            right as BoundTypeExpression
+            val leftTypeAsString = rewriteExpression(BoundLiteralExpression(left.type.qualifiedName))
+            val rightTypeAsString = rewriteExpression(BoundLiteralExpression(right.symbol.qualifiedName))
+            val equalityOperator =
+                BoundBinaryOperator.bind(Operator.DoubleEquals, leftTypeAsString.type, rightTypeAsString.type)
+                    ?: throw IllegalStateException("Cannot bind operator")
+            val typeEquality = BoundBinaryExpression(
+                leftTypeAsString,
+                rightTypeAsString,
+                equalityOperator,
+            )
+            return rewriteBinaryExpression(
+                typeEquality
+            )
+        }
+        if (left != node.left || right != node.right) {
+            return BoundBinaryExpression(left, right, operator);
+        }
+        return node
+    }
 }

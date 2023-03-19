@@ -43,6 +43,7 @@ pub enum OpCode {
     DHALLOC = 0x81,
     FFCALL = 0x90,
     ITOA = 0x91,
+    BTOA = 0x92,
     HALT = 0xFF,
 }
 

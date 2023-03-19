@@ -51,8 +51,8 @@ sealed class TypeSymbol(name: kotlin.String) :
             }
         }
 
-        fun fromName(name: kotlin.String): TypeSymbol {
-            return internalTypes.value.firstOrNull { it.simpleName == name } ?: Struct(name)
+        fun fromName(name: kotlin.String): TypeSymbol? {
+            return internalTypes.value.firstOrNull { it.simpleName == name }
         }
 
         fun fromJavaType(javaType: java.lang.reflect.Type): TypeSymbol {

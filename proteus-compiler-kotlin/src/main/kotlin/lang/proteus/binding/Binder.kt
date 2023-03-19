@@ -4,7 +4,7 @@ import lang.proteus.diagnostics.Diagnosable
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextLocation
 import lang.proteus.generation.Lowerer
-import lang.proteus.generation.ConstOptimizer
+import lang.proteus.generation.optimization.CodeOptimizer
 import lang.proteus.symbols.*
 import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.parser.*
@@ -146,7 +146,7 @@ internal class Binder(
                 var optimizedBody = BoundBlockStatement(listOf())
                 if (!binder.hasErrors()) {
                     val loweredBody = Lowerer.lower(body)
-                    optimizedBody = if (optimize) ConstOptimizer.optimize(loweredBody) else loweredBody
+                    optimizedBody = if (optimize) CodeOptimizer.optimize(loweredBody) else loweredBody
                     val graph = ControlFlowGraph.createAndOutput(optimizedBody)
                     if (!graph.allPathsReturn()) {
                         diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
@@ -176,7 +176,7 @@ internal class Binder(
                     val binder = Binder(parentScope ?: BoundScope(null), null, structMembers)
                     val initializer = variable.declarationSyntax.initializer
                     val boundInitializer = binder.bindExpression(initializer)
-                    val optimized = ConstOptimizer.optimize(boundInitializer)
+                    val optimized = CodeOptimizer.optimize(boundInitializer)
                     variableInitializers[variable] = optimized
                     diagnostics.addAll(binder.diagnostics)
                 }
@@ -424,6 +424,7 @@ internal class Binder(
         expectedType: TypeSymbol,
         textLocation: TextLocation,
         isCastExplicit: Boolean = false,
+        reportDiagnostics: Boolean = true,
     ): BoundExpression {
         val type = boundExpression.type
         val conversion = Conversion.classify(type, expectedType)
@@ -431,7 +432,14 @@ internal class Binder(
             return boundExpression
         }
         if (conversion.isNone || (conversion.isExplicit && !isCastExplicit)) {
-            diagnosticsBag.reportCannotConvert(textLocation, expectedType, type)
+            val hint = if (Conversion.classify(type.deref(), expectedType.deref()).isImplicit) {
+                "You need to pass by reference instead of by value. Use & to get a reference to the value."
+            } else {
+                null
+            }
+            if (reportDiagnostics) {
+                diagnosticsBag.reportCannotConvert(textLocation, expectedType, type, hint)
+            }
             return BoundErrorExpression
         }
         return BoundConversionExpression(expectedType, boundExpression, conversion)
@@ -764,33 +772,64 @@ internal class Binder(
             diagnosticsBag.reportInvalidName(syntax.identifierToken.location)
             return BoundErrorExpression
         }
-        val variable = scope.tryLookupVariable(name, syntax.syntaxTree)
-        if (variable == null) {
+        val symbol = scope.tryLookup(name, syntax.syntaxTree)
+        if (symbol == null) {
             diagnosticsBag.reportUnresolvedReference(syntax.identifierToken.location, name)
             return BoundErrorExpression
         }
-        return BoundVariableExpression(variable)
+        return when (symbol) {
+            is VariableSymbol -> BoundVariableExpression(symbol)
+            is FunctionSymbol -> {
+                diagnosticsBag.reportCannotReferenceFunction(syntax.identifierToken.location, name)
+                BoundErrorExpression
+            }
+
+            is StructMemberSymbol -> {
+                diagnosticsBag.reportCannotReferenceStructMember(syntax.identifierToken.location, name)
+                BoundErrorExpression
+            }
+
+            is StructSymbol, is TypeSymbol -> {
+                BoundTypeExpression(symbol)
+            }
+        }
     }
 
 
     private fun bindBinaryExpression(binaryExpression: BinaryExpressionSyntax): BoundExpression {
 
         val boundLeft = bindExpression(binaryExpression.left)
-        val boundRight =
-            bindConversion(bindExpression(binaryExpression.right), boundLeft.type, binaryExpression.right.location)
+        var boundRight = bindExpression(binaryExpression.right)
+
         if (boundLeft.type is TypeSymbol.Error || boundRight.type is TypeSymbol.Error) {
             return BoundErrorExpression
         }
-        val binaryOperator =
+        /*
+        Why is this needed?
+         Because there are certain operators that allow two types that are not compatible to be used together
+         For example, the 'is' operator allows any value to be compared to a type
+         But you cannot convert a value to a type
+         Solution: First check if there is a binary operator that accepts the two types
+         If there is not, then try to convert the right side to the type of the left side
+         If that fails, then there is no binary operator that accepts the two types
+         */
+        var binaryOperator =
             BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
         if (binaryOperator == null) {
-            diagnosticsBag.reportBinaryOperatorMismatch(
-                binaryExpression.operatorToken.literal,
-                binaryExpression.operatorToken.location,
-                boundLeft.type,
-                boundRight.type
-            )
-            return BoundErrorExpression
+            val originalRightType = boundRight.type
+            boundRight =
+                bindConversion(boundRight, boundLeft.type, binaryExpression.right.location, reportDiagnostics = false)
+            binaryOperator =
+                BoundBinaryOperator.bind(binaryExpression.operatorToken.token, boundLeft.type, boundRight.type)
+            if (binaryOperator == null) {
+                diagnosticsBag.reportBinaryOperatorMismatch(
+                    binaryExpression.operatorToken.literal,
+                    binaryExpression.operatorToken.location,
+                    boundLeft.type,
+                    originalRightType
+                )
+                return BoundErrorExpression
+            }
         }
         return BoundBinaryExpression(boundLeft, boundRight, binaryOperator)
 
@@ -826,18 +865,24 @@ internal class Binder(
 
 
     private fun bindTypeLiteral(typeSyntax: TypeSyntax, location: TextLocation): TypeSymbol {
-        val type = TypeSymbol.fromName(typeSyntax.typeIdentifier.literal)
-        if (type is TypeSymbol.Struct) {
-            val struct = scope.tryLookupStruct(type.name, typeSyntax.syntaxTree)
-            if (struct == null) {
-                diagnosticsBag.reportUndefinedType(location, type.name)
-                return TypeSymbol.Error
+        val boundType = when (val type = scope.tryLookup(typeSyntax.typeIdentifier.literal, typeSyntax.syntaxTree)) {
+            is TypeSymbol -> {
+                type
+            }
+
+            is StructSymbol -> {
+                TypeSymbol.Struct(type.simpleName)
+            }
+
+            else -> {
+                diagnosticsBag.reportUndefinedType(location, typeSyntax.typeIdentifier.literal)
+                TypeSymbol.Error
             }
         }
         if (typeSyntax.isPointer) {
-            return type.ref()
+            return boundType.ref()
         }
-        return type
+        return boundType
     }
 
 

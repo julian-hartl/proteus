@@ -143,6 +143,7 @@ internal class Evaluator(
             is BoundConversionExpression -> evaluateConversionExpression(expression)
             is BoundStructInitializationExpression -> evaluateStructInitializationExpression(expression)
             is BoundMemberAccessExpression -> evaluateMemberAccessExpression(expression)
+            is BoundTypeExpression -> expression.symbol
             else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 

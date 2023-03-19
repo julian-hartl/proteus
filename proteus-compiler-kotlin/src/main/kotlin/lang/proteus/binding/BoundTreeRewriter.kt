@@ -133,7 +133,12 @@ internal abstract class BoundTreeRewriter {
             is BoundConversionExpression -> rewriteConversionExpression(expression)
             is BoundStructInitializationExpression -> rewriteStructInitializationExpression(expression)
             is BoundMemberAccessExpression -> rewriteMemberAccessExpression(expression)
+            is BoundTypeExpression -> rewriteTypeExpression(expression)
         }
+    }
+
+    protected open fun rewriteTypeExpression(expression: BoundTypeExpression): BoundExpression {
+        return expression
     }
 
 

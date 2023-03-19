@@ -1,8 +1,8 @@
 package lang.proteus.binding
 
+import lang.proteus.symbols.*
 import lang.proteus.symbols.FunctionSymbol
 import lang.proteus.symbols.StructSymbol
-import lang.proteus.symbols.Symbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.parser.SyntaxTree
 
@@ -42,6 +42,14 @@ internal class BoundScope internal constructor(val parent: BoundScope?) {
 
     fun tryLookupStruct(struct: String, syntaxTree: SyntaxTree): StructSymbol? {
         return structScope.tryLookup(struct, syntaxTree)
+    }
+
+    fun tryLookup(symbol: String, syntaxTree: SyntaxTree): Symbol? {
+        return tryLookupType(symbol, syntaxTree) ?: tryLookupVariable(symbol, syntaxTree) ?: tryLookupFunction(symbol, syntaxTree) ?: tryLookupStruct(symbol, syntaxTree)
+    }
+
+    fun tryLookupType(symbol: String, syntaxTree: SyntaxTree): Symbol? {
+        return TypeSymbol.fromName(symbol)
     }
 
 }

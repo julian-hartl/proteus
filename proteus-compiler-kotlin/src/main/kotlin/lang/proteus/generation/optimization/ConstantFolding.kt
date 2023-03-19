@@ -1,39 +1,26 @@
-package lang.proteus.generation
+package lang.proteus.generation.optimization
 
 import lang.proteus.binding.*
 import lang.proteus.evaluator.BinaryExpressionEvaluator
 import lang.proteus.evaluator.UnaryExpressionEvaluator
 import lang.proteus.symbols.VariableSymbol
 
+internal class ConstantFolding :
+    BoundTreeRewriter(), Optimizer {
 
-internal class ConstOptimizer private constructor(
-
-    ) :
-    BoundTreeRewriter() {
-    companion object {
-        fun optimize(
-            statement: BoundBlockStatement,
-        ): BoundBlockStatement {
-            val optimizer = ConstOptimizer()
-            return optimizer.optimize(statement)
-        }
-
-        fun optimize(statement: BoundExpression): BoundExpression {
-            val optimizer = ConstOptimizer()
-            return optimizer.optimizeExpression(statement)
-        }
-    }
 
     private val assignments: MutableMap<VariableSymbol, List<BoundExpression>> = mutableMapOf()
 
     private val declarations: MutableMap<VariableSymbol, BoundVariableDeclaration> = mutableMapOf()
 
 
-    private fun optimizeExpression(expression: BoundExpression): BoundExpression {
+    override fun optimizeExpression(expression: BoundExpression): BoundExpression {
+        return expression
         return rewriteExpression(expression)
     }
 
-    private fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
+    override fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
+        return statement
         var lastStatement = rewriteBlockStatement(statement)
 
         var lastSize = -1
@@ -63,12 +50,13 @@ internal class ConstOptimizer private constructor(
             is BoundVariableExpression -> expression.variable.isConst
             is BoundUnaryExpression -> isConstExpression(expression.operand)
             is BoundBinaryExpression -> isConstExpression(expression.left) && isConstExpression(expression.right)
-            is BoundCallExpression -> expression.arguments.all { isConstExpression(it) }
+            is BoundCallExpression -> false
             is BoundConversionExpression -> isConstExpression(expression.expression)
             is BoundAssignmentExpression -> isConstExpression(expression.expression)
             BoundErrorExpression -> true
             is BoundMemberAccessExpression -> isConstExpression(expression.expression)
             is BoundStructInitializationExpression -> expression.members.all { isConstExpression(it.expression) }
+            is BoundTypeExpression -> true
         }
     }
 
@@ -93,6 +81,7 @@ internal class ConstOptimizer private constructor(
     private fun isFunctionConst(function: BoundBlockStatement): Boolean {
         return function.statements.all { isConstStatement(it) }
     }
+
 
     override fun rewriteConditionalGotoStatement(statement: BoundConditionalGotoStatement): BoundStatement {
         val condition = rewriteExpression(statement.condition)

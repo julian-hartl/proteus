@@ -60,9 +60,9 @@ internal class DiagnosticsBag {
         mutableDiagnostics.concat(other.mutableDiagnostics)
     }
 
-    fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol) {
+    fun reportCannotConvert(textLocation: TextLocation, expectedType: TypeSymbol, actualType: TypeSymbol, hint: String? = null) {
         if (actualType !is TypeSymbol.Error) {
-            report("Cannot convert type '${actualType}' to '${expectedType.toString()}'", textLocation)
+            report("Cannot convert type '${actualType}' to '$expectedType'", textLocation, hint = hint)
         }
     }
 
@@ -290,6 +290,14 @@ internal class DiagnosticsBag {
 
     fun reportInvalidAssignmentTarget(location: TextLocation) {
         report("Invalid assignment target", location)
+    }
+
+    fun reportCannotReferenceFunction(location: TextLocation, name: String) {
+        report("Cannot reference function '$name'", location)
+    }
+
+    fun reportCannotReferenceStructMember(location: TextLocation, name: String) {
+        report("Cannot reference struct member '$name'", location)
     }
 
 

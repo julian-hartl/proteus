@@ -38,7 +38,11 @@ internal class LexerTest {
                 Token.Parameter,
                 Token.GlobalStatement,
                 Token.ImportStatement,
-                Token.Annotation
+                Token.Annotation,
+                Token.StructMember,
+                Token.StructDeclaration,
+                Token.StructMemberInitialization,
+                Token.Type
             )
         )
 
@@ -214,7 +218,7 @@ internal class LexerTest {
 
                 Arguments.of(Token.String, "\"test\""),
 
-                Arguments.of(Token.Type, "Int"),
+                Arguments.of(Token.Identifier, "Int"),
 
                 Arguments.of(Token.SingleQuote, "'"),
 
@@ -248,7 +252,8 @@ internal class LexerTest {
                 Arguments.of(Keyword.Return, "return"),
                 Arguments.of(Keyword.Import, "import"),
                 Arguments.of(Keyword.External, "external"),
-
+                Arguments.of(Keyword.Struct, "struct"),
+                Arguments.of(Token.Dot, "."),
                 )
         }
 
@@ -263,6 +268,7 @@ internal class LexerTest {
         }
 
         private fun requiresSeparator(t1Token: Token, t2Token: Token): Boolean {
+
             if (t1Token is Token.String && t2Token is Token.String) return true
             if (t1Token is Token.Identifier && t2Token is Token.Identifier) return true
             if (t1Token is Keyword && t2Token is Keyword) return true
@@ -277,9 +283,9 @@ internal class LexerTest {
             val isSecondIdentifierOrKeyword = t2Token is Token.Identifier || t2Token is Keyword
 
             if (isFirstIdentifierOrKeyword) {
-                return isWordOperator(t2Token)
+                return isWordOperator(t2Token)  || t2Token is Token.Number
             }
-            if (isSecondIdentifierOrKeyword) {
+            if (isSecondIdentifierOrKeyword || t2Token is Token.Number) {
                 return isWordOperator(t1Token)
             }
             if (isWordOperator(t1Token) && isWordOperator(t2Token)) return true

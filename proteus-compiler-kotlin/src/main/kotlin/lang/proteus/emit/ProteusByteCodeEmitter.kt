@@ -210,8 +210,7 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
                     )
                 )
                 return
-            }
-            else if(function.simpleName == "malloc") {
+            } else if (function.simpleName == "malloc") {
                 generateExpression(expression.arguments[0])
                 codeBuilder.appendLine(api.dhalloc())
                 return
@@ -227,24 +226,47 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
     override fun generateConversionExpression(expression: BoundConversionExpression) {
         generateExpression(expression.expression)
         if (expression.conversion.isIdentity) return
-        if(expression.type.deref() is TypeSymbol.Any || expression.expression.type.deref() is TypeSymbol.Any) return
-        when (expression.expression.type) {
-            TypeSymbol.Int -> {
-                when (expression.type) {
-                    TypeSymbol.String -> {
-                        codeBuilder.appendLine(api.itoa())
-                    }
+        val expressionType = expression.expression.type
+        if (expression.type.deref() is TypeSymbol.Any || expressionType.deref() is TypeSymbol.Any) return
+        if (expressionType.isPointer()) {
+            val deref = expressionType.deref()
+            when (deref) {
+                is TypeSymbol.Boolean -> {
+                    when (expression.type.deref()) {
+                        is TypeSymbol.String -> {
+                            codeBuilder.appendLine(api.btoa())
+                        }
 
-                    else -> {
-                        throw Exception("Unexpected conversion from ${expression.expression.type} to ${expression.type}")
+                        else -> {
+                            throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
+                        }
                     }
                 }
-            }
 
-            else -> {
-                throw Exception("Unexpected conversion from ${expression.expression.type} to ${expression.type}")
+                else -> {
+                    throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
+                }
+            }
+        }else {
+            when (expressionType) {
+                TypeSymbol.Int -> {
+                    when (expression.type) {
+                        TypeSymbol.String -> {
+                            codeBuilder.appendLine(api.itoa())
+                        }
+
+                        else -> {
+                            throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
+                        }
+                    }
+                }
+
+                else -> {
+                    throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
+                }
             }
         }
+
     }
 
     override fun generateLiteralExpression(expression: BoundLiteralExpression<*>) {
@@ -262,7 +284,7 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
                 for (char in expression.value) {
                     codeBuilder.appendLine(api.pushb(char.code))
                 }
-                codeBuilder.appendLine(api.push(0))
+                codeBuilder.appendLine(api.pushb(0))
             }
 
             is TypeSymbol.Pointer -> {
