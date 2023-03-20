@@ -2,7 +2,7 @@ import "std/io";
 fn main() {
 
     let test2 = &mut 2;
-    let test3: &Int = test2;
+    let test3: &mut Int = test2;
     let mut test = 1;
     test = 2;
     let mut foo = Foo { x: 1, y: 2 };

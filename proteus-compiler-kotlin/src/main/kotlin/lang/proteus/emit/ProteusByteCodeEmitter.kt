@@ -290,6 +290,18 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
                     }
                 }
 
+                is TypeSymbol.Int -> {
+                    when (expression.type.deref()) {
+                        is TypeSymbol.String -> {
+                            codeBuilder.appendLine(api.itoa())
+                        }
+
+                        else -> {
+                            throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
+                        }
+                    }
+                }
+
                 else -> {
                     throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
                 }
