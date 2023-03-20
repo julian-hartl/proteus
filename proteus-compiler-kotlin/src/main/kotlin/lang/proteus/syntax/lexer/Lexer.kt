@@ -3,6 +3,8 @@ package lang.proteus.syntax.lexer
 import lang.proteus.diagnostics.DiagnosticsBag
 import lang.proteus.diagnostics.TextLocation
 import lang.proteus.diagnostics.TextSpan
+import lang.proteus.syntax.lexer.token.Keyword
+import lang.proteus.syntax.lexer.token.Operator
 import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.lexer.token_lexers.*
 import lang.proteus.syntax.parser.SyntaxTree
@@ -37,6 +39,7 @@ internal class Lexer(
         if (current == '"') {
             return readString();
         }
+
         val matchingLexer = tokenLexers.firstOrNull { it.match(current) }
         if (matchingLexer != null) {
             var length = 0
@@ -62,6 +65,7 @@ internal class Lexer(
         next()
         return SyntaxToken.badToken(position, current.toString(), syntaxTree)
     }
+
 
     private val isAtEnd: Boolean
         get() = position >= sourceText.length

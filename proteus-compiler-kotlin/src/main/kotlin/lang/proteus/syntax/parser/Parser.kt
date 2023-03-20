@@ -81,7 +81,7 @@ internal class Parser(
         return when (current.token) {
             is Keyword.Import -> parseImportStatement()
             is Keyword.External, is Keyword.Fn -> parseFunctionDeclaration()
-            is Keyword.Val, Keyword.Var, Keyword.Const -> parseGlobalVariableDeclaration()
+            is Keyword.Let, Keyword.Const -> parseGlobalVariableDeclaration()
             is Keyword.Struct -> parseStructDeclaration()
             else -> {
                 val statement = parseStatement()
@@ -121,10 +121,15 @@ internal class Parser(
     }
 
     private fun parseStructMember(): StructMemberSyntax {
+        val mut = if (current.token == Keyword.Mut) {
+            matchToken(Keyword.Mut)
+        } else {
+            null
+        }
         val identifier = matchToken(Token.Identifier)
         val type = parseTypeClause()
         val semiColon = matchToken(Token.SemiColon)
-        return StructMemberSyntax(syntaxTree, identifier, type, semiColon)
+        return StructMemberSyntax(syntaxTree, mut, identifier, type, semiColon)
     }
 
     private fun parseStructInitialization(identifier: SyntaxToken<Token.Identifier>): StructInitializationExpressionSyntax {
@@ -250,9 +255,14 @@ internal class Parser(
     }
 
     private fun parseParameter(): ParameterSyntax {
+        val mut = if (current.token == Keyword.Mut) {
+            matchToken(Keyword.Mut)
+        } else {
+            null
+        }
         val identifier = matchToken(Token.Identifier)
         val typeClauseSyntax = parseTypeClause()
-        return ParameterSyntax(identifier, typeClauseSyntax, syntaxTree)
+        return ParameterSyntax(mut, identifier, typeClauseSyntax, syntaxTree)
     }
 
     private fun parseGlobalVariableDeclaration(): GlobalVariableDeclarationSyntax {
@@ -269,7 +279,7 @@ internal class Parser(
                 return parseBlockStatement()
             }
 
-            Keyword.Var, Keyword.Val, Keyword.Const -> {
+            Keyword.Let, Keyword.Const -> {
                 return parseVariableDeclarationStatement()
             }
 
@@ -365,11 +375,19 @@ internal class Parser(
 
     private fun parseVariableDeclarationStatement(): VariableDeclarationSyntax {
         val keyword = nextToken().token as Keyword
+        val mut = if (current.token == Keyword.Mut) {
+            matchToken(Keyword.Mut)
+        } else {
+            null
+        }
+        if (keyword == Keyword.Const && mut != null) {
+            diagnosticsBag.reportCannotUseMutWithConst(mut)
+        }
         val identifier = matchToken(Token.Identifier)
         val typeClause = parseOptionalTypeClause()
         val equals = matchToken(Operator.Equals)
         val expression = parseExpression()
-        return VariableDeclarationSyntax(keyword, identifier, typeClause, equals, expression, syntaxTree)
+        return VariableDeclarationSyntax(keyword, mut, identifier, typeClause, equals, expression, syntaxTree)
     }
 
     private fun parseOptionalTypeClause(): TypeClauseSyntax? {
@@ -418,7 +436,21 @@ internal class Parser(
 
 
     private fun parseExpression(): ExpressionSyntax {
-        return parseBinaryExpression()
+        return parseReferenceExpression()
+    }
+
+    private fun parseReferenceExpression(): ExpressionSyntax {
+        return if (current.token is Operator.Ampersand) {
+            val ampersand = matchToken(Operator.Ampersand)
+            val mutable = if (current.token is Keyword.Mut) {
+                matchToken(Keyword.Mut)
+            } else {
+                null
+            }
+            ReferenceExpressionSyntax(ampersand, mutable, parseExpression(), syntaxTree)
+        } else {
+            parseBinaryExpression()
+        }
     }
 
     private fun parseTypeCastExpression(expressionToCast: ExpressionSyntax? = null): ExpressionSyntax {
@@ -432,12 +464,22 @@ internal class Parser(
     }
 
     private fun parseType(): TypeSyntax {
-        var pointerToken: SyntaxToken<Operator.Ampersand>? = null
-        if (current.token is Operator.Ampersand) {
-            pointerToken = matchToken(Operator.Ampersand)
-        }
+        val pointerToken = parsePointerSyntax()
         val identifier = matchToken(Token.Identifier)
         return TypeSyntax(pointerToken, identifier, syntaxTree)
+    }
+
+    private fun parsePointerSyntax(): PointerSyntax? {
+        if (current.token is Operator.Ampersand) {
+            val ampersand = matchToken(Operator.Ampersand)
+            val mutable = if (current.token is Keyword.Mut) {
+                matchToken(Keyword.Mut)
+            } else {
+                null
+            }
+            return PointerSyntax(ampersand, mutable, syntaxTree)
+        }
+        return null
     }
 
     private fun parseBinaryExpression(parentPrecedence: Int = 0): ExpressionSyntax {
@@ -473,7 +515,7 @@ internal class Parser(
             if (precedence == 0 || precedence <= parentPrecedence) {
                 break
             }
-            if(current.token is AssignmentOperator) {
+            if (current.token is AssignmentOperator) {
                 left = parseAssignmentExpression(left)
                 continue
             }
@@ -690,6 +732,7 @@ internal class Parser(
         if (current.token == token) {
             return nextToken() as SyntaxToken<T>
         }
+        nextToken()
         diagnosticsBag.reportUnexpectedToken(
 
             current.location,

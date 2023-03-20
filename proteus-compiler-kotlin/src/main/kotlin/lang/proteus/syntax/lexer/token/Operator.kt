@@ -33,7 +33,8 @@ internal sealed class Operator(
     object DoubleGreaterThan : BinaryOperator(">>", 3)
     object DoubleLessThan : BinaryOperator("<<", 3)
 
-    object Ampersand : UnaryAndBinaryOperator("&", 3, 1)
+    object Ampersand : BinaryOperator("&", 3)
+
 
     object Pipe : BinaryOperator("|", 3)
     object Circumflex : BinaryOperator("^", 3)

@@ -6,6 +6,7 @@ import lang.proteus.symbols.Symbol
 import lang.proteus.symbols.TypeSymbol
 import lang.proteus.symbols.VariableSymbol
 import lang.proteus.syntax.lexer.SyntaxToken
+import lang.proteus.syntax.lexer.token.Keyword
 import lang.proteus.syntax.lexer.token.Token
 import lang.proteus.syntax.parser.FunctionDeclarationSyntax
 import lang.proteus.syntax.parser.ImportStatementSyntax
@@ -71,11 +72,18 @@ internal class DiagnosticsBag {
     }
 
     fun reportFinalVariableCannotBeReassigned(textLocation: TextLocation, variable: VariableSymbol) {
-        val variableDeclarationLiteral = variable.declarationLiteral
         report(
-            "Readonly variables cannot be reassigned",
+            "Immutable variable '${variable.simpleName}' cannot be reassigned",
             textLocation,
-            hint = "Variable '${variable.simpleName}' is declared as '$variableDeclarationLiteral'"
+            hint = "Use 'let mut ${variable.simpleName} = ...' to declare a mutable variable"
+        )
+    }
+
+    fun reportImmutableParameterCannotBeReassigned(textLocation: TextLocation, parameter: VariableSymbol) {
+        report(
+            "Immutable parameter '${parameter.simpleName}' cannot be reassigned",
+            textLocation,
+            hint = "Use 'mut ${parameter.simpleName}: ${parameter.type}' to declare a mutable parameter"
         )
     }
 
@@ -298,6 +306,22 @@ internal class DiagnosticsBag {
 
     fun reportCannotReferenceStructMember(location: TextLocation, name: String) {
         report("Cannot reference struct member '$name'", location)
+    }
+
+    fun reportCannotUseMutWithConst(mut: SyntaxToken<Keyword.Mut>) {
+        report("Cannot use 'mut' with 'const'", mut.location)
+    }
+
+    fun reportMemberOfStructNotMutable(location: TextLocation, memberName: String, structName: String) {
+        report("Member '$memberName' of struct '$structName' is not mutable", location, hint = "Use 'mut' to make it mutable")
+    }
+
+    fun reportCannotAssignToImmutablePointer(location: TextLocation, pointer: TypeSymbol.Pointer) {
+        report("Cannot assign to immutable pointer '${pointer}'", location, hint = "Use '&mut' to get a mutable pointer to the value.")
+    }
+
+    fun reportCannotGetMutableReferenceToImmutableValue(location: TextLocation, type: TypeSymbol) {
+        report("Cannot get mutable reference to '${type}'", location)
     }
 
 

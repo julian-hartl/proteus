@@ -33,14 +33,14 @@ class CodeGenerationTest {
                 Arguments.of(
                     """
                         fn main() {
-                            val a = 1;
-                            val b = 2;
+                            let a = 1;
+                            let b = 2;
                         }
                     """.trimIndent(),
                     """
                         fn main_0() -> Unit {
-                            var a_main_0: Int = 1;
-                            var b_main_0: Int = 2;
+                            let a_main_0: Int = 1;
+                            let b_main_0: Int = 2;
                             return;
                         }
                        
@@ -49,16 +49,16 @@ class CodeGenerationTest {
                 Arguments.of(
                     """
                         fn main() {
-                            val a = 1;
-                            val b = 2;
-                            val c = a + b;
+                            let a = 1;
+                            let b = 2;
+                            let c = a + b;
                         }
                     """.trimIndent(),
                     """
                         fn main_0() -> Unit {
-                            var a_main_0: Int = 1;
-                            var b_main_0: Int = 2;
-                            var c_main_0: Int = ((a_main_0) + (b_main_0));
+                            let a_main_0: Int = 1;
+                            let b_main_0: Int = 2;
+                            let c_main_0: Int = ((a_main_0) + (b_main_0));
                             return;
                         }
                    
@@ -67,12 +67,12 @@ class CodeGenerationTest {
                 Arguments.of(
                     """
                         fn main() {
-                            val test = "test";
+                            let test = "test";
                         }
                     """.trimIndent(),
                     """
                         fn main_0() -> Unit {
-                            var test_main_0: String = "test";
+                            let test_main_0: String = "test";
                             return;
                         }
                      
@@ -82,24 +82,24 @@ class CodeGenerationTest {
                     """
                         fn main() {
                         if (true) {
-                            val a = 1;
-                            val b = 2;
-                            val c = a + b;
+                            let a = 1;
+                            let b = 2;
+                            let c = a + b;
                             }
                             else {
-                            val a = 1;
+                            let a = 1;
                             }
                         }
                     """.trimIndent(),
                     """
                         fn main_0() -> Unit {
                             gotoIfFalse else_0 true;
-                            var a_main_0: Int = 1;
-                            var b_main_0: Int = 2;
-                            var c_main_0: Int = ((a_main_0) + (b_main_0));
+                            let a_main_0: Int = 1;
+                            let b_main_0: Int = 2;
+                            let c_main_0: Int = ((a_main_0) + (b_main_0));
                             goto if_0_end;
                             else_0:
-                            var a_main_0: Int = 1;
+                            let a_main_0: Int = 1;
                             if_0_end:
                             return;
                         }

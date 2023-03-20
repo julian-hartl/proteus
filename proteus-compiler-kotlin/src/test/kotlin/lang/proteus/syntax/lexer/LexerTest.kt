@@ -42,7 +42,8 @@ internal class LexerTest {
                 Token.StructMember,
                 Token.StructDeclaration,
                 Token.StructMemberInitialization,
-                Token.Type
+                Token.Type,
+                Token.Pointer
             )
         )
 
@@ -225,8 +226,8 @@ internal class LexerTest {
                 Arguments.of(Token.OpenBrace, "{"),
                 Arguments.of(Token.CloseBrace, "}"),
 
-                Arguments.of(Keyword.Val, "val"),
-                Arguments.of(Keyword.Var, "var"),
+                Arguments.of(Keyword.Let, "let"),
+                Arguments.of(Keyword.Mut, "mut"),
                 Arguments.of(Keyword.Const, "const"),
 
                 Arguments.of(Keyword.If, "if"),

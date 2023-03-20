@@ -43,6 +43,7 @@ internal sealed class Token(open val literal: kotlin.String? = null) {
 
     object StructMemberInitialization : Token()
     object Type : Token()
+    object Pointer : Token()
 
     fun toSyntaxToken(
         position: Int,

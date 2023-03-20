@@ -62,6 +62,7 @@ internal fun getConstantValue(expression: BoundExpression): Any? {
         is BoundMemberAccessExpression -> null
         is BoundStructInitializationExpression -> null
         is BoundTypeExpression -> null
+        is BoundReferenceExpression -> null
     }
 }
 

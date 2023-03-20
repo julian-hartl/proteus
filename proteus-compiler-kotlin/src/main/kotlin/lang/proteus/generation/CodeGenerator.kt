@@ -215,7 +215,8 @@ internal class CodeGenerator private constructor(
     }
 
     override fun rewriteVariableDeclaration(node: BoundVariableDeclaration): BoundStatement {
-        codeBuilder.append("var ")
+        codeBuilder.append(node.variable.declarationLiteral)
+        codeBuilder.append(" ")
         codeBuilder.append(node.variable.qualifiedName)
         codeBuilder.append(": ")
         codeBuilder.append(node.variable.type.simpleName)

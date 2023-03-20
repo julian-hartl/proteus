@@ -5,13 +5,13 @@ import lang.proteus.syntax.lexer.token.Operator
 
 internal sealed class BoundUnaryOperator(
     val operator: Operator,
-    val operandType: TypeSymbol,
+    val operandTypes: Set<TypeSymbol>,
     val resultType: TypeSymbol,
 ) : BoundOperator() {
 
     constructor(operator: Operator, type: TypeSymbol) : this(
         operator,
-        type,
+        setOf(type),
         type
     )
 
@@ -21,12 +21,15 @@ internal sealed class BoundUnaryOperator(
             BoundUnaryNegationOperator,
             BoundUnaryNotOperator,
             BoundUnaryTypeOfOperator,
-            BoundReferenceOperator,
             BoundDereferenceOperator,
         )
 
         fun bind(operator: Operator, operandType: TypeSymbol): BoundUnaryOperator? {
-            return operators.firstOrNull { it.operator == operator && operandType.isAssignableTo(it.operandType) }
+            return operators.firstOrNull {
+                it.operator == operator && it.operandTypes.any { symbol ->
+                    operandType.isAssignableTo(symbol)
+                }
+            }
         }
     }
 
@@ -34,10 +37,13 @@ internal sealed class BoundUnaryOperator(
     object BoundUnaryIdentityOperator : BoundUnaryOperator(Operator.Plus, TypeSymbol.Int)
     object BoundUnaryNegationOperator : BoundUnaryOperator(Operator.Minus, TypeSymbol.Int)
 
-    object BoundUnaryTypeOfOperator : BoundUnaryOperator(Operator.TypeOf, TypeSymbol.Any, TypeSymbol.Type)
+    object BoundUnaryTypeOfOperator : BoundUnaryOperator(Operator.TypeOf, setOf(TypeSymbol.Any), TypeSymbol.Type)
 
-    object BoundReferenceOperator : BoundUnaryOperator(Operator.Ampersand, TypeSymbol.Any, TypeSymbol.Pointer(TypeSymbol.Any))
+    object BoundDereferenceOperator :
+        BoundUnaryOperator(Operator.Asterisk, setOf(
+            TypeSymbol.Pointer(TypeSymbol.Any, true),
+            TypeSymbol.Pointer(TypeSymbol.Any, false)
+        ), TypeSymbol.Any)
 
-    object BoundDereferenceOperator : BoundUnaryOperator(Operator.Asterisk, TypeSymbol.Pointer(TypeSymbol.Any), TypeSymbol.Any)
 
 }

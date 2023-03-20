@@ -70,6 +70,10 @@ internal class JVMEmitter private constructor(
 
     }
 
+    override fun generateReferenceExpression(expression: BoundReferenceExpression) {
+        TODO("Not yet implemented")
+    }
+
 
     override fun generateMemberAccessExpression(expression: BoundMemberAccessExpression) {
         TODO("Not yet implemented")

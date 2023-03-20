@@ -29,6 +29,7 @@ internal data class ProteusExternalFunction(val symbol: FunctionSymbol, val func
                     method.parameterTypes.map {
                         ParameterSymbol(
                             it.name,
+                            false,
                             TypeSymbol.fromJavaType(it),
                             declaration.syntaxTree,
                             functionSymbol

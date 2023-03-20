@@ -23,7 +23,7 @@ class ExampleTests {
             ),
             Arguments.of(
                 "shadowing/main.psl",
-                2
+                10
             )
         )
     }

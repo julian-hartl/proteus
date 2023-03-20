@@ -60,7 +60,7 @@ internal class Lowerer private constructor() : BoundTreeRewriter() {
             LocalVariableSymbol(
                 "@modify",
                 TypeSymbol.Boolean,
-                isFinal = false,
+                isMut = false,
                 syntaxTree = node.variable.syntaxTree,
                 enclosingFunction = node.variable.enclosingFunction,
             ),

@@ -134,7 +134,16 @@ internal abstract class BoundTreeRewriter {
             is BoundStructInitializationExpression -> rewriteStructInitializationExpression(expression)
             is BoundMemberAccessExpression -> rewriteMemberAccessExpression(expression)
             is BoundTypeExpression -> rewriteTypeExpression(expression)
+            is BoundReferenceExpression -> rewriteReferenceExpression(expression)
         }
+    }
+
+    protected open fun rewriteReferenceExpression(expression: BoundReferenceExpression): BoundExpression {
+        val expr = rewriteExpression(expression.expression)
+        if (expr != expression.expression) {
+            return BoundReferenceExpression(expr, expression.isMutable)
+        }
+        return expression
     }
 
     protected open fun rewriteTypeExpression(expression: BoundTypeExpression): BoundExpression {

@@ -8,7 +8,7 @@ import lang.proteus.syntax.parser.statements.VariableDeclarationSyntax
 internal sealed class VariableSymbol(
     name: String,
     val type: TypeSymbol,
-    val isFinal: Boolean,
+    val isMutable: Boolean,
     var constantValue: BoundExpression?,
     syntaxTree: SyntaxTree,
     uniqueIdentifier: String = syntaxTree.id.toString(),
@@ -17,7 +17,7 @@ internal sealed class VariableSymbol(
         return "$simpleName: $type"
     }
 
-    val isReadOnly get() = isFinal || isConst
+    val isReadOnly get() = !isMutable
 
     val isLocal: Boolean
         get() = this is LocalVariableSymbol
@@ -31,7 +31,7 @@ internal sealed class VariableSymbol(
     val isConst: Boolean
         get() = constantValue != null
 
-    val declarationLiteral: String get() = if (isConst) "const" else if (isFinal) "val" else "var"
+    val declarationLiteral: String get() = if (isConst) "const" else if (isMutable) "let mut" else "let"
 }
 
 internal class GlobalVariableSymbol(
@@ -51,7 +51,7 @@ internal class GlobalVariableSymbol(
 
 internal open class LocalVariableSymbol(
     name: String, type: TypeSymbol,
-    isFinal: Boolean,
+    isMut: Boolean,
     constantValue: BoundLiteralExpression<*>? = null,
     val syntaxTree: SyntaxTree,
     val enclosingFunction: FunctionSymbol,
@@ -59,7 +59,7 @@ internal open class LocalVariableSymbol(
     VariableSymbol(
         name,
         type,
-        isFinal,
+        isMut,
         constantValue,
         syntaxTree,
         uniqueIdentifier = enclosingFunction.qualifiedName

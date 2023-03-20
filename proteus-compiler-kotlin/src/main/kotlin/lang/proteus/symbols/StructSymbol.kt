@@ -23,4 +23,7 @@ internal class StructMemberSymbol(
         type: TypeSymbol = this.type,
         syntax: StructMemberSyntax = this.syntax,
     ) = StructMemberSymbol(name, type, syntax, syntaxTree)
+
+    val isMutable: Boolean
+        get() = syntax.mutabilityToken != null
 }

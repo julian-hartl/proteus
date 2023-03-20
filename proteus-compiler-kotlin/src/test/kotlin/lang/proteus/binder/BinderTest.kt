@@ -250,8 +250,8 @@ class BinderTest {
     fun shouldAllowAssignmentToDeclaredVariable() {
         useExpression(
             """
-            var a = 1
-            a = 2
+            let mut a = 1;
+            a = 2;
         """.trimIndent()
         )
         assertHasNoErrors()
@@ -262,7 +262,7 @@ class BinderTest {
     fun shouldNotAllowAssignmentToOtherType() {
         useExpression(
             """
-            var a = 1
+            let mut a = 1
             a = true
         """.trimIndent()
         )
@@ -285,7 +285,7 @@ class BinderTest {
     fun shouldAllowTypeofOnVariable() {
         useExpression(
             """
-            var a = 1;
+            let mut a = 1;
             typeof a;
         """.trimIndent()
         )
@@ -296,7 +296,7 @@ class BinderTest {
     fun shouldAllowTypeComparison() {
         useExpression(
             """
-            var a = 1;
+            let mut a = 1;
             typeof a == typeof 2;
         """.trimIndent()
         )
@@ -313,8 +313,8 @@ class BinderTest {
     fun shouldAllowAssignmentToVariableInScope() {
         useExpression(
             """
-            var a = 1
-            a = 2
+            let mut a = 1;
+            a = 2;
         """.trimIndent()
         )
         assertHasNoErrors()
@@ -338,7 +338,7 @@ class BinderTest {
         useExpression(
             """
                 {
-            var a = 1
+            let mut a = 1
             {
                 a = 2
             }
@@ -368,7 +368,7 @@ class BinderTest {
         useExpression(
             """
                 {
-            var a = 1
+            let mut a = 1
             {
                 {
                     a = 2
@@ -405,7 +405,7 @@ class BinderTest {
             {
                 val a = 1
                 {
-                    var x = 2
+                    let mut x = 2
                     val x = 2
                 }
             }
@@ -418,7 +418,7 @@ class BinderTest {
     fun shouldAllowAssignmentToVariableInChildScope() {
         useExpression(
             """
-            var a = 1
+            let mut a = 1
             {
                 a = 2
             }
@@ -432,7 +432,7 @@ class BinderTest {
         useExpression(
             """
             {
-                var a = 1
+                let mut a = 1
                 a += true
             }
         """.trimIndent()
@@ -445,7 +445,7 @@ class BinderTest {
         useExpression(
             """
             {
-                var a = 1
+                let mut a = 1
                 a -= true
             }
         """.trimIndent()
@@ -463,7 +463,7 @@ class BinderTest {
     fun shouldReportErrorWhenNonConstantIsUsedInConstantDeclaration() {
         useExpression(
             """
-            var b = 20;
+            let mut b = 20;
             const a = 2 * b;
         """.trimIndent(),
             inMain = true
