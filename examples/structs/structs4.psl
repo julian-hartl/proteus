@@ -1,27 +1,34 @@
 import "std/io";
+fn main() {
+
+    let test2 = &mut 2;
+    let test3: &mut Int = test2;
+    let mut test = 1;
+    test = 2;
+    let mut foo = Foo { x: 1, y: 2 };
+    println(&foo.x);
+    modifyByValue(foo);
+    println(&foo.x);
+    modifyByReference(&foo);
+    println(&foo.x);
+    reassignPointer(&foo);
+    println(&foo.x);
+    reassignPointerReference(&mut foo);
+    println(&foo.x);
+
+}
 
 struct Foo {
-    x: Int;
+    mut x: Int;
     y: Int;
 }
-fn reassignPointerReference(foo: &Foo) {
+fn reassignPointer(mut foo: &Foo) {
+    foo = &Foo { x: 10, y: 4 };
+}
+fn reassignPointerReference(foo: &mut Foo) {
     *foo = Foo { x: 10, y: 4 };
 }
 
-fn main() {
-
-    val foo = Foo { x: 1, y: 2 };
-    println(foo.x);
-    modifyByValue(foo);
-    println(foo.x);
-    modifyByReference(&foo);
-    println(foo.x);
-    reassignPointer(&foo);
-    println(foo.x);
-    reassignPointerReference(&foo);
-    println(foo.x);
-
-}
 
 fn modifyByValue(foo: Foo) {
     foo.x = 3;
@@ -31,8 +38,6 @@ fn modifyByReference(foo: &Foo) {
     (*foo).x = 3;
 }
 
-fn reassignPointer(foo: &Foo) {
-    foo = &Foo { x: 10, y: 4 };
-}
+
 
 

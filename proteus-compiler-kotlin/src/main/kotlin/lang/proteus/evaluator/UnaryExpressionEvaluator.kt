@@ -11,7 +11,6 @@ internal object  UnaryExpressionEvaluator {
             BoundUnaryOperator.BoundUnaryNotOperator -> !(operand as Boolean)
             BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.fromValueOrAny(operand)
             BoundUnaryOperator.BoundDereferenceOperator -> operand
-            BoundUnaryOperator.BoundReferenceOperator -> operand
         }
     }
 }

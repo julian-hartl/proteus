@@ -11,11 +11,11 @@ internal sealed class BoundAssignee<T : BoundExpression>(
     class BoundVariableAssignee(val variable: VariableSymbol) :
         BoundAssignee<BoundVariableExpression>(BoundVariableExpression(variable))
 
-    class BoundMemberAssignee(member: BoundMemberAccessExpression) :
-        BoundAssignee<BoundMemberAccessExpression>(member)
+    class BoundMemberAssignee(expression: BoundMemberAccessExpression) :
+        BoundAssignee<BoundMemberAccessExpression>(expression)
 
-    class BoundDereferenceAssignee(dereferenced: BoundExpression, val referencing: BoundAssignee<out BoundExpression>) :
-        BoundAssignee<BoundExpression>(dereferenced)
+    class BoundDereferenceAssignee(expression: BoundUnaryExpression, val referencing: BoundAssignee<out BoundExpression>) :
+        BoundAssignee<BoundUnaryExpression>(expression)
 
 
     companion object {

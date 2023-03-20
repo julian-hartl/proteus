@@ -2,6 +2,6 @@ import "std/math";
 import "./multiply";
 
 fn main() {
-    val random = random(1,1);
-    val multiplied = multiply(random, PI);
+    let random = random(1,1);
+    let multiplied = multiply(random, PI);
 }

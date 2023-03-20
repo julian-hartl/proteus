@@ -19,9 +19,12 @@ internal abstract class Emitter<Output>(val boundProgram: BoundProgram) {
             is BoundVariableExpression -> generateVariableExpression(expression)
             is BoundStructInitializationExpression -> generateStructInitializationExpression(expression)
             is BoundMemberAccessExpression -> generateMemberAccessExpression(expression)
+            is BoundReferenceExpression -> generateReferenceExpression(expression)
             else -> throw Exception("Unexpected expression: $expression")
         }
     }
+
+    protected abstract fun generateReferenceExpression(expression: BoundReferenceExpression)
 
 
     protected abstract fun generateMemberAccessExpression(expression: BoundMemberAccessExpression)

@@ -121,7 +121,7 @@ internal class Compilation private constructor(
     }
 
     private fun getProgram(): BoundProgram {
-        val program = Binder.bindProgram(globalScope, mainTree = entryPointTree, optimize = !isInterpreting)
+        val program = Binder.bindProgram(globalScope, mainTree = entryPointTree)
         _globalScope = program.globalScope
         return program
     }

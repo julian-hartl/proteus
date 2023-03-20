@@ -32,7 +32,6 @@ internal class BoundUnaryExpression(val operand: BoundExpression, val operator: 
             BoundUnaryOperator.BoundUnaryNotOperator -> operand.type
             BoundUnaryOperator.BoundUnaryTypeOfOperator -> TypeSymbol.Type
             BoundUnaryOperator.BoundDereferenceOperator -> (operand.type as TypeSymbol.Pointer).type
-            BoundUnaryOperator.BoundReferenceOperator -> TypeSymbol.Pointer(operand.type)
         }
 
 

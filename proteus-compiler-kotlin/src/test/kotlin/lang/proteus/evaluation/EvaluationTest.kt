@@ -47,7 +47,7 @@ class EvaluationTest {
         assertEquals(
             value,
             evaluationResult.value,
-            "Evaluation result should be $value, but was $evaluationResult"
+            "Evaluation result should be $value, but was ${evaluationResult.value}"
         )
     }
 
@@ -214,14 +214,14 @@ class EvaluationTest {
                 Arguments.of("1 is Int and 1 is Boolean;", false),
                 Arguments.of("1 is Int or 1 is Boolean;", true),
 
-                Arguments.of(" var a = 0; a = (a = 10) * 10; ", 100),
-                Arguments.of(" val a = 42; a;", 42),
-                Arguments.of(" val b = -4; b;", -4),
+                Arguments.of(" let mut a = 0; a = (a = 10) * 10; ", 100),
+                Arguments.of(" let a = 42; a;", 42),
+                Arguments.of(" let b = -4; b;", -4),
                 Arguments.of(
                     """
                     
-                        val a = 42;
-                        val b = a + 1;
+                        let a = 42;
+                        let b = a + 1;
                         b;
                     
                 """.trimIndent(), 43
@@ -230,7 +230,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     
-                        var a = 0;
+                        let mut a = 0;
                         a += 10;
                         a;
                     
@@ -240,7 +240,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     
-                        var a = 0;
+                        let mut a = 0;
                         a -= 10;
                         a;
                     
@@ -250,7 +250,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                         
-                            var x = 1 + 2;
+                            let mut x = 1 + 2;
                             typeof x;
                         
 
@@ -261,7 +261,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     
-                       var x = 10;
+                       let mut x = 10;
                        if x == 10
                             x = 20;
                        x;
@@ -272,7 +272,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     
-                        var x = 10;
+                        let mut x = 10;
                         if x == 20 {
                             x = 5;
                         }
@@ -287,7 +287,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     
-                        var x = 10;
+                        let mut x = 10;
                         while x > 0
                             x = x - 1;
                         x;
@@ -297,7 +297,7 @@ class EvaluationTest {
 
                 Arguments.of(
                     """
-                            var b = 0;
+                            let mut b = 0;
                             for x in 1 until 10 {
                                 b = b + x;
                             }
@@ -308,7 +308,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                         
-                            var b = 0;
+                            let mut b = 0;
                             if b == 0
                                 b = 10;
                             b;
@@ -319,7 +319,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                         
-                            var b = 10;
+                            let mut b = 10;
                             for x in 1 until 10 {
                                 b += x;
                             }
@@ -331,7 +331,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                        
-                            var b = 0;
+                            let mut b = 0;
                             if (b == 0) {
                                 b = 10;
                             };
@@ -344,8 +344,8 @@ class EvaluationTest {
                 Arguments.of(
                     """
 
-                            val test = "{ val test = a; }";
-                            var a = 0;
+                            let test = "{ val test = a; }";
+                            let mut a = 0;
                             if test == "{ val test = a; }" {
                                 a = 10;
                             } else {
@@ -360,7 +360,7 @@ class EvaluationTest {
                 Arguments.of(
                     """
                     {
-                    val a = "Hello" + " " + "World";
+                    let a = "Hello" + " " + "World";
                     a;
                     }
                 """.trimIndent(),
@@ -396,22 +396,22 @@ class EvaluationTest {
                 ),
                 Arguments.of(
                     """
-                        val hello = "Hello";
-                        val name = "World";
+                        let hello = "Hello";
+                        let name = "World";
                         hello + " " + name;
                     """.trimIndent(), "Hello World"
                 ),
                 Arguments.of(
                     """
-                        val hello = "Hello";
-                        val number = 2;
+                        let hello = "Hello";
+                        let number = 2;
                         hello + " " + number as String;
                     """.trimIndent(), "Hello 2"
                 ),
 
                 Arguments.of(
                     """
-                    var a = 1;
+                    let mut a = 1;
                     while true {
                         if a == 10 {
                             break;
@@ -423,8 +423,8 @@ class EvaluationTest {
 
                 Arguments.of(
                     """
-                    var a = 0;
-                    var b = 0;
+                    let mut a = 0;
+                    let mut b = 0;
                     while true {
                         if a == 10 break;
                         a += 1;
@@ -438,7 +438,7 @@ class EvaluationTest {
 
                 Arguments.of(
                     """
-                        var i = 0;
+                        let mut i = 0;
                         while i < 5 {
                             i += 1;
                             if i == 5 continue;
@@ -460,7 +460,7 @@ class EvaluationTest {
                         }
                         
                         fn main() {
-                            val x = test();
+                            let x = test();
                         }
                     """.trimIndent(),
                 10,
@@ -470,7 +470,7 @@ class EvaluationTest {
                 """
                     import "std/math";
                         fn main() {
-                            val random = "1";
+                            let random = "1";
                             random(random as Int, 1);
                         }
                     """.trimIndent(), 1
@@ -478,7 +478,7 @@ class EvaluationTest {
 
             Arguments.of(
                 """
-                        var a = 0;
+                        let mut a = 0;
                         fn test() {
                             if a == 0 {
                                 return;
@@ -490,7 +490,7 @@ class EvaluationTest {
                         }
                         fn main() {
                             test();
-                            val x = a;
+                            let x = a;
                         }
                     """.trimIndent(),
                 0,
@@ -499,8 +499,8 @@ class EvaluationTest {
             Arguments.of(
                 """
                     fn sum(n: Int) -> Int {
-                        var i = n;
-                        var result = 0;
+                        let mut i = n;
+                        let mut result = 0;
                         while true {
                             if i == 0 return result;
                             result += i;
@@ -509,7 +509,7 @@ class EvaluationTest {
                     }
 
                     fn main() {
-                        val sum = sum(90);
+                        let sum = sum(90);
                     }
                 """.trimIndent(), 4095
             ),
@@ -522,12 +522,12 @@ class EvaluationTest {
                     }
                     
                     fn main() {
-                        val test = Test {
+                        let test = Test {
                             a: 10,
                             b: 20,
                         };
-                        val a = test.a;
-                        val b = test.b;
+                        let a = test.a;
+                        let b = test.b;
                     }
                 """.trimIndent(),
                 20
@@ -537,35 +537,46 @@ class EvaluationTest {
                 """
                     struct Test {
                         a: Int;
-                        b: Int;
+                        mut b: Int;
                     }
                     
                     fn main() {
-                        val test = Test {
+                        let test = Test {
                             a: 10,
                             b: 20,
                         };
                         test.b = 30;
-                        val a = test.a;
-                        val b = test.b;
+                        let a = test.a;
+                        let b = test.b;
                     }
                 """.trimIndent(),
                 30
             ),
+
+            Arguments.of(
+                """
+                    fn main() {
+                        let test = &mut 10;
+                        
+                        let a = *test;
+                    }
+                """.trimIndent(),
+                10
+            )
         )
 
     }
 
     @Test
-    fun `evaluator variable declaration reports redeclaration`() {
+    fun `evaluator let mutiable declaration reports redeclaration`() {
         val text = """
             
-                var x = 10;
-                var y = 100;
+                let mut x = 10;
+                let mut y = 100;
                 {
-                    var x = 10;
+                    let mut x = 10;
                 }
-                var [x] = 5;
+                let mut [x] = 5;
             
         """
 
@@ -598,11 +609,11 @@ class EvaluationTest {
     fun `evaluator Assignment reports cannot be reassigned`() {
         val text = """
             
-                val x = 10;
+                let x = 10;
                 [x] = 20;
             
         """
-        val diagnostics = "Readonly variables cannot be reassigned --- Hint: Variable 'x' is declared as 'val'"
+        val diagnostics = "Immutable variable 'x' cannot be reassigned --- Hint: Use 'let mut x = ...' to declare a mutable variable"
         assertDiagnostics(text, diagnostics)
     }
 
@@ -610,7 +621,7 @@ class EvaluationTest {
     fun `evaluator Assignment reports cannot convert`() {
         val text = """
 
-                var x = 10;
+                let mut x = 10;
                 x = [false];
             
         """
@@ -622,7 +633,7 @@ class EvaluationTest {
     fun `evaluator Binary reports undefined operator`() {
         val text = """
             
-                var x = 5 [+] false;
+                let mut x = 5 [+] false;
             
         """
         val diagnostics = "Operator '+' is not defined for types 'Int' and 'Boolean'"
@@ -633,7 +644,7 @@ class EvaluationTest {
     fun `evaluator Unary reports undefined operator`() {
         val text = """
             
-                var x = [+]false;
+                let mut x = [+]false;
 
         """
         val diagnostics = "Operator '+' is not defined for type 'Boolean'"
@@ -645,7 +656,7 @@ class EvaluationTest {
         val text = """
             
                 if [10] {
-                    var x = 10;
+                    let mut x = 10;
                 }
             
         """
@@ -658,7 +669,7 @@ class EvaluationTest {
         val text = """
             
                 while [10] {
-                    var x = 10;
+                    let mut x = 10;
                 }
             
         """
@@ -706,27 +717,27 @@ class EvaluationTest {
     }
 
     @Test
-    fun `evaluator final variable should not be reassigned with += operator`() {
+    fun `evaluator final let mutable should not be reassigned with += operator`() {
         val text = """
             
-                val a = 2;
+                let a = 2;
                 [a] += 1;
             
         """.trimIndent()
-        val diagnostics = "Readonly variables cannot be reassigned --- Hint: Variable 'a' is declared as 'val'"
+        val diagnostics = "Immutable variable 'a' cannot be reassigned --- Hint: Use 'let mut a = ...' to declare a mutable variable"
 
         assertDiagnostics(text, diagnostics)
     }
 
     @Test
-    fun `evaluator final variable should not be reassigned with -= operator`() {
+    fun `evaluator final let mutable should not be reassigned with -= operator`() {
         val text = """
             
-                val a = 2;
+                let a = 2;
                 [a] -= 1;
             
         """.trimIndent()
-        val diagnostics = "Readonly variables cannot be reassigned --- Hint: Variable 'a' is declared as 'val'"
+        val diagnostics = "Immutable variable 'a' cannot be reassigned --- Hint: Use 'let mut a = ...' to declare a mutable variable"
 
         assertDiagnostics(text, diagnostics)
     }
@@ -736,7 +747,7 @@ class EvaluationTest {
     fun `evaluator += operator should not be applicable to Boolean`() {
         val text = """
             
-                var a = true;
+                let mut a = true;
                 a += [1];
             
         """.trimIndent()
@@ -749,7 +760,7 @@ class EvaluationTest {
     fun `evaluator -= operator should not be applicable to Boolean`() {
         val text = """
             
-                var a = true;
+                let mut a = true;
                 a -= [1];
             
         """.trimIndent()
@@ -762,7 +773,7 @@ class EvaluationTest {
     fun `should not be able to use while statement as top level statement`() {
         val text = """
             [while true {
-                var a = 1;
+                let mut a = 1;
             }]
             
             fn main() {
@@ -774,7 +785,164 @@ class EvaluationTest {
         assertDiagnostics(text, diagnostics, wrapInMain = false)
     }
 
+    @Test
+    fun `should not be able to reassign let mutable not marked as mut`() {
+        val text = """
+            fn main() {
+                let a = 1;
+                [a] = 2;
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Immutable variable 'a' cannot be reassigned --- Hint: Use 'let mut a = ...' to declare a mutable variable
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
 
+    @Test
+    fun `should not be able to reassign not mutable struct member`() {
+        val text = """
+            struct Foo {
+                a: Int;
+            }
+            
+            fn main() {
+                let foo = Foo { a: 1 };
+                [foo.a] = 2;
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Member 'a' of struct 'Foo' is not mutable --- Hint: Use 'mut' to make it mutable
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to reassign not mutable function parameter`() {
+        val text = """
+            fn foo(a: Int) {
+                [a] = 2;
+            }
+            
+            fn main() {
+                foo(1);
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Immutable parameter 'a' cannot be reassigned --- Hint: Use 'mut a: Int' to declare a mutable parameter
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to reassign not mutable pointer`() {
+        val text = """
+            fn main() {
+                let a = 1;
+                let b = &a;
+                [*b] = 2;
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot assign to immutable pointer '&Int' --- Hint: Use '&mut' to get a mutable pointer to the value.
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to obtain mutable reference to immutable value`() {
+        val text = """
+            fn main() {
+                let a = 1;
+                let b = &[mut] a;
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot get mutable reference to 'Int'
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to pass mutable reference to immutable value`() {
+        val text = """
+            
+            
+            fn main() {
+                let mut a = 1;
+                let b: &Int = [&mut a];
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot convert type '&mut Int' to '&Int' --- Hint: You need to pass an immutable reference instead of a mutable one. Use & to get an immutable reference to the value.
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to assign by reference to immutable struct member`() {
+        val text = """
+            struct Foo {
+                a: Int;
+            }
+            
+            fn main() {
+                let foo = Foo { a: 1 };
+                let b = &foo.a;
+                [*b] = 2;
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot assign to immutable pointer '&Int' --- Hint: Use '&mut' to get a mutable pointer to the value.
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to pass immutable pointer to function that requires mutable pointer`() {
+        val text = """
+            fn foo(a: &mut Int) {
+            }
+            
+            fn main() {
+                let a = 1;
+                let b = &a;
+                foo([b]);
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot convert type '&Int' to '&mut Int' --- Hint: You need to pass a mutable reference instead of an immutable one. Use &mut to get a mutable reference to the value.
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not be able to pass immutable reference to function that requires mutable reference`() {
+        val text = """
+            fn foo(a: &mut Int) {
+            }
+            
+            fn main() {
+                let a = 1;
+                foo([&a]);
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot convert type '&Int' to '&mut Int' --- Hint: You need to pass a mutable reference instead of an immutable one. Use &mut to get a mutable reference to the value.
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
+    fun `should not allow mutable constant`() {
+        val text = """
+            const [mut] a = 1;
+        """.trimIndent()
+        val diagnostics = """
+            Cannot use 'mut' with 'const'
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
 
     private fun assertDiagnostics(text: String, diagnosticText: String, wrapInMain: Boolean = true) {
         val wrappedText = if (wrapInMain) """

@@ -145,8 +145,8 @@ internal class Binder(
                 val body = binder.bindBlockStatement(functionBody)
                 var optimizedBody = BoundBlockStatement(listOf())
                 if (!binder.hasErrors()) {
-                    val loweredBody = Lowerer.lower(body)
-                    optimizedBody = if (optimize) CodeOptimizer.optimize(loweredBody) else loweredBody
+                    optimizedBody = if (optimize) CodeOptimizer.optimize(body) else body
+                    optimizedBody = Lowerer.lower(optimizedBody)
                     val graph = ControlFlowGraph.createAndOutput(optimizedBody)
                     if (!graph.allPathsReturn()) {
                         diagnostics.reportAllCodePathsMustReturn(function.declaration.identifier.location)
@@ -242,6 +242,7 @@ internal class Binder(
 
     private data class ParameterInfo(
         val name: String,
+        val isMutable: Boolean,
         val type: TypeSymbol,
     )
 
@@ -261,13 +262,13 @@ internal class Binder(
             }
             val type = bindTypeClause(parameterSyntax.typeClause)
             val parameter =
-                ParameterInfo(name, type)
+                ParameterInfo(name, parameterSyntax.mutabilityToken != null, type)
             parameterInfos.add(parameter)
         }
 
         val returnType = bindOptionalReturnTypeClause(function.returnTypeClause) ?: TypeSymbol.Unit
         val functionSymbol = FunctionSymbol(null, returnType, function, tree)
-        val parameters = parameterInfos.map { ParameterSymbol(it.name, it.type, tree, functionSymbol) }
+        val parameters = parameterInfos.map { ParameterSymbol(it.name, it.isMutable, it.type, tree, functionSymbol) }
         functionSymbol.parameters = parameters
         if (scope.tryDeclareFunction(functionSymbol, tree) == null) {
             diagnosticsBag.reportFunctionAlreadyDeclared(function.identifier.location, function.identifier.literal)
@@ -369,7 +370,7 @@ internal class Binder(
 
         val name = syntax.identifier.literal
         val variable = LocalVariableSymbol(
-            name, TypeSymbol.Int, isFinal = true, syntaxTree = syntax.syntaxTree,
+            name, TypeSymbol.Int, isMut = true, syntaxTree = syntax.syntaxTree,
             enclosingFunction = this.function!!
         )
         val declaredVariable = scope.tryLookupVariable(name, syntax.syntaxTree)
@@ -432,10 +433,19 @@ internal class Binder(
             return boundExpression
         }
         if (conversion.isNone || (conversion.isExplicit && !isCastExplicit)) {
-            val hint = if (Conversion.classify(type.deref(), expectedType.deref()).isImplicit) {
-                "You need to pass by reference instead of by value. Use & to get a reference to the value."
-            } else {
-                null
+            val hint = run {
+                if (Conversion.classify(type.deref(), expectedType.deref()).isImplicit) {
+                    "You need to pass by reference instead of by value. Use & to get a reference to the value."
+                } else {
+                    if (type is TypeSymbol.Pointer && expectedType is TypeSymbol.Pointer) {
+                        if (expectedType.isMutable && !type.isMutable) {
+                            return@run "You need to pass a mutable reference instead of an immutable one. Use &mut to get a mutable reference to the value."
+                        } else{
+                            return@run "You need to pass an immutable reference instead of a mutable one. Use & to get an immutable reference to the value."
+                        }
+                    }
+                    null
+                }
             }
             if (reportDiagnostics) {
                 diagnosticsBag.reportCannotConvert(textLocation, expectedType, type, hint)
@@ -450,20 +460,20 @@ internal class Binder(
     ): BoundVariableDeclaration {
         val initializer = bindExpression(syntax.initializer)
         val isConst = syntax.keyword is Keyword.Const
-        val isFinal = isConst || syntax.keyword is Keyword.Val
+        val isMutable = syntax.mutabilityToken != null
         val typeClause = bindOptionalTypeClause(syntax.typeClauseSyntax)
         val type = (typeClause ?: initializer.type)
         val convertedInitializer = bindConversion(initializer, type, syntax.initializer.location)
         val symbol = if (function == null) GlobalVariableSymbol(
             syntax.identifier.literal,
             type,
-            isFinal,
+            isMutable,
             syntaxTree = syntax.syntaxTree,
             declarationSyntax = syntax
         ) else LocalVariableSymbol(
             syntax.identifier.literal,
             type,
-            isFinal,
+            isMutable,
             syntaxTree = syntax.syntaxTree,
             enclosingFunction = function
         )
@@ -550,9 +560,29 @@ internal class Binder(
             is CastExpressionSyntax -> bindCastExpression(syntax)
             is StructInitializationExpressionSyntax -> bindStructInitializationExpression(syntax)
             is MemberAccessExpressionSyntax -> bindMemberAccessExpression(syntax)
+            is ReferenceExpressionSyntax -> bindReferenceExpression(syntax)
         }
     }
 
+    private fun bindReferenceExpression(syntax: ReferenceExpressionSyntax): BoundExpression {
+        val expression = bindExpression(syntax.expression)
+        val isMutable = syntax.mutabilityToken != null
+        if (isMutable && !isExpressionMutable(expression)) {
+            diagnosticsBag.reportCannotGetMutableReferenceToImmutableValue(syntax.mutabilityToken!!.location , expression.type)
+        }
+        return BoundReferenceExpression(expression, isMutable = isMutable)
+    }
+
+    private fun isExpressionMutable(expression: BoundExpression): Boolean {
+        return when (expression) {
+            is BoundReferenceExpression -> expression.isMutable
+            is BoundVariableExpression -> expression.variable.isMutable
+            is BoundMemberAccessExpression -> isExpressionMutable(expression.expression)
+            is BoundConversionExpression -> isExpressionMutable(expression.expression)
+            is BoundLiteralExpression<*> -> true
+            else -> false
+        }
+    }
 
     private fun bindMemberAccessExpression(syntax: MemberAccessExpressionSyntax): BoundExpression {
         val expression = bindExpression(syntax.expression)
@@ -744,21 +774,44 @@ internal class Binder(
     ): Boolean {
         when (boundAssignee) {
             is BoundAssignee.BoundMemberAssignee -> {
-
+                val parent = boundAssignee.expression.expression.type as? TypeSymbol.Struct
+                val structSymbol = structMembers?.keys?.firstOrNull { it.name == parent?.name }
+                val member =
+                    structMembers?.get(structSymbol)?.firstOrNull { it.name == boundAssignee.expression.memberName }
+                        ?: return false
+                if (!member.isMutable) {
+                    diagnosticsBag.reportMemberOfStructNotMutable(
+                        syntax.assigneeExpression.location,
+                        member.name,
+                        structSymbol!!.name
+                    )
+                    return true
+                }
             }
 
             is BoundAssignee.BoundVariableAssignee -> {
                 val variable = boundAssignee.variable
                 if (variable.isReadOnly) {
-                    diagnosticsBag.reportFinalVariableCannotBeReassigned(syntax.assigneeExpression.location, variable)
+                    if(variable is ParameterSymbol){
+                        diagnosticsBag.reportImmutableParameterCannotBeReassigned(syntax.assigneeExpression.location, variable)
+                    }else {
+                        diagnosticsBag.reportFinalVariableCannotBeReassigned(
+                            syntax.assigneeExpression.location,
+                            variable
+                        )
+                    }
                     return true
                 }
             }
 
             is BoundAssignee.BoundDereferenceAssignee -> {
 
-
-                checkAssignmentTarget(boundAssignee.referencing, syntax)
+                val expression = boundAssignee.expression
+                val type = expression.operand.type as TypeSymbol.Pointer
+                if (!type.isMutable) {
+                    diagnosticsBag.reportCannotAssignToImmutablePointer(syntax.assigneeExpression.location, type)
+                    return true
+                }
 
 
             }
@@ -880,7 +933,9 @@ internal class Binder(
             }
         }
         if (typeSyntax.isPointer) {
-            return boundType.ref()
+            return boundType.ref(
+                typeSyntax.pointer!!.mutability != null
+            )
         }
         return boundType
     }

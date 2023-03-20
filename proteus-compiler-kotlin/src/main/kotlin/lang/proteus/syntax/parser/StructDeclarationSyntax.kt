@@ -19,6 +19,7 @@ internal class StructDeclarationSyntax(
 
 internal class StructMemberSyntax(
     syntaxTree: SyntaxTree,
+    val mutabilityToken: SyntaxToken<Keyword.Mut>?,
     val identifier: SyntaxToken<Token.Identifier>,
     val type: TypeClauseSyntax,
     val semiColonToken: SyntaxToken<Token.SemiColon>,

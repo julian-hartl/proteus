@@ -2,11 +2,6 @@ package lang.proteus.evaluator
 
 import lang.proteus.binding.*
 import lang.proteus.symbols.*
-import lang.proteus.symbols.FunctionSymbol
-import lang.proteus.symbols.GlobalVariableSymbol
-import lang.proteus.symbols.ProteusExternalFunction
-import lang.proteus.symbols.StructMemberSymbol
-import lang.proteus.symbols.StructSymbol
 import java.util.*
 
 internal class Evaluator(
@@ -144,14 +139,19 @@ internal class Evaluator(
             is BoundStructInitializationExpression -> evaluateStructInitializationExpression(expression)
             is BoundMemberAccessExpression -> evaluateMemberAccessExpression(expression)
             is BoundTypeExpression -> expression.symbol
+            is BoundReferenceExpression -> evaluateReferenceExpression(expression)
             else -> throwUnsupportedOperation(expression::class.simpleName!!)
         }
 
     }
 
+    private fun evaluateReferenceExpression(expression: BoundReferenceExpression): Any? {
+        return evaluateExpression(expression.expression)
+    }
+
     private fun evaluateMemberAccessExpression(expression: BoundMemberAccessExpression): Any? {
         val value = evaluateExpression(expression.expression)!!
-        if(isAssignmentAccess) {
+        if (isAssignmentAccess) {
             return value
         }
         return (value as Map<*, *>)[expression.memberName]
@@ -204,38 +204,46 @@ internal class Evaluator(
     private var isAssignmentAccess = false
 
     private fun evaluateAssignmentExpression(expression: BoundAssignmentExpression): Any {
-        val assignee = expression.assignee
+        var assignee: BoundAssignee<*>? = expression.assignee
         var currentValue: Any? = null
         val expressionValue = evaluateExpression(expression.expression)
-        when(assignee) {
-            is BoundAssignee.BoundDereferenceAssignee -> TODO()
-            is BoundAssignee.BoundMemberAssignee -> {
-                isAssignmentAccess = true
-                val value = evaluateExpression(assignee.expression)!!
-                isAssignmentAccess = false
-                (value as MutableMap<String, Any>)[assignee.expression.memberName] = expressionValue!!
-                currentValue = value
-            }
-            is BoundAssignee.BoundVariableAssignee -> {
-                val variable = assignee.variable
-                 currentValue = if (variable.isLocal) {
-                    locals.peek()[variable.qualifiedName]
-                        ?: throw IllegalStateException("No locals found for ${variable.simpleName}")
-                } else {
-                    globals[variable.qualifiedName]
-                        ?: throw IllegalStateException("No globals found for ${variable.simpleName}")
+        while (assignee != null) {
+            when (assignee) {
+                is BoundAssignee.BoundDereferenceAssignee -> {
+                    isAssignmentAccess = true
+                    assignee = assignee.referencing
                 }
-                evaluateExpression(expression.expression)
-                if (variable.isGlobal) {
-                    globals[variable.qualifiedName] = expressionValue!!
-                } else {
-                    locals.peek()[variable.qualifiedName] = expressionValue!!
+
+                is BoundAssignee.BoundMemberAssignee -> {
+                    isAssignmentAccess = true
+                    val value = evaluateExpression(assignee.expression)!!
+                    isAssignmentAccess = false
+                    (value as MutableMap<String, Any>)[assignee.expression.memberName] = expressionValue!!
+                    currentValue = value
+                    assignee = null
+                }
+
+                is BoundAssignee.BoundVariableAssignee -> {
+                    val variable = assignee.variable
+                    currentValue = if (variable.isLocal) {
+                        locals.peek()[variable.qualifiedName]
+                            ?: throw IllegalStateException("No locals found for ${variable.simpleName}")
+                    } else {
+                        globals[variable.qualifiedName]
+                            ?: throw IllegalStateException("No globals found for ${variable.simpleName}")
+                    }
+                    if (variable.isGlobal) {
+                        globals[variable.qualifiedName] = expressionValue!!
+                    } else {
+                        locals.peek()[variable.qualifiedName] = expressionValue!!
+                    }
+                    assignee = null
                 }
             }
         }
 
 
-        return if (expression.returnAssignment) expressionValue else currentValue
+        return if (expression.returnAssignment) expressionValue!! else currentValue!!
     }
 
     private fun evaluateBinaryExpression(expression: BoundBinaryExpression): Any {

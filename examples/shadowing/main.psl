@@ -7,6 +7,6 @@ fn getA() -> Int {
 }
 
 fn main() {
-    val a = getA();
-    println(a as String);
+    let a = getA();
+    println(&a);
 }

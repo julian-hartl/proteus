@@ -1,15 +1,31 @@
 import "std/io";
+
+
+
 fn main() {
-    var x= 0;
 
-    x += 1;
 
-    x = calc(x);
+    val x = 20;
 
-   println(x);
+    val y = 10;
+    val z = x + y;
+
+    println(&z);
+
+    if(z > 30) {
+        println(&"z is greater than 30");
+    } else {
+        println(&"z is less than 30");
+    }
+
+    while(37 > 0) {
+        println(&"37 is greater than 0");
+        if(37 == 0) {
+            println(&"37 is equal to 0");
+        }
+        break;
+    }
+
 
 }
 
-fn calc(x: Int) -> Int {
-    return x + 1;
-}

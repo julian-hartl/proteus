@@ -70,6 +70,53 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
         generateBlockStatement(body)
     }
 
+    override fun generateReferenceExpression(expression: BoundReferenceExpression) {
+        when (val referencedExpression = expression.expression) {
+            is BoundVariableExpression -> {
+                val variable = referencedExpression.variable
+                val offset = currentStackFrame.variables[variable] ?: globalVariables[variable]!!
+                codeBuilder.appendLine(api.loada(offset))
+            }
+
+            is BoundLiteralExpression<*>, is BoundUnaryExpression, is BoundBinaryExpression -> {
+                generateExpression(referencedExpression)
+                val sizeInBytes = if (referencedExpression is BoundLiteralExpression<*>) {
+                    when (referencedExpression.value) {
+                        is Int -> 4
+                        is Boolean -> 4
+                        is String -> referencedExpression.value.length + 1
+                        else -> throw Exception("Unexpected literal ${referencedExpression.value}")
+                    }
+                } else MemoryLayout.layout(
+                    referencedExpression.type,
+                    boundProgram.structMembers
+                ).sizeInBytes
+                codeBuilder.appendLine(
+                    api.pushsp(
+                        -sizeInBytes
+                    )
+                )
+            }
+
+            is BoundMemberAccessExpression -> {
+                generateAsPointer = true
+                generateExpression(referencedExpression)
+                generateAsPointer = false
+
+            }
+
+            is BoundStructInitializationExpression -> {
+                generateAsPointer = true
+                generateExpression(referencedExpression)
+                generateAsPointer = false
+                codeBuilder.appendLine(api.rstore(referencedExpression.type))
+            }
+
+
+            else -> throw Exception("Unexpected expression $referencedExpression")
+        }
+    }
+
     private fun writeFunctionDeclaration(functionSymbol: FunctionSymbol) {
         writeComment("${functionSymbol.simpleName}(${functionSymbol.parameters.joinToString(", ") { it.type.simpleName }})")
     }
@@ -243,6 +290,18 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
                     }
                 }
 
+                is TypeSymbol.Int -> {
+                    when (expression.type.deref()) {
+                        is TypeSymbol.String -> {
+                            codeBuilder.appendLine(api.itoa())
+                        }
+
+                        else -> {
+                            throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
+                        }
+                    }
+                }
+
                 else -> {
                     throw Exception("Unexpected conversion from $expressionType to ${expression.type}")
                 }
@@ -341,53 +400,6 @@ internal class ProteusByteCodeEmitter(boundProgram: BoundProgram) : Emitter<Stri
                         MemoryLayout.pointerSize
                     )
                 )
-            }
-
-            BoundUnaryOperator.BoundReferenceOperator -> {
-                when (val referencedExpression = expression.operand) {
-                    is BoundVariableExpression -> {
-                        val variable = referencedExpression.variable
-                        val offset = currentStackFrame.variables[variable] ?: globalVariables[variable]!!
-                        codeBuilder.appendLine(api.loada(offset))
-                    }
-
-                    is BoundLiteralExpression<*>, is BoundUnaryExpression, is BoundBinaryExpression -> {
-                        generateExpression(referencedExpression)
-                        val sizeInBytes = if (referencedExpression is BoundLiteralExpression<*>) {
-                            when (referencedExpression.value) {
-                                is Int -> 4
-                                is Boolean -> 4
-                                is String -> referencedExpression.value.length + 1
-                                else -> throw Exception("Unexpected literal ${referencedExpression.value}")
-                            }
-                        } else MemoryLayout.layout(
-                            referencedExpression.type,
-                            boundProgram.structMembers
-                        ).sizeInBytes
-                        codeBuilder.appendLine(
-                            api.pushsp(
-                                -sizeInBytes
-                            )
-                        )
-                    }
-
-                    is BoundMemberAccessExpression -> {
-                        generateAsPointer = true
-                        generateExpression(referencedExpression)
-                        generateAsPointer = false
-
-                    }
-
-                    is BoundStructInitializationExpression -> {
-                        generateAsPointer = true
-                        generateExpression(referencedExpression)
-                        generateAsPointer = false
-                        codeBuilder.appendLine(api.rstore(referencedExpression.type))
-                    }
-
-
-                    else -> throw Exception("Unexpected expression $referencedExpression")
-                }
             }
 
             else -> throw Exception("Unexpected unary operator ${expression.operator}")

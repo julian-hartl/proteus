@@ -5,6 +5,71 @@ import lang.proteus.evaluator.BinaryExpressionEvaluator
 import lang.proteus.evaluator.UnaryExpressionEvaluator
 import lang.proteus.symbols.VariableSymbol
 
+internal fun isConstStatement(statement: BoundStatement): Boolean {
+    return when (statement) {
+        is BoundBlockStatement -> statement.statements.all { isConstStatement(it) }
+        is BoundVariableDeclaration -> statement.variable.isConst
+        is BoundExpressionStatement -> isConstExpression(statement.expression)
+        is BoundGotoStatement -> true
+        is BoundConditionalGotoStatement -> isConstExpression(statement.condition)
+        is BoundLabelStatement -> true
+        is BoundReturnStatement -> if (statement.expression == null) true else isConstExpression(statement.expression)
+        is BoundNopStatement -> true
+        is BoundBreakStatement -> true
+        is BoundContinueStatement -> true
+        else -> {
+            throw Exception("Unexpected statement: $statement")
+        }
+    }
+}
+
+internal fun getConstantValue(expression: BoundExpression): Any? {
+
+    return when (expression) {
+        is BoundLiteralExpression<*> -> expression.value
+        is BoundVariableExpression -> {
+            val constantValue = expression.variable.constantValue
+            if (constantValue == null) {
+                null
+            } else {
+                getConstantValue(constantValue)
+            }
+        }
+
+        is BoundUnaryExpression -> {
+            val operand = getConstantValue(expression.operand)
+            if (operand == null) {
+                null
+            } else {
+                UnaryExpressionEvaluator.evaluate(expression.operator, operand)
+            }
+        }
+
+        is BoundBinaryExpression -> {
+            val left = getConstantValue(expression.left)
+            val right = getConstantValue(expression.right)
+            if (left == null || right == null) {
+                null
+            } else {
+                BinaryExpressionEvaluator.evaluate(expression.operator.kind, expression.type, left, right)
+            }
+        }
+
+        is BoundCallExpression -> null
+        is BoundConversionExpression -> getConstantValue(expression.expression)
+        is BoundAssignmentExpression -> null
+        BoundErrorExpression -> null
+        is BoundMemberAccessExpression -> null
+        is BoundStructInitializationExpression -> null
+        is BoundTypeExpression -> null
+        is BoundReferenceExpression -> null
+    }
+}
+
+internal fun isConstExpression(expression: BoundExpression): Boolean {
+    return getConstantValue(expression) != null
+}
+
 internal class ConstantFolding :
     BoundTreeRewriter(), Optimizer {
 
@@ -15,12 +80,10 @@ internal class ConstantFolding :
 
 
     override fun optimizeExpression(expression: BoundExpression): BoundExpression {
-        return expression
         return rewriteExpression(expression)
     }
 
     override fun optimize(statement: BoundBlockStatement): BoundBlockStatement {
-        return statement
         var lastStatement = rewriteBlockStatement(statement)
 
         var lastSize = -1
@@ -44,39 +107,6 @@ internal class ConstantFolding :
         return lastStatement
     }
 
-    private fun isConstExpression(expression: BoundExpression): Boolean {
-        return when (expression) {
-            is BoundLiteralExpression<*> -> true
-            is BoundVariableExpression -> expression.variable.isConst
-            is BoundUnaryExpression -> isConstExpression(expression.operand)
-            is BoundBinaryExpression -> isConstExpression(expression.left) && isConstExpression(expression.right)
-            is BoundCallExpression -> false
-            is BoundConversionExpression -> isConstExpression(expression.expression)
-            is BoundAssignmentExpression -> isConstExpression(expression.expression)
-            BoundErrorExpression -> true
-            is BoundMemberAccessExpression -> isConstExpression(expression.expression)
-            is BoundStructInitializationExpression -> expression.members.all { isConstExpression(it.expression) }
-            is BoundTypeExpression -> true
-        }
-    }
-
-    private fun isConstStatement(statement: BoundStatement): Boolean {
-        return when (statement) {
-            is BoundBlockStatement -> statement.statements.all { isConstStatement(it) }
-            is BoundVariableDeclaration -> statement.variable.isConst
-            is BoundExpressionStatement -> isConstExpression(statement.expression)
-            is BoundGotoStatement -> true
-            is BoundConditionalGotoStatement -> isConstExpression(statement.condition)
-            is BoundLabelStatement -> true
-            is BoundReturnStatement -> if (statement.expression == null) true else isConstExpression(statement.expression)
-            is BoundNopStatement -> true
-            is BoundBreakStatement -> true
-            is BoundContinueStatement -> true
-            else -> {
-                throw Exception("Unexpected statement: $statement")
-            }
-        }
-    }
 
     private fun isFunctionConst(function: BoundBlockStatement): Boolean {
         return function.statements.all { isConstStatement(it) }

@@ -1,0 +1,7 @@
+import "std/io";
+fn main() {
+                        val test = &10;
+
+                        val a = *test;
+                        println(&a);
+                    }

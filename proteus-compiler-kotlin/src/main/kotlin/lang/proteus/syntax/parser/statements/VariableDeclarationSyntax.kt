@@ -10,6 +10,7 @@ import lang.proteus.syntax.parser.TypeClauseSyntax
 
 internal class VariableDeclarationSyntax(
     val keyword: Keyword,
+    val mutabilityToken: SyntaxToken<Keyword.Mut>?,
     val identifier: SyntaxToken<Token.Identifier>,
     val typeClauseSyntax: TypeClauseSyntax?,
     val equalsToken: SyntaxToken<Operator.Equals>,

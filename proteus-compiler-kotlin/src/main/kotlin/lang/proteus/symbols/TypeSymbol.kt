@@ -22,9 +22,9 @@ sealed class TypeSymbol(name: kotlin.String) :
         }
     }
 
-    data class Pointer(val type: TypeSymbol) : TypeSymbol(type.simpleName) {
+    data class Pointer(val type: TypeSymbol, val isMutable: kotlin.Boolean) : TypeSymbol(type.simpleName) {
         override fun toString(): kotlin.String {
-            return "&$type"
+            return "&${if (isMutable) "mut " else ""}$type"
         }
     }
 
@@ -77,7 +77,9 @@ sealed class TypeSymbol(name: kotlin.String) :
             Any -> true
             Unit -> this is Unit
             is Struct -> this is Struct && this.qualifiedName == symbol.qualifiedName
-            is Pointer -> this is Pointer && this.type.isAssignableTo(symbol.type)
+            is Pointer -> {
+                return this is Pointer && this.type.isAssignableTo(symbol.type) && this.isMutable == symbol.isMutable
+            }
         }
     }
 
@@ -88,8 +90,8 @@ sealed class TypeSymbol(name: kotlin.String) :
         }
     }
 
-    fun ref(): TypeSymbol {
-        return Pointer(this)
+    fun ref(asMut: kotlin.Boolean): TypeSymbol {
+        return Pointer(this, asMut)
     }
 
     fun deref(): TypeSymbol {
