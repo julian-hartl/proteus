@@ -440,6 +440,8 @@ internal class Binder(
                     if (type is TypeSymbol.Pointer && expectedType is TypeSymbol.Pointer) {
                         if (expectedType.isMutable && !type.isMutable) {
                             return@run "You need to pass a mutable reference instead of an immutable one. Use &mut to get a mutable reference to the value."
+                        } else{
+                            return@run "You need to pass an immutable reference instead of a mutable one. Use & to get an immutable reference to the value."
                         }
                     }
                     null

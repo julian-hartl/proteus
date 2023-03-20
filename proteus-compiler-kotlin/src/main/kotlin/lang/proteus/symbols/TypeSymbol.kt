@@ -78,19 +78,7 @@ sealed class TypeSymbol(name: kotlin.String) :
             Unit -> this is Unit
             is Struct -> this is Struct && this.qualifiedName == symbol.qualifiedName
             is Pointer -> {
-                val areTypesCompatible = this is Pointer && this.type.isAssignableTo(symbol.type)
-                if(areTypesCompatible){
-                    this as Pointer
-                    if(symbol.isMutable){
-                        this.isMutable
-                    }
-                    else{
-                        true
-                    }
-                }
-                else{
-                    false
-                }
+                return this is Pointer && this.type.isAssignableTo(symbol.type) && this.isMutable == symbol.isMutable
             }
         }
     }

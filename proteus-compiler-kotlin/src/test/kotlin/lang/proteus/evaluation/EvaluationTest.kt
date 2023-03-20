@@ -864,6 +864,22 @@ class EvaluationTest {
     }
 
     @Test
+    fun `should not be able to pass mutable reference to immutable value`() {
+        val text = """
+            
+            
+            fn main() {
+                let mut a = 1;
+                let b: &Int = [&mut a];
+            }
+        """.trimIndent()
+        val diagnostics = """
+            Cannot convert type '&mut Int' to '&Int' --- Hint: You need to pass an immutable reference instead of a mutable one. Use & to get an immutable reference to the value.
+        """.trimIndent()
+        assertDiagnostics(text, diagnostics, wrapInMain = false)
+    }
+
+    @Test
     fun `should not be able to assign by reference to immutable struct member`() {
         val text = """
             struct Foo {

@@ -6,7 +6,7 @@ internal sealed class Conversion {
     companion object {
         fun classify(from: TypeSymbol, to: TypeSymbol): Conversion {
             if (from is TypeSymbol.Pointer && to is TypeSymbol.Pointer) {
-                if(to.isMutable && !from.isMutable) return NoConversion
+                if(to.isMutable != from.isMutable) return NoConversion
                 return classify(from.type, to.type)
             }
             if (from == to) return IdentityConversion
